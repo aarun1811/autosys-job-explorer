@@ -35,6 +35,33 @@ public class TlmStatsV2Service {
     @Autowired
     private JdbcTemplate reconmgmtJdbcTemplate;
 
+    private static final Map<String, String> TLM_INSTANCE_MAP = Map.ofEntries(
+        Map.entry("TLMP_ASIA", "APTLMPP"),
+        Map.entry("TLMP_IND", "INTLMP"),
+        Map.entry("TLMP_CONSUMER", "TCOSPRD"),
+        Map.entry("TLMP_FEM", "TFEMPRD"),
+        Map.entry("TLMP_FNM", "TFNMPRD"),
+        Map.entry("TLMP_INT", "TINTPRD"),
+        Map.entry("TLMP_INV", "TINVPRD"),
+        Map.entry("TLMP_LAT", "TLATPRD"),
+        Map.entry("TLMP_OPS", "TOPSPRD"),
+        Map.entry("TLMP_PFSS", "TSFSPRD"),
+        Map.entry("TLMP_PNS", "TPNSPRD"),
+        Map.entry("TLMP_SNPB", "TSNBPRD"),
+        Map.entry("TCOSPRD", "TLMP_CONSUMER"),
+        Map.entry("TFEMPRD", "TLMP_FEM"),
+        Map.entry("TFNMPRD", "TLMP_FNM"),
+        Map.entry("TINTPRD", "TLMP_INT"),
+        Map.entry("TINVPRD", "TLMP_INV"),
+        Map.entry("TLATPRD", "TLMP_LAT"),
+        Map.entry("TOPSPRD", "TLMP_OPS"),
+        Map.entry("TSFSPRD", "TLMP_PFSS"),
+        Map.entry("TPNSPRD", "TLMP_PNS"),
+        Map.entry("TSNBPRD", "TLMP_SNPB"),
+        Map.entry("APTLMPP", "TLMP_ASIA"),
+        Map.entry("INTLMP", "TLMP_IND")
+    );
+
     /**
      * Get all breaks table data
      */
@@ -125,6 +152,7 @@ public class TlmStatsV2Service {
         // Get manual match data
         String manualSql = buildManualMatchQuery(request);
         Object[] manualParams = buildManualMatchParameters(request);
+        logger.info("Manual SQL: {}", manualSql);
         List<ManualMatchStats> manualData = reconmgmtJdbcTemplate.query(manualSql, manualParams, getManualMatchStatsRowMapper());
         
         // Merge data
@@ -135,7 +163,7 @@ public class TlmStatsV2Service {
     private List<MergedReconStats> mergeAutomatchAndManualData(List<AutomatchStats> automatchData, 
                                                               List<ManualMatchStats> manualData) {
         Map<String, MergedReconStats> mergedMap = new HashMap<>();
-        
+        logger.info("Merging automatch data size: {}, manual data size: {}", automatchData.size(), manualData.size());
         // Process automatch data
         for (AutomatchStats item : automatchData) {
             String key = getMergeKey(item.getTlmInstance(), item.getAgentCode(), item.getSetid(),
@@ -424,7 +452,7 @@ public class TlmStatsV2Service {
         
         // First part of UNION
         if (request.getTlmInstance() != null) {
-            params.add(request.getTlmInstance());
+            params.add(TLM_INSTANCE_MAP.get(request.getTlmInstance()));
         }
         if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
             params.addAll(request.getAgentCodes());
@@ -435,7 +463,7 @@ public class TlmStatsV2Service {
         
         // Second part of UNION (same parameters repeated)
         if (request.getTlmInstance() != null) {
-            params.add(request.getTlmInstance());
+            params.add(TLM_INSTANCE_MAP.get(request.getTlmInstance()));
         }
         if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
             params.addAll(request.getAgentCodes());
@@ -493,7 +521,7 @@ public class TlmStatsV2Service {
 
     private RowMapper<AutomatchStats> getAutomatchStatsRowMapper() {
         return (rs, rowNum) -> new AutomatchStats(
-            rs.getString("tlm_instance"),
+            TLM_INSTANCE_MAP.get(rs.getString("tlm_instance")),
             rs.getString("agent_code"),
             rs.getString("setid"),
             rs.getString("stmt_date"),
@@ -506,7 +534,7 @@ public class TlmStatsV2Service {
 
     private RowMapper<ManualMatchStats> getManualMatchStatsRowMapper() {
         return (rs, rowNum) -> new ManualMatchStats(
-            rs.getString("tlm_instance"),
+            TLM_INSTANCE_MAP.get(rs.getString("tlm_instance")),
             rs.getString("agent_code"),
             rs.getString("setid"),
             rs.getString("stmt_date"),
