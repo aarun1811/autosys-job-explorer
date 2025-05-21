@@ -1,0 +1,75 @@
+<div class="grid-container">
+  <div class="grid-header">
+    <div class="grid-actions">
+      <!-- View Controls Group -->
+      <div class="grid-actions-group">
+        <button (click)="toggleColumns()" matTooltip="Show/Hide Columns">
+          <mat-icon>view_column</mat-icon>
+        </button>
+
+        <!-- <button (click)="resetView()" matTooltip="Reset All Filters & Sorting">
+          <mat-icon>restart_alt</mat-icon>
+        </button> -->
+
+        <button [class.active]="isCompactView" (click)="toggleDensity()" matTooltip="Toggle Row Height">
+          <mat-icon>density_medium</mat-icon>
+        </button>
+      </div>
+
+      <!-- Group Controls -->
+      <div class="grid-actions-group">
+        <button (click)="expandAllGroups()" matTooltip="Expand All Groups">
+          <mat-icon>unfold_more</mat-icon>
+
+        </button>
+        <button (click)="collapseAllGroups()" matTooltip="Collapse All Groups">
+          <mat-icon>unfold_less</mat-icon>
+
+        </button>
+      </div>
+
+      <!-- Data Controls -->
+      <div class="grid-actions-group">
+        <button (click)="removeDuplicates()" [class.active]="isDeduplicated" matTooltip="Remove Duplicate Rows">
+          <mat-icon>filter_list_off</mat-icon>
+
+        </button>
+      </div>
+
+      <!-- Export Group -->
+      <div class="grid-actions-group">
+        <button (click)="onExportClick()" matTooltip="Export to Excel">
+          <mat-icon>file_download</mat-icon>
+
+        </button>
+        <button (click)="copyToClipboard()" matTooltip="Copy to Clipboard">
+          <mat-icon>content_copy</mat-icon>
+
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ag-grid-angular
+    class="ag-theme-alpine"
+    [rowData]="rowData"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [autoGroupColumnDef]="autoGroupColumnDef"
+    [sideBar]="sideBarConfig"
+    [pagination]="true"
+    [paginationPageSize]="100"
+    [animateRows]="true"
+    [suppressRowClickSelection]="true"
+    [suppressCellFocus]="true"
+    [suppressColumnVirtualisation]="true"
+    [groupDefaultExpanded]="1"
+    [enableCellTextSelection]="true"
+    [tooltipShowDelay]="0"
+    [tooltipHideDelay]="2000"
+    [rowSelection]="'multiple'"
+    [components]="components"
+    rowGroupPanelShow="always"
+    (gridReady)="onGridReady($event)">
+  </ag-grid-angular>
+</div>

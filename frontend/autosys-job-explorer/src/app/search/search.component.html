@@ -1,0 +1,115 @@
+<div class="app-container">
+  <div class="navbar">
+    <div class="navbar-content">
+      <div class="navbar-search" [class.visible]="hasSearched">
+        <div class="logo-container" (click)="resetToHome()" style="cursor: pointer">
+          <img src="assets/Rectrace.jpg" alt="Rectrace Label" class="logo-image"/>
+        </div>
+        <div class="search-box">
+          <div appearance="outline" class="search-input-container" [class.focused]="isFocused">
+            <mat-icon class="search-icon" (click)="onSearchIconClick()" style="cursor: pointer;">search</mat-icon>
+            <input
+              matInput
+              #searchInputNavbar
+              [(ngModel)]="query"
+              (ngModelChange)="onQueryInputChange()"
+              (keyup.enter)="doSearch()"
+              (focus)="onSearchFocus()"
+              (blur)="onSearchBlur()"
+              placeholder="Search by {{currentPlaceholder}}"
+              class="search-input"
+              [class.has-value]="query"
+              [matAutocomplete]="auto" aria-label="Search Jobs"
+            />
+            <mat-icon class="clear-icon" *ngIf="query" (click)="clearSearch()" style="cursor: pointer;">close</mat-icon>
+            <mat-icon class="mic-icon">mic</mat-icon> </div>
+        </div>
+      </div>
+      <div class="navbar-right">
+        <ng-container *ngIf="isUserIdentified; else signInButton">
+         <div class="user-profile-indicator"
+            [matTooltip]="userLoginId" matTooltipPosition="below">
+          {{ userInitials }}
+         </div>
+        </ng-container>
+        <ng-template #signInButton>
+         <button class="sign-in-button">Sign in</button> </ng-template>
+      </div>
+    </div>
+    <div class="tabs-navigation" *ngIf="hasSearched && tabs.length > 0">
+      <nav class="tabs-container">
+        <a *ngFor="let tab of tabs; let i = index"
+            [class.active]="selectedTabIndex === i"
+            (click)="selectTab(i)"
+            class="tab-link">
+          {{ tab.label }}
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="search-container" [class.has-searched]="hasSearched">
+    <div class="search-content" [class.hidden]="hasSearched">
+      <div class="logo-container">
+        <img src="assets/Rectrace.jpg" alt="Rectrace Label" class="logo-image"/>
+      </div>
+      <div class="search-box">
+        <div class="search-input-container" [class.focused]="isFocused">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            matInput
+            #searchInput
+            [(ngModel)]="query"
+            (ngModelChange)="onQueryInputChange()"
+            (keyup.enter)="doSearch()"
+            (focus)="onSearchFocus()"
+            (blur)="onSearchBlur()"
+            placeholder="Are you looking for {{currentPlaceholder}} ?"
+            class="search-input"
+            [class.has-value]="query"
+            [matAutocomplete]="auto"
+            aria-label="Search Jobs"
+          />
+          <mat-icon class="clear-icon" *ngIf="query" (click)="clearSearch()" style="cursor: pointer;">close</mat-icon>
+          <mat-icon class="mic-icon">mic</mat-icon> </div>
+        <div class="search-buttons">
+          <button mat-stroked-button (click)="doSearch()">Search</button>
+          <button mat-stroked-button class="try-button" (mouseenter)="updateTryButtonText()" (click)="onTryButtonClick()">Try "{{tryButtonText}}"</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-dots"> <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+
+    <div *ngIf="tabs.length > 0 && hasSearched" class="results-container" [class.visible]="tabs.length > 0">
+      <div class="tab-content">
+        <ng-container *ngFor="let tab of tabs; let i = index">
+           <app-all-jobs
+            *ngIf="selectedTabIndex === i"
+            [rowData]="tab.data"
+            [columnDefs]="tab.columnDef"
+            [categoryKey]="tab.key"
+            [isGridLoading]="isLoadingCategory && selectedTabIndex === i"
+            (columnVisibilityChanged)="handleColumnVisibilityChange($event)"
+            (duplicatesRemoved)="handleDuplicatesRemoved($event)"
+            (originalDataRestored)="handleOriginalDataRestored($event)">
+          </app-all-jobs>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading && showNoResultsMessage && hasSearched" class="no-results-container">
+      <mat-icon class="no-results-icon">search_off</mat-icon>
+      <p>No results found for "<strong>{{ query }}</strong>".</p>
+      <p class="suggestion-text">Try searching for something else.</p>
+    </div>
+  </div>
+</div>
+<mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSuggestionSelected($event)">
+  <mat-option *ngFor="let suggestion of suggestions$ | async" [value]="suggestion">
+    {{ suggestion }}
+  </mat-option>
+</mat-autocomplete>

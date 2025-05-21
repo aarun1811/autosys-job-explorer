@@ -1,0 +1,241 @@
+.grid-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: calc(100vh - 148px); /* Account for navbar (60px), tabs (60px), search header (28px) */
+  min-height: 400px;
+  width: 100%;
+  background-color: #fff;
+  isolation: isolate;
+  z-index: 0;
+}
+
+.grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #fff;
+  border-bottom: 1px solid #dadce0;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.grid-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.grid-actions-group {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.grid-actions-group:not(:last-child) {
+  margin-right: 8px;
+}
+
+.grid-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a73e8;
+  background-color: transparent;
+  border: none;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+  height: 32px;
+  cursor: pointer;
+}
+
+.grid-actions-group button:not(:last-child) {
+  border-right: 1px solid #dadce0;
+}
+
+.grid-actions button:hover {
+  background-color: #f8f9fa;
+}
+
+.grid-actions button:active {
+  background-color: #f1f3f4;
+}
+
+.grid-actions button.active {
+  background-color: #e8f0fe;
+  color: #1967d2;
+}
+
+.grid-actions button mat-icon {
+  font-size: 16px;
+  height: 16px;
+  width: 16px;
+  opacity: 0.87;
+}
+
+.grid-actions button:disabled {
+  color: #5f6368;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* AG Grid container */
+ag-grid-angular {
+  flex: 1 1 auto; /* Allow grid to grow and shrink */
+  width: 100%;
+  min-height: 0; /* Important for Firefox flex box */
+  position: relative;
+  z-index: 0;
+}
+
+/* AG Grid custom styling */
+:host ::ng-deep .ag-theme-alpine {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+  --ag-header-foreground-color: #202124;
+  --ag-header-background-color: #fff;
+  --ag-odd-row-background-color: #fff;
+  --ag-row-border-color: transparent;
+  --ag-row-hover-color: #f8f9fa;
+  --ag-selected-row-background-color: #e8f0fe;
+  --ag-font-family: 'Google Sans', sans-serif;
+  --ag-font-size: 12.5px;
+  --ag-header-font-size: 12.5px;
+  --ag-header-font-weight: 500;
+  --ag-font-weight: 400;
+  --ag-border-color: #dadce0;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-header-column-separator-height: 50%;
+  --ag-header-column-separator-width: 1px;
+  --ag-header-column-separator-color: #dadce0;
+  height: 100%; /* This ensures the grid takes full height of its container */
+  --ag-popup-shadow: 0 2px 6px rgba(60,64,67,.15);
+  --ag-modal-overlay-background-color: rgba(32, 33, 36, 0.7);
+  position: relative;
+}
+
+/* Ensure overlays are visible */
+:host ::ng-deep .ag-theme-alpine .ag-popup-child {
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-popup {
+  position: absolute;
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-popup-backdrop {
+  z-index: 4;
+}
+
+/* Ensure menu items are visible */
+:host ::ng-deep .ag-theme-alpine .ag-menu {
+  z-index: 5;
+  background: #fff;
+}
+
+/* Ensure filters are visible */
+:host ::ng-deep .ag-theme-alpine .ag-filter-wrapper {
+  z-index: 5;
+  background: #fff;
+}
+
+/* Ensure column headers are properly positioned */
+:host ::ng-deep .ag-theme-alpine .ag-header {
+  position: relative;
+  z-index: 1;
+}
+
+/* Style header icons */
+:host ::ng-deep .ag-theme-alpine .ag-header-icon {
+  color: #5f6368;
+}
+
+/* Fix cell styling */
+:host ::ng-deep .ag-theme-alpine .ag-cell {
+  padding: 0 12px;
+  border-right: none;
+  line-height: 32px;
+  font-weight: 400;
+}
+
+/* Group row styling */
+:host ::ng-deep .ag-theme-alpine .ag-row-group {
+  background-color: #f8f9fa;
+  font-weight: 400;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group:hover {
+  background-color: #f1f3f4;
+}
+
+/* Row styling */
+:host ::ng-deep .ag-theme-alpine .ag-row {
+  border-bottom: 1px solid #f1f3f4;
+  font-weight: 400;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row:hover {
+  background-color: #f8f9fa;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-selected {
+  background-color: #e8f0fe;
+}
+
+/* Column headers with menu */
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.ag-header-cell-menu-button {
+  border-right: none;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-menu-button:hover {
+  background-color: #f1f3f4;
+}
+
+/* Pagination styling */
+:host ::ng-deep .ag-theme-alpine .ag-paging-panel {
+  border-top: 1px solid #dadce0;
+  padding: 6px 12px;
+  background-color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 36px;
+  font-weight: 400;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-paging-button {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 12.5px;
+  color: #1a73e8;
+  background-color: transparent;
+  border: none;
+  padding: 4px 8px;
+  margin: 0 2px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-paging-button:hover:not(.ag-disabled) {
+  background-color: #f1f3f4;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-paging-button.ag-disabled {
+  color: #70757a;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Responsive pagination controls */
+@media (min-width: 1200px) {
+  :host ::ng-deep .ag-theme-alpine .ag-paging-panel {
+    padding: 6px 24px;
+  }
+}

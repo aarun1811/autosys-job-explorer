@@ -1,0 +1,69 @@
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ===== Node / Angular (frontend/) =====
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.angular/cache/
+/frontend/.angular/local/
+/frontend/.angular/config.json
+/frontend/.env
+/frontend/.env.local
+
+# Angular test coverage
+/frontend/coverage/
+
+# Angular logs
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+
+# IDE
+/frontend/.idea/
+/frontend/.vscode/
+
+# ===== Java / Spring Boot (backend/) =====
+/backend/target/
+/backend/.classpath
+/backend/.project
+/backend/.settings/
+/backend/.env
+/backend/.env.local
+
+# Logs
+/backend/*.log
+
+# IDE
+/backend/.idea/
+/backend/.vscode/
+
+# ===== Global IDE & system ignores =====
+*.iml
+*.log
+*.tmp
+*.swp
+*~
+
+# Backup files
+*.bak
+*.orig
+*.old
+
+# Ignore build tools' wrapper files (optional)
+/backend/mvnw.cmd
+/backend/mvnw
+/backend/gradlew
+/backend/gradlew.bat
+/backend/.mvn/
+/backend/.gradle/
+
+# Ignore IntelliJ project files
+*.iws
+*.ipr
+*.bak
+.idea/
+
+# VSCode
+.vscode/

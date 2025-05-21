@@ -1,0 +1,101 @@
+<div class="modal-header">
+  <div class="header-content">
+    <h2 mat-dialog-title>
+      <mat-icon class="header-icon">account_tree</mat-icon>
+      <div class="title-content">
+        <div class="main-title">Job Execution Order</div>
+        <div class="job-id">{{data.loadJob}}</div>
+      </div>
+    </h2>
+    <!-- <div class="header-subtitle">View the execution sequence and dependencies for this job</div> -->
+  </div>
+  <button mat-icon-button mat-dialog-close aria-label="Close dialog">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <div class="modal-content">
+    <div class="graph-section">
+      <app-execution-order-graph
+        [executionSequence]="data.executionSequence"
+        [jobDetails]="data.jobDetails"
+        [loadJob]="data.loadJob"
+        (nodeSelected)="onNodeSelected($event)">
+      </app-execution-order-graph>
+    </div>
+
+    <mat-divider [vertical]="true"></mat-divider>
+
+    <div class="details-section" *ngIf="selectedJobName || !selectedJobDetails">
+      <div class="details-header">
+        <mat-icon class="details-icon">description</mat-icon>
+        <h3>Job Details</h3>
+      </div>
+
+      <ng-container *ngIf="selectedJobDetails; else noSelection">
+        <div class="selected-job-name">
+          <h4>
+            <mat-icon [ngClass]="{'cmd-type': selectedJobDetails.jobType === 'CMD', 'box-type': selectedJobDetails.jobType === 'BOX'}">
+              {{selectedJobDetails.jobType === 'CMD' ? 'code' : 'folder'}}
+            </mat-icon>
+            {{selectedJobName}}
+          </h4>
+        </div>
+
+        <mat-list>
+          <mat-list-item>
+            <mat-icon matListItemIcon>business</mat-icon>
+            <span matListItemTitle>Machine</span>
+            <span matListItemLine>{{selectedJobDetails.machine || 'N/A'}}</span>
+          </mat-list-item>
+
+          <mat-list-item>
+            <mat-icon matListItemIcon>event</mat-icon>
+            <span matListItemTitle>Run Calendar</span>
+            <span matListItemLine>{{selectedJobDetails.runCalendar || 'N/A'}}</span>
+          </mat-list-item>
+
+          <mat-list-item>
+            <mat-icon matListItemIcon>event_busy</mat-icon>
+            <span matListItemTitle>Exclude Calendar</span>
+            <span matListItemLine>{{selectedJobDetails.excludeCalendar || 'N/A'}}</span>
+          </mat-list-item>
+
+          <mat-list-item *ngIf="selectedJobDetails.boxName">
+            <mat-icon matListItemIcon>folder</mat-icon>
+            <span matListItemTitle>Box Name</span>
+            <span matListItemLine>{{selectedJobDetails.boxName}}</span>
+          </mat-list-item>
+        </mat-list>
+
+        <div class="command-section" *ngIf="selectedJobDetails.command">
+          <div class="section-header">
+            <mat-icon>code</mat-icon>
+            <h4>Command</h4>
+          </div>
+          <pre class="command-text">{{selectedJobDetails.command}}</pre>
+        </div>
+
+        <div class="description-section" *ngIf="selectedJobDetails.description">
+          <div class="section-header">
+            <mat-icon>info</mat-icon>
+            <h4>Description</h4>
+          </div>
+          <div class="description-text">{{selectedJobDetails.description}}</div>
+        </div>
+      </ng-container>
+
+      <ng-template #noSelection>
+        <div class="no-selection-container">
+          <mat-icon class="no-selection-icon">touch_app</mat-icon>
+          <p class="help-text">Click on any job in the graph to view its details</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<!-- <mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>Close</button>
+</mat-dialog-actions> -->

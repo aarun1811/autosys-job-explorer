@@ -1,0 +1,23 @@
+<div class="graph-container">
+  <div class="controls-panel">
+    <div class="zoom-controls">
+      <button mat-icon-button color="primary" (click)="zoomIn()" matTooltip="Zoom In">
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+      <button mat-icon-button color="primary" (click)="zoomOut()" matTooltip="Zoom Out">
+        <mat-icon>zoom_out</mat-icon>
+      </button>
+      <button mat-icon-button color="primary" (click)="resetZoom()" matTooltip="Reset Zoom">
+        <mat-icon>center_focus_strong</mat-icon>
+      </button>
+      <button mat-icon-button color="primary" (click)="fitGraph()" matTooltip="Fit Graph">
+        <mat-icon>fit_screen</mat-icon>
+      </button>
+      <span class="zoom-level">{{ (currentZoom * 100).toFixed(0) }}%</span>
+    </div>
+    <div class="help-text">
+      • Use mouse wheel to pan 
+    </div>
+  </div>
+  <div #cy class="cytoscape-graph"></div>
+</div>

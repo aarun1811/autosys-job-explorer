@@ -1,0 +1,414 @@
+/* CSS Variables for Google Design System */
+:root {
+  --google-blue: #1a73e8;
+  --google-blue-hover: #1557b0;
+  --google-blue-active: #174ea6;
+  --google-text-primary: #202124;
+  --google-text-secondary: #5f6368;
+  --google-border: #dadce0;
+  --google-bg-light: #f8f9fa;
+  --google-bg-hover: rgba(26, 115, 232, 0.04);
+  --google-bg-active: rgba(26, 115, 232, 0.08);
+  --google-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --google-shadow-hover: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Override Material Dialog styles */
+::ng-deep .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: transparent !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .mdc-dialog__surface {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .mat-mdc-dialog-surface {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .mat-dialog-container {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4285f4, #1a73e8);
+  color: #fff;
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  color: #fff;
+}
+
+.header-icon {
+  margin-right: 16px;
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
+}
+
+.title-content {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.main-title {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+}
+
+.job-id {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.95);
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.header-subtitle {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-left: 44px;
+  margin-top: 4px;
+}
+
+.subtitle {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 15px;
+  margin-left: 12px;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+#execution-order-visualization {
+  height: 600px;
+  width: 100%;
+  min-width: 800px;
+}
+
+ag-charts-angular {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.modal-content {
+  display: flex;
+  gap: 24px;
+  height: 100%;
+  min-height: 500px;
+  padding: 24px;
+}
+
+.graph-section {
+  flex: 3;
+  min-width: 0;
+  height: 100%;
+}
+
+.details-section {
+  flex: 1;
+  min-width: 300px;
+  max-width: 380px;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  box-shadow: var(--google-shadow);
+  background: linear-gradient(180deg, #ffffff, #f8f9fa);
+  transition: all 0.2s ease;
+}
+
+.help-text {
+  color: var(--google-blue);
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  text-align: center;
+  margin: 8px 0;
+}
+
+mat-dialog-content {
+  height: calc(100% - 100px);
+  max-height: none !important;
+  padding: 0 !important;
+  background-color: #f8f9fa;
+  border-radius: 0 0 8px 8px !important;
+  overflow: hidden !important;
+}
+
+.details-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--google-border);
+}
+
+.details-header h3 {
+  margin: 0;
+  color: var(--google-blue);
+  font-family: 'Google Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.details-icon {
+  color: var(--google-blue);
+  margin-right: 12px;
+  font-size: 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.section-divider {
+  margin: 16px 0;
+}
+
+.selected-job-name {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--google-border);
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.selected-job-name h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--google-text-primary);
+}
+
+.selected-job-name mat-icon {
+  margin-right: 12px;
+  font-size: 22px;
+  height: 22px;
+  width: 22px;
+  opacity: 0.9;
+}
+
+.cmd-type {
+  color: #4285f4;
+}
+
+.box-type {
+  color: #34a853;
+}
+
+.command-section, .description-section {
+  margin: 16px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-header h4 {
+  color: var(--google-blue);
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 0 8px;
+}
+
+.section-header mat-icon {
+  color: var(--google-blue);
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
+.command-text {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: 'Google Sans', monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--google-border);
+  color: var(--google-text-primary);
+}
+
+.description-text {
+  color: var(--google-text-primary);
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 4px;
+}
+
+mat-list-item {
+  height: auto !important;
+  margin-bottom: 4px;
+}
+
+::ng-deep .mat-mdc-list-item {
+  --mdc-list-list-item-label-text-size: 13px;
+  border-bottom: 1px solid var(--google-border);
+  transition: background-color 0.2s ease;
+}
+
+::ng-deep .mat-mdc-list-item:hover {
+  background-color: #e8f0fe !important;
+}
+
+::ng-deep .mat-mdc-list-item-line {
+  font-family: 'Google Sans', sans-serif !important;
+  font-size: 13px !important;
+  color: var(--google-text-primary) !important;
+}
+
+::ng-deep .mat-mdc-list-item-icon {
+  margin-right: 12px !important;
+  color: var(--google-blue) !important;
+  opacity: 0.9 !important;
+}
+
+.visualization-container {
+  flex: 2;
+  min-width: 0;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  padding: 16px;
+  overflow: auto;
+}
+
+#execution-order-diagram {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+.no-selection-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.no-selection-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: var(--google-blue);
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.error-container {
+  text-align: center;
+  padding: 24px;
+  color: #f44336;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    flex-direction: column;
+  }
+
+  .details-section {
+    min-width: 100%;
+    max-width: none;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  mat-dialog-content {
+    padding: 12px !important;
+  }
+
+  mat-divider[vertical] {
+    display: none;
+  }
+}
+
+/* Animation */
+.details-section {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+mat-dialog-actions button {
+  transition: all 0.2s ease;
+}
+
+mat-dialog-actions button:hover {
+  background-color: var(--google-bg-hover);
+  transform: translateY(-1px);
+}
