@@ -185,7 +185,7 @@ Located in `backend/src/main/resources/search-config.json`, this crucial JSON fi
   }
 ```
 
-**Adding/Modifying Searches:** Edit `search-config.json`. Ensure DTOs in `com.citi.gru.autosysjobexplorer.dto` are aligned if you change the structure significantly. For Elasticsearch, ensure new fields are mapped in your ES index template and data is loaded/re-indexed. Restart the backend application to pick up changes.
+**Adding/Modifying Searches:** Edit `search-config.json`. Ensure DTOs in `com.citi.gru.rectrace.dto` are aligned if you change the structure significantly. For Elasticsearch, ensure new fields are mapped in your ES index template and data is loaded/re-indexed. Restart the backend application to pick up changes.
 
 ## Components
 
