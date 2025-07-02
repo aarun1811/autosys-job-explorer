@@ -10,11 +10,11 @@ import type {
   IFilter
 } from 'ag-grid-enterprise';
 import 'ag-grid-enterprise';
-import { ExecutionOrderButtonComponent } from './execution-order-modal/execution-order-button.component';
-import { AppIDCellRendererComponent } from './app-id-cell-renderer.component';
+import { ExecutionOrderButtonComponent } from '../../../custom-interactions/components/renderers/execution-order-button.component';
+import { AppIDCellRendererComponent } from '../../../custom-interactions/components/renderers/app-id-cell-renderer.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { JobData, SearchColumnDefinition } from '../models/job.model';
-import { AppSupportCellRendererComponent } from './app-support-cell-renderer.component';
+import { JobData, SearchColumnDefinition } from '../../../models/job.model';
+import { AppSupportCellRendererComponent } from '../../../custom-interactions/components/renderers/app-support-cell-renderer.component';
 import { LicenseManager } from "ag-grid-enterprise";
 
 export interface ColumnVisibleEvent {

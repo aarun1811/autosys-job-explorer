@@ -1,12 +1,12 @@
-import { SearchResponse, TabData, SearchColumnDefinition } from './../models/job.model'; // Ensure SearchColumnDefinition is imported if used directly here beyond TabData
+import { SearchResponse, TabData } from '../../../models/job.model'; // Ensure SearchColumnDefinition is imported if used directly here beyond TabData
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
-import { SearchService } from '../services/search.service';
+import { SearchService } from '../../../services/search.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, Observable, of, Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap, catchError, tap, filter, first } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, first } from 'rxjs/operators';
 import { MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { ColumnVisibleEvent } from '../all-jobs/all-jobs.component'; // Verify this path
-import { UserInfo, UserService } from '../services/user.service';
+import { UserInfo, UserService } from '../../../services/user.service';
 
 interface CategoryColumnState {
   loadedFields: Set<string>;          // Fields for which data has been successfully fetched

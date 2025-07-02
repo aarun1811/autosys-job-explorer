@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 // *** Verify this import path is correct relative to app-routing.module.ts ***
-import { SearchComponent } from './search/search.component';
+import { SearchComponent } from './search-feature/components/search/search.component';
 
 // This is the configuration array for your routes
 const routes: Routes = [

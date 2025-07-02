@@ -3,7 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams, ColDef } from 'ag-grid-enterprise';
 import { ExecutionOrderService } from 'src/app/services/execution-order.service';
-import { ExecutionOrderModalComponent } from './execution-order-modal.component';
+import { ExecutionOrderModalComponent } from '../modals/execution-order-modal/execution-order-modal.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface ExecutionOrderButtonParams extends ICellRendererParams {
