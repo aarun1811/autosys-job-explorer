@@ -231,6 +231,8 @@ export class SearchComponent implements OnInit, OnDestroy {
 
         if (targetTabKey) {
           this.selectTabByKey(targetTabKey, false);
+        } else {
+          this.selectTabByKey(undefined, false);
         }
       },
       error: (error) => {
@@ -249,7 +251,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     }
   }
 
-    handleColumnVisibilityChange(event: ColumnVisibleEvent): void {
+  handleColumnVisibilityChange(event: ColumnVisibleEvent): void {
     // Convert ColumnVisibleEvent to ColumnVisibilityEvent
     const columnVisibilityEvent = {
       categoryKey: event.categoryKey,
@@ -304,13 +306,15 @@ export class SearchComponent implements OnInit, OnDestroy {
   }
 
   private selectTabByKey(key?: string | null, updateUrl: boolean = true): void {
-    if (!key) return;
-
+    if (!key && this.tabs.length === 0) return;
+    if (!key && this.tabs.length > 0) {
+      key = this.tabs[0].key;
+    }
     const tabIndex = this.tabs.findIndex(tab => tab.key === key);
     if (tabIndex !== -1) {
       this.searchStateService.setSelectedTabIndex(tabIndex);
       if (updateUrl) {
-        this.searchStateService.updateUrlWithState(this.query, key);
+        this.searchStateService.updateUrlWithState(this.query, key || undefined);
       }
     }
   }
