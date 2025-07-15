@@ -297,6 +297,7 @@ export class SearchComponent implements OnInit, OnDestroy {
   }
 
   resetToHome(): void {
+    this.clearSearch();
     this.searchStateService.resetToInitialState();
     this.searchResultsService.clearSearchResults();
     this.searchInputService.startPlaceholderCycle();
