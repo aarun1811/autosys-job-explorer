@@ -293,6 +293,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     this.query = '';
     this.searchStateService.updateQuery('');
     this.searchInputService.onQueryInputChange('');
+    this.searchStateService.updateUrlWithState(this.query);
   }
 
   resetToHome(): void {
