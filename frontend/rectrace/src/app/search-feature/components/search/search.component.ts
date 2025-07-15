@@ -221,7 +221,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     this.searchStateService.updateQuery(this.query);
     this.searchStateService.setLoading(true);
     this.searchStateService.setHasSearched(true);
-    this.searchStateService.updateUrlWithState(this.query);
+    this.searchStateService.updateUrlWithState(this.query, targetTabKey);
 
     this.searchSubscription?.unsubscribe();
     this.searchSubscription = this.searchService.search(this.query).subscribe({
