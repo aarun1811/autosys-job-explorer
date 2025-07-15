@@ -69,7 +69,7 @@ export class SearchInputService {
       debounceTime(300),
       distinctUntilChanged(),
       switchMap((prefix: string) => {
-        if (!prefix || typeof prefix !== 'string' || prefix.trim().length < 2) {
+        if (!prefix || typeof prefix !== 'string' || prefix.trim().length <= 2) {
           return of([]);
         }
         return this.searchService.getCombinedSuggestions(prefix.trim()).pipe(
