@@ -101,7 +101,11 @@ export class SearchInputService {
   }
 
   getCurrentTryButtonText(): string {
-    return this.tryButtonText$.value;
+    const foundItem = this.tryButtonTexts.find(item => item.name === this.tryButtonText$.value);
+    if (foundItem && foundItem.options.length > 0) {
+      return foundItem.options[Math.floor(Math.random() * foundItem.options.length)];
+    }
+    return '';
   }
 
   getCurrentPlaceholder(): string {
