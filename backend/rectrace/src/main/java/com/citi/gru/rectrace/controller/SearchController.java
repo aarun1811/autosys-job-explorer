@@ -1,17 +1,21 @@
 package com.citi.gru.rectrace.controller;
 
-import com.citi.gru.rectrace.dto.SearchCategoryResult;
-import com.citi.gru.rectrace.service.EnhancedSearchService;
-import com.citi.gru.rectrace.service.SuggestionService;
-import com.citi.gru.rectrace.service.v2.SearchServiceV2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.citi.gru.rectrace.dto.SearchCategoryResult;
+import com.citi.gru.rectrace.service.SuggestionService;
+import com.citi.gru.rectrace.service.v2.SearchServiceV2;
 
 @RestController
 @RequestMapping("/api")
@@ -21,24 +25,15 @@ public class SearchController {
 
     private static final String CITI_PORTAL_LOGIN_ID_HEADER = "x-citiportal-loginid";
 
-    private final EnhancedSearchService enhancedSearchService;
-
     private final SuggestionService suggestionService;
 
     private final SearchServiceV2 searchServiceV2;
 
     public SearchController(
-            EnhancedSearchService enhancedSearchService,
             SuggestionService suggestionService,
             SearchServiceV2 searchServiceV2) {
-        this.enhancedSearchService = enhancedSearchService;
         this.suggestionService = suggestionService;
         this.searchServiceV2 = searchServiceV2;
-    }
-
-    @GetMapping("/search")
-    public Map<String, SearchCategoryResult> search(@RequestParam(name = "q") String query) {
-        return enhancedSearchService.search(query);
     }
 
     @GetMapping("/search/suggest")
