@@ -171,11 +171,17 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   onQueryInputChange(): void {
     this.searchInputService.onQueryInputChange(this.query);
+    this.searchStateService.updateQuery(this.query);
   }
 
   onSuggestionSelected(event: MatAutocompleteSelectedEvent): void {
     this.query = event.option.viewValue;
     this.searchStateService.updateQuery(this.query);
+
+    // Close autocomplete panels
+    this.autocompleteTriggerCentered?.closePanel();
+    this.autocompleteTriggerNavbar?.closePanel();
+
     this.doSearch();
   }
 
@@ -223,11 +229,24 @@ export class SearchComponent implements OnInit, OnDestroy {
     this.searchStateService.setHasSearched(true);
     this.searchStateService.updateUrlWithState(this.query, targetTabKey);
 
+    this.searchResultsService.clearSearchResults();
+    this.searchStateService.setShowNoResultsMessage(false);
+
+    this.autocompleteTriggerCentered?.closePanel();
+    this.autocompleteTriggerNavbar?.closePanel();
+
     this.searchSubscription?.unsubscribe();
     this.searchSubscription = this.searchService.search(this.query).subscribe({
       next: (searchResponse: SearchResponse) => {
         this.searchResultsService.updateSearchResults(searchResponse);
         this.searchStateService.setLoading(false);
+
+        // Check if we have any results after processing
+        if (this.tabs.length === 0) {
+          this.searchStateService.setShowNoResultsMessage(true);
+        } else {
+          this.searchStateService.setShowNoResultsMessage(false);
+        }
 
         if (targetTabKey) {
           this.selectTabByKey(targetTabKey, false);
