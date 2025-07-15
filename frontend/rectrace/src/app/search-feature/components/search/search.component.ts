@@ -11,7 +11,6 @@ import { UserInfo, UserService } from '../../../services/user.service';
 import { SearchStateService } from '../../services/search-state.service';
 import { SearchResultsService } from '../../services/search-results.service';
 import { SearchInputService } from '../../services/search-input.service';
-import { ColumnVisibilityService } from '../../services/column-visibility.service';
 
 @Component({
   selector: 'app-search',
@@ -61,8 +60,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     // Inject our new services
     private searchStateService: SearchStateService,
     private searchResultsService: SearchResultsService,
-    private searchInputService: SearchInputService,
-    private columnVisibilityService: ColumnVisibilityService
+    private searchInputService: SearchInputService
   ) {
     // Initialize observables from services
     this.suggestions$ = this.searchInputService.suggestions$;
@@ -267,44 +265,6 @@ export class SearchComponent implements OnInit, OnDestroy {
     const tab = this.tabs[index];
     if (tab) {
       this.searchStateService.updateUrlWithState(this.query, tab.key);
-    }
-  }
-
-  handleColumnVisibilityChange(event: ColumnVisibleEvent): void {
-    // Convert ColumnVisibleEvent to ColumnVisibilityEvent
-    const columnVisibilityEvent = {
-      categoryKey: event.categoryKey,
-      columnField: event.columnField,
-      isVisible: event.isVisible
-    };
-
-    this.columnVisibilityService.handleColumnVisibilityChange(columnVisibilityEvent);
-
-    const currentState = this.searchResultsService.getCategoryColumnState(event.categoryKey);
-    if (currentState) {
-      const updatedState = this.columnVisibilityService.updateCategoryColumnState(
-        event.categoryKey,
-        currentState,
-        event.columnField,
-        event.isVisible
-      );
-      this.searchResultsService.updateCategoryColumnState(event.categoryKey, updatedState);
-    }
-  }
-
-  handleDuplicatesRemoved(categoryKey: string): void {
-    const currentState = this.searchResultsService.getCategoryColumnState(categoryKey);
-    if (currentState) {
-      const updatedState = { ...currentState, isDeduplicationActive: true };
-      this.searchResultsService.updateCategoryColumnState(categoryKey, updatedState);
-    }
-  }
-
-  handleOriginalDataRestored(categoryKey: string): void {
-    const currentState = this.searchResultsService.getCategoryColumnState(categoryKey);
-    if (currentState) {
-      const updatedState = { ...currentState, isDeduplicationActive: false };
-      this.searchResultsService.updateCategoryColumnState(categoryKey, updatedState);
     }
   }
 

@@ -35,59 +35,6 @@ export class GridActionsService {
     }
   }
 
-  resetView(
-    gridApi: GridApi<JobData | undefined | null>,
-    columnDefs: any[] | undefined | null,
-    originalRowData: (JobData | null | undefined)[],
-    isDeduplicated: boolean,
-    categoryKey: string,
-    onOriginalDataRestored: (categoryKey: string) => void
-  ): void {
-    if (!gridApi) return;
-
-    // Reset filters
-    gridApi.setFilterModel(null);
-
-    // Reset sorting, grouping, pivot, pinning for all columns
-    const colStatesToReset = gridApi.getColumnState().map(s => ({
-      colId: s.colId,
-      sort: null,
-      rowGroup: false,
-      pivot: false,
-      pinned: null,
-    }));
-    gridApi.applyColumnState({ state: colStatesToReset, defaultState: { hide: false } });
-
-    // Re-apply initial hide state from original columnDefs
-    const initialColumnHideStates = columnDefs
-      ?.map(colDef => {
-        if (colDef.field) {
-          return { colId: colDef.field, hide: !!colDef.hide };
-        }
-        return null;
-      })
-      .filter(state => state !== null) as { colId: string; hide: boolean }[];
-
-    if (initialColumnHideStates && initialColumnHideStates.length > 0) {
-      gridApi.applyColumnState({ state: initialColumnHideStates, applyOrder: true });
-    }
-
-    // Restore original data if it was deduplicated or if current data count differs
-    if (originalRowData) {
-      if (isDeduplicated || gridApi.getDisplayedRowCount() !== originalRowData.length) {
-        gridApi.setGridOption('rowData', originalRowData);
-        onOriginalDataRestored(categoryKey);
-      }
-    }
-
-    gridApi.collapseAll();
-
-    setTimeout(() => {
-      if (gridApi) gridApi.autoSizeAllColumns();
-      this.showMessage('View reset successfully');
-    }, 100);
-  }
-
   toggleDensity(
     gridApi: GridApi<JobData | undefined | null>,
     isCompactView: boolean,
@@ -202,30 +149,6 @@ export class GridActionsService {
     }
 
     setTimeout(() => gridApi?.autoSizeAllColumns(), 50);
-  }
-
-  restoreOriginalData(
-    gridApi: GridApi<JobData | undefined | null>,
-    originalRowData: (JobData | null | undefined)[],
-    isDeduplicated: boolean,
-    categoryKey: string,
-    onOriginalDataRestored: (categoryKey: string) => void
-  ): void {
-    if (!gridApi) return;
-
-    if (isDeduplicated && originalRowData) {
-      gridApi.setGridOption('rowData', originalRowData);
-      this.showMessage('Original data restored.');
-      onOriginalDataRestored(categoryKey);
-    } else if (!isDeduplicated) {
-      this.showMessage('Data is already in its original state.');
-    } else {
-      this.showMessage('No original data to restore or inconsistent state.');
-    }
-
-    setTimeout(() => {
-      if (gridApi) gridApi.autoSizeAllColumns();
-    }, 50);
   }
 
   private showMessage(message: string): void {

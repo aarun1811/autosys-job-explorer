@@ -92,10 +92,7 @@
             [rowData]="tab.data"
             [columnDefs]="tab.columnDef"
             [categoryKey]="tab.key"
-            [isGridLoading]="isLoadingCategory && selectedTabIndex === i"
-            (columnVisibilityChanged)="handleColumnVisibilityChange($event)"
-            (duplicatesRemoved)="handleDuplicatesRemoved($event)"
-            (originalDataRestored)="handleOriginalDataRestored($event)">
+            [isGridLoading]="isLoadingCategory && selectedTabIndex === i">
           </app-all-jobs>
         </ng-container>
       </div>

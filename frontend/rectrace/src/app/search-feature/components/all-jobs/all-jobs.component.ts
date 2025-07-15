@@ -40,9 +40,7 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   @Input() categoryKey!: string;
   @Input() isGridLoading: boolean = false;
 
-  @Output() columnVisibilityChanged = new EventEmitter<ColumnVisibleEvent>();
   @Output() duplicatesRemoved = new EventEmitter<string>();
-  @Output() originalDataRestored = new EventEmitter<string>();
 
   // Grid configuration from service
   components = this.gridConfigService.getComponents();
@@ -61,7 +59,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
 
   // Bound event handlers
   private boundOnRowGroupOpened = this.onRowGroupOpened.bind(this);
-  private boundOnAgColumnVisibilityChanged = this.onAgColumnVisibilityChanged.bind(this);
   private boundOnFirstDataRendered = this.onFirstDataRendered.bind(this);
   private boundOnDocumentKeyDown = this.onDocumentKeyDown.bind(this);
 
@@ -100,7 +97,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     if (this.gridApi) {
       this.gridApi.removeEventListener('rowGroupOpened', this.boundOnRowGroupOpened);
-      this.gridApi.removeEventListener('columnVisible', this.boundOnAgColumnVisibilityChanged);
       this.gridApi.removeEventListener('firstDataRendered', this.boundOnFirstDataRendered);
     }
     document.removeEventListener('keydown', this.boundOnDocumentKeyDown);
@@ -119,7 +115,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.gridApi.addEventListener('rowGroupOpened', this.boundOnRowGroupOpened);
-    this.gridApi.addEventListener('columnVisible', this.boundOnAgColumnVisibilityChanged);
     this.gridApi.addEventListener('firstDataRendered', this.boundOnFirstDataRendered);
   }
 
@@ -129,24 +124,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
 
   private onRowGroupOpened(event: RowGroupOpenedEvent) {
     setTimeout(() => event.api.autoSizeAllColumns(), 50);
-  }
-
-  private onAgColumnVisibilityChanged(event: AgColumnVisibleEvent): void {
-    if (this.isProgrammaticChange) return;
-
-    if (event.column && event.column.getColDef().field) {
-      const eventSource = event.source as string;
-      if (eventSource === 'toolPanelUi' || eventSource === 'columnMenu') {
-        this.columnVisibilityChanged.emit({
-          categoryKey: this.categoryKey,
-          columnField: event.column.getColDef().field as string,
-          isVisible: !!event.visible,
-        });
-      }
-    }
-    if (event.api) {
-      setTimeout(() => event.api.autoSizeAllColumns(), 50);
-    }
   }
 
   private onDocumentKeyDown(event: KeyboardEvent): void {
@@ -182,25 +159,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     this.gridActionsService.toggleColumns(this.gridApi);
   }
 
-  resetView(): void {
-    this.gridStateService.setProgrammaticChange(true);
-    this.gridActionsService.resetView(
-      this.gridApi,
-      this.columnDefs,
-      this.originalRowData,
-      this.isDeduplicated,
-      this.categoryKey,
-      (categoryKey: string) => {
-        this.originalDataRestored.emit(categoryKey);
-        this.isDeduplicated = false;
-        this.gridStateService.setDeduplicated(false);
-      }
-    );
-    setTimeout(() => {
-      this.gridStateService.setProgrammaticChange(false);
-    }, 100);
-  }
-
   toggleDensity(): void {
     this.gridActionsService.toggleDensity(
       this.gridApi,
@@ -231,23 +189,5 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       },
       this.categoryKey
     );
-  }
-
-  restoreOriginalData(): void {
-    this.gridStateService.setProgrammaticChange(true);
-    this.gridActionsService.restoreOriginalData(
-      this.gridApi,
-      this.originalRowData,
-      this.isDeduplicated,
-      this.categoryKey,
-      (categoryKey: string) => {
-        this.originalDataRestored.emit(categoryKey);
-        this.isDeduplicated = false;
-        this.gridStateService.setDeduplicated(false);
-      }
-    );
-    setTimeout(() => {
-      this.gridStateService.setProgrammaticChange(false);
-    }, 50);
   }
 }
