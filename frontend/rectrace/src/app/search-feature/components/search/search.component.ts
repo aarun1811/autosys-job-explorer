@@ -218,6 +218,7 @@ export class SearchComponent implements OnInit, OnDestroy {
       return;
     }
 
+    this.searchStateService.updateQuery(this.query);
     this.searchStateService.setLoading(true);
     this.searchStateService.setHasSearched(true);
     this.searchStateService.updateUrlWithState(this.query);
