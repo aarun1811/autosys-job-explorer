@@ -1,9 +1,15 @@
 package com.citi.gru.rectrace.service.v2;
 
-import com.citi.gru.rectrace.dto.ElasticsearchProviderConfig;
-import com.citi.gru.rectrace.dto.SearchCategoryConfig;
-import com.citi.gru.rectrace.dto.SearchCategoryDefinition;
-import com.citi.gru.rectrace.dto.SearchCategoryResult;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -29,9 +35,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.citi.gru.rectrace.dto.ElasticsearchProviderConfig;
+import com.citi.gru.rectrace.dto.SearchCategoryConfig;
+import com.citi.gru.rectrace.dto.SearchCategoryDefinition;
+import com.citi.gru.rectrace.dto.SearchCategoryResult;
 
 @Service
 public class ElasticsearchSearchProviderV2 {
@@ -48,8 +55,13 @@ public class ElasticsearchSearchProviderV2 {
 
         public SearchCategoryResult performPaginatedSearch(SearchCategoryDefinition categoryDefinition, String searchTerm
                 , List<String> essentialFieldsToFetch) {
-        logger.info("ES V2 Paginated Search: Category: {}, Term: '{}', Essential Fields: {}",
-                categoryDefinition.getKey(), searchTerm, essentialFieldsToFetch);
+        return performPaginatedSearch(categoryDefinition, searchTerm, essentialFieldsToFetch, true); // Default to collapsed
+    }
+
+        public SearchCategoryResult performPaginatedSearch(SearchCategoryDefinition categoryDefinition, String searchTerm
+                , List<String> essentialFieldsToFetch, boolean collapsed) {
+        logger.info("ES V2 Paginated Search: Category: {}, Term: '{}', Essential Fields: {}, Collapsed: {}",
+                categoryDefinition.getKey(), searchTerm, essentialFieldsToFetch, collapsed);
 
         ElasticsearchProviderConfig esConfig = getAndValidateEsConfig(categoryDefinition);
         if (esConfig == null) return null;
@@ -60,7 +72,8 @@ public class ElasticsearchSearchProviderV2 {
                         searchTerm,
                         essentialFieldsToFetch, // These are used for _source
                         false, // isScrollQuery = false
-                        INITIAL_SEARCH_SIZE
+                        INITIAL_SEARCH_SIZE,
+                        collapsed
                 );
                 SearchRequest searchRequest = new SearchRequest(esConfig.getTargetIndex()).source(sourceBuilder);
                 logger.debug("Executing Paginated Search for category {}: Query DSL: {}", categoryDefinition.getKey(),
@@ -75,6 +88,61 @@ public class ElasticsearchSearchProviderV2 {
                 logger.error("Error during ES V2 Paginated Search for category {}: {}", categoryDefinition.getKey(),
                         e.getMessage(), e);
                 return null;
+        }
+    }
+
+    /**
+     * Expands a specific group to show all matching rows for that group.
+     */
+    public SearchCategoryResult expandGroup(SearchCategoryDefinition categoryDefinition, String groupKey, String searchTerm, List<String> visibleColumns) {
+        logger.info("ES V2 Expand Group: Category: {}, Group: '{}', Term: '{}', Visible Columns: {}",
+                categoryDefinition.getKey(), groupKey, searchTerm, visibleColumns);
+
+        ElasticsearchProviderConfig esConfig = getAndValidateEsConfig(categoryDefinition);
+        if (esConfig == null) return null;
+
+        try {
+            // Get the first column (group column) from the category config
+            String groupColumn = categoryDefinition.getColumns().get(0).getField();
+            
+            QueryBuilder groupFilter = QueryBuilders.matchQuery(groupColumn, groupKey);
+
+            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder().query(groupFilter);
+            
+            // Only fetch visible columns if specified
+            if (!CollectionUtils.isEmpty(visibleColumns)) {
+                sourceBuilder.fetchSource(visibleColumns.toArray(new String[0]), null);
+            } else {
+                sourceBuilder.fetchSource(true);
+            }
+
+            // Apply sorting
+            if (esConfig.getDefaultSort() != null && StringUtils.hasText(esConfig.getDefaultSort().getField())) {
+                ElasticsearchProviderConfig.SortConfig sortConfig = esConfig.getDefaultSort();
+                SortOrder sortOrder = "desc".equalsIgnoreCase(sortConfig.getDirection()) ? SortOrder.DESC : SortOrder.ASC;
+                SortBuilder<?> sortBuilder = "_score".equalsIgnoreCase(sortConfig.getField()) ?
+                        new ScoreSortBuilder().order(sortOrder) :
+                        new FieldSortBuilder(sortConfig.getField()).order(sortOrder);
+                sourceBuilder.sort(sortBuilder);
+            }
+
+            // No size limit for group expansion - get all matching rows
+            sourceBuilder.size(10000); // Reasonable limit for group expansion
+
+            SearchRequest searchRequest = new SearchRequest(esConfig.getTargetIndex()).source(sourceBuilder);
+            logger.info("Executing Group Expansion for category {} group {}: Query DSL: {}", 
+                    categoryDefinition.getKey(), groupKey, sourceBuilder);
+            
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+            List<Map<String, Object>> data = extractDataFromResponse(searchResponse);
+
+            logger.info("ES V2 Expand Group for category {} group {}: Returned {} hits.",
+                    categoryDefinition.getKey(), groupKey, data.size());
+            return buildResultDto(categoryDefinition, data);
+        } catch (Exception e) {
+            logger.error("Error during ES V2 Expand Group for category {} group {}: {}", 
+                    categoryDefinition.getKey(), groupKey, e.getMessage(), e);
+            return null;
         }
     }
 
@@ -186,6 +254,16 @@ public class ElasticsearchSearchProviderV2 {
             List<String> fieldsForSource, // These are the fields for _source
             boolean isScrollQuery,
             int size) {
+        return buildSearchSourceBuilder(esConfig, searchTerm, fieldsForSource, isScrollQuery, size, true); // Default to collapsed
+    }
+
+    private SearchSourceBuilder buildSearchSourceBuilder(
+            ElasticsearchProviderConfig esConfig,
+            String searchTerm,
+            List<String> fieldsForSource, // These are the fields for _source
+            boolean isScrollQuery,
+            int size,
+            boolean collapsed) {
     
         String escapedSearchTerm = escapeElasticsearchQueryString(searchTerm);
         String queryString = "*" + escapedSearchTerm + "*";
@@ -229,11 +307,13 @@ public class ElasticsearchSearchProviderV2 {
 
         if (!isScrollQuery) {
             sourceBuilder.from(0);
-            // Use pre-computed field for collapsing if configured
-            if (StringUtils.hasText(esConfig.getCollapseOnPrecomputedField())) {
+            // Use pre-computed field for collapsing if configured and collapsed mode is enabled
+            if (collapsed && StringUtils.hasText(esConfig.getCollapseOnPrecomputedField())) {
                 logger.debug("Applying field collapsing on precomputed field: {} for category/index {}",
                         esConfig.getCollapseOnPrecomputedField(), esConfig.getTargetIndex());
                 sourceBuilder.collapse(new CollapseBuilder(esConfig.getCollapseOnPrecomputedField()));
+            } else if (!collapsed) {
+                logger.debug("Collapsed mode disabled for category/index {}. Skipping collapsing.", esConfig.getTargetIndex());
             } else {
                 logger.debug("No collapseOnPrecomputedField configured for category/index {}. Skipping collapsing for" +
                         " paginated search.", esConfig.getTargetIndex());

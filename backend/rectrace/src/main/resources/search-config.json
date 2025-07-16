@@ -24,7 +24,8 @@
         "resultFields": [ 
             "recon", "load_job", "box_name", "job_name", "load_file_name", "set_id", "sub_acc", "tlm_instance"
         ],
-        "defaultSort": { "field": "recon.keyword", "direction": "asc" }
+        "defaultSort": { "field": "recon.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "recon"
       }
     },
     {
@@ -64,7 +65,8 @@
              "support_email", "support_hotline", "receive_path", "archival_path",
              "recon", "set_id", "sub_acc", "load_job", "box_name"
         ],
-        "defaultSort": { "field": "file_name.keyword", "direction": "asc" } 
+        "defaultSort": { "field": "file_name.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "file_name"
       }
     },
     {
@@ -90,7 +92,8 @@
         "resultFields": [
             "box_name", "job_name", "recon", "load_job", "machine", "run_calendar", "exclude_calendar"
          ],
-        "defaultSort": { "field": "box_name.keyword", "direction": "asc" } 
+        "defaultSort": { "field": "box_name.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "box_name"
       }
     },
     {
@@ -116,7 +119,8 @@
          "resultFields": [
              "set_id", "recon", "sub_acc", "load_file_name", "load_job", "box_name", "tlm_instance"
           ],
-        "defaultSort": { "field": "set_id.keyword", "direction": "asc" } 
+        "defaultSort": { "field": "set_id.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "set_id"
       }
     },
     {
@@ -142,7 +146,8 @@
         "resultFields": [
              "sub_acc", "recon", "set_id", "load_file_name", "load_job", "box_name", "tlm_instance"
          ],
-        "defaultSort": { "field": "sub_acc.keyword", "direction": "asc" } 
+        "defaultSort": { "field": "sub_acc.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "sub_acc"
       }
     },
      {
@@ -169,7 +174,8 @@
          "resultFields": [
              "load_file_name", "recon", "load_job", "box_name", "set_id", "sub_acc", "tlm_instance"
           ],
-        "defaultSort": { "field": "load_file_name.keyword", "direction": "asc" } 
+        "defaultSort": { "field": "load_file_name.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "load_file_name"
       }
     },
     {
@@ -201,7 +207,8 @@
              "job_name", "box_name", "recon", "load_job", "machine", "run_calendar", "exclude_calendar",
              "feed_id", "app_name", "app_id", "support_email", "support_hotline"
          ],
-        "defaultSort": { "field": "job_name.keyword", "direction": "asc" } 
+        "defaultSort": { "field": "job_name.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "job_name"
       }
     },
      {
@@ -221,7 +228,8 @@
             "resultFields": [
                 "machine", "job_name", "box_name", "run_calendar", "exclude_calendar"
             ],
-           "defaultSort": { "field": "machine.keyword", "direction": "asc" } 
+           "defaultSort": { "field": "machine.keyword", "direction": "asc" },
+           "collapseOnPrecomputedField": "machine"
        }
     },
      {
@@ -240,7 +248,8 @@
             "resultFields": [
                 "run_calendar", "job_name", "box_name", "exclude_calendar"
             ],
-            "defaultSort": { "field": "run_calendar.keyword", "direction": "asc" } 
+            "defaultSort": { "field": "run_calendar.keyword", "direction": "asc" },
+            "collapseOnPrecomputedField": "run_calendar"
        }
     },
     {
@@ -259,7 +268,8 @@
             "resultFields": [
                 "exclude_calendar", "job_name", "box_name", "run_calendar"
             ],
-           "defaultSort": { "field": "exclude_calendar.keyword", "direction": "asc" } 
+           "defaultSort": { "field": "exclude_calendar.keyword", "direction": "asc" },
+           "collapseOnPrecomputedField": "exclude_calendar"
        }
     }
   ]

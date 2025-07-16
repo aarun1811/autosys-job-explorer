@@ -38,6 +38,13 @@ public class SearchServiceV2 {
      * Performs the V2 initial search asynchronously: essential, unique (collapsed) columns for all ES categories.
      */
     public Map<String, SearchCategoryResult> performInitialSearch(String userQuery) {
+        return performInitialSearch(userQuery, true); // Default to collapsed mode
+    }
+
+    /**
+     * Performs the V2 initial search asynchronously with collapse control.
+     */
+    public Map<String, SearchCategoryResult> performInitialSearch(String userQuery, boolean collapsed) {
         Map<String, SearchCategoryResult> finalResults = new LinkedHashMap<>();
         List<SearchCategoryDefinition> validCategories = searchConfigService.getValidSearchCategories();
 
@@ -50,7 +57,7 @@ public class SearchServiceV2 {
 
         for (SearchCategoryDefinition categoryConfig : validCategories) {
             if ("elasticsearch".equalsIgnoreCase(categoryConfig.getSearchProviderType())) {
-                futures.add(asyncFetchInitialCategoryData(categoryConfig, userQuery));
+                futures.add(asyncFetchInitialCategoryData(categoryConfig, userQuery, collapsed));
             }
             // Other provider types are skipped for V2 as per current scope
         }
@@ -69,14 +76,19 @@ public class SearchServiceV2 {
             }
         }
     
-        logger.info("V2 Initial Search completed for query '{}'. Found results for {} ES categories.", userQuery,
-                finalResults.size());
+        logger.info("V2 Initial Search completed for query '{}' (collapsed: {}). Found results for {} ES categories.", 
+                userQuery, collapsed, finalResults.size());
         return finalResults;
     }
     
     @Async("taskExecutor") // Use the configured async executor from AsyncConfig
     public CompletableFuture<Map.Entry<String, SearchCategoryResult>> asyncFetchInitialCategoryData(SearchCategoryDefinition categoryConfig, String userQuery) {
-        logger.debug("Async V2 Initial Fetch for category: {}", categoryConfig.getKey());
+        return asyncFetchInitialCategoryData(categoryConfig, userQuery, true); // Default to collapsed
+    }
+
+    @Async("taskExecutor") // Use the configured async executor from AsyncConfig
+    public CompletableFuture<Map.Entry<String, SearchCategoryResult>> asyncFetchInitialCategoryData(SearchCategoryDefinition categoryConfig, String userQuery, boolean collapsed) {
+        logger.debug("Async V2 Initial Fetch for category: {} (collapsed: {})", categoryConfig.getKey(), collapsed);
         List<String> essentialFields = Collections.emptyList();
         if (categoryConfig.getProviderConfig() instanceof ElasticsearchProviderConfig) {
             essentialFields = ((ElasticsearchProviderConfig) categoryConfig.getProviderConfig()).getResultFields();
@@ -93,7 +105,8 @@ public class SearchServiceV2 {
             SearchCategoryResult result = elasticsearchSearchProviderV2.performPaginatedSearch(
                     categoryConfig,
                     userQuery,
-                    essentialFields
+                    essentialFields,
+                    collapsed
             );
             if (result != null) {
                 return CompletableFuture.completedFuture(new AbstractMap.SimpleEntry<>(categoryConfig.getKey(),
@@ -104,6 +117,40 @@ public class SearchServiceV2 {
                     e.getMessage(), e);
         }
         return CompletableFuture.completedFuture(null); // Return null if search fails or no result
+    }
+
+    /**
+     * Expands a specific group within a category to show all matching rows.
+     */
+    public Map<String, SearchCategoryResult> expandGroup(String userQuery, String categoryKey, String groupKey, List<String> visibleColumns) {
+        logger.info("Expanding group '{}' for category '{}' with query '{}'", groupKey, categoryKey, userQuery);
+        
+        SearchCategoryDefinition categoryConfig = searchConfigService.getValidSearchCategories().stream()
+                .filter(cat -> categoryKey.equals(cat.getKey()) && "elasticsearch".equalsIgnoreCase(cat.getSearchProviderType()))
+                .findFirst()
+                .orElse(null);
+
+        if (categoryConfig == null) {
+            logger.warn("Expand Group: Category key '{}' not found or not ES. Returning empty result.", categoryKey);
+            return Collections.emptyMap();
+        }
+
+        try {
+            SearchCategoryResult result = elasticsearchSearchProviderV2.expandGroup(
+                    categoryConfig, 
+                    groupKey, 
+                    userQuery, 
+                    visibleColumns != null ? visibleColumns : Collections.emptyList()
+            );
+            
+            if (result != null) {
+                return Collections.singletonMap(categoryKey, result);
+            }
+        } catch (Exception e) {
+            logger.error("Exception in expandGroup for category {} and group {}: {}", categoryKey, groupKey, e.getMessage(), e);
+        }
+        
+        return Collections.emptyMap();
     }
 
 

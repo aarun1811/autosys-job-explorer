@@ -45,15 +45,29 @@ public class SearchController {
     public Map<String, SearchCategoryResult> searchV2(
             @RequestParam(name = "q") String query,
             @RequestParam(name = "category", required = false) String category,
-            @RequestParam(name = "requestedFields", required = false) String requestedFieldsCsv, HttpServletRequest request) {
+            @RequestParam(name = "requestedFields", required = false) String requestedFieldsCsv,
+            @RequestParam(name = "collapsed", defaultValue = "true") boolean collapsed,
+            @RequestParam(name = "groupKey", required = false) String groupKey,
+            HttpServletRequest request) {
         String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
+        
         if (category != null && requestedFieldsCsv != null) {
             List<String> fields = Arrays.asList(requestedFieldsCsv.split("\\s*,\\s*"));
             logger.info("Category Search performed by user: {} for the term: {} for the category: {} and the fields: {}",
                     loginId, query, category, fields);
             return searchServiceV2.fetchDetailedCategorySearch(query, category, fields);
         }
-        logger.info("Search performed by user: {} for the term: {}", loginId, query);
-        return searchServiceV2.performInitialSearch(query);
+        
+        if (category != null && groupKey != null) {
+            // Group expansion mode
+            List<String> fields = requestedFieldsCsv != null ? 
+                Arrays.asList(requestedFieldsCsv.split("\\s*,\\s*")) : null;
+            logger.info("Group Expansion performed by user: {} for the term: {} for the category: {} and group: {}",
+                    loginId, query, category, groupKey);
+            return searchServiceV2.expandGroup(query, category, groupKey, fields);
+        }
+        
+        logger.info("Search performed by user: {} for the term: {} (collapsed: {})", loginId, query, collapsed);
+        return searchServiceV2.performInitialSearch(query, collapsed);
     }
 }
