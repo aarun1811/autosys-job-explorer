@@ -186,9 +186,8 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
 
   private getVisibleColumnFields(): string[] {
     if (!this.columnDefs) return [];
-
     return this.columnDefs
-      .filter(col => !col.hide)
+      .filter(col => !col.hide || col.rowGroup)
       .map(col => col.field)
       .filter(field => field !== undefined) as string[];
   }
