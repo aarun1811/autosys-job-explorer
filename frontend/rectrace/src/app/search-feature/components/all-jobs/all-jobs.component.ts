@@ -11,6 +11,7 @@ import 'ag-grid-enterprise';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { JobData, SearchColumnDefinition } from '../../../models/job.model';
 import { LicenseManager } from "ag-grid-enterprise";
+import { SearchService } from '../../../services/search.service';
 
 // Import our new services
 import { GridStateService } from '../../services/grid-state.service';
@@ -39,14 +40,16 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   @Input() columnDefs: SearchColumnDefinition[] | undefined | null;
   @Input() categoryKey!: string;
   @Input() isGridLoading: boolean = false;
+  @Input() currentQuery: string = ''; // Add current search query
 
   @Output() duplicatesRemoved = new EventEmitter<string>();
+  @Output() groupExpanded = new EventEmitter<{groupKey: string, expandedData: any[], rowIndex?: number}>();
 
   // Grid configuration from service
   components = this.gridConfigService.getComponents();
   sideBarConfig = this.gridConfigService.getSideBarConfig();
   defaultColDef = this.gridConfigService.getDefaultColDef();
-  autoGroupColumnDef = this.gridConfigService.getAutoGroupColumnDef();
+  autoGroupColumnDef = this.gridConfigService.getAutoGroupColumnDef(this);
 
   // Grid API
   private gridApi!: GridApi<JobData | undefined | null>;
@@ -57,6 +60,10 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   originalRowData: (JobData | null | undefined)[] = [];
   isProgrammaticChange: boolean = false;
 
+  // Group expansion tracking
+  private expandedGroups = new Set<string>();
+  public loadingGroups = new Set<string>();
+
   // Bound event handlers
   private boundOnRowGroupOpened = this.onRowGroupOpened.bind(this);
   private boundOnFirstDataRendered = this.onFirstDataRendered.bind(this);
@@ -66,7 +73,8 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     private readonly snackBar: MatSnackBar,
     private gridStateService: GridStateService,
     private gridActionsService: GridActionsService,
-    private gridConfigService: GridConfigurationService
+    private gridConfigService: GridConfigurationService,
+    private searchService: SearchService
   ) {}
 
   ngOnInit(): void {
@@ -123,7 +131,81 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onRowGroupOpened(event: RowGroupOpenedEvent) {
+    // Auto-size columns
     setTimeout(() => event.api.autoSizeAllColumns(), 50);
+
+    // Handle group expansion
+    if (event.expanded) {
+      const groupKey = event.node.key as string;
+      const rowIndex = event.node.rowIndex === null ? undefined : event.node.rowIndex;
+      // Check if we already have data for this group
+      if (!this.expandedGroups.has(groupKey)) {
+        this.expandGroup(groupKey, rowIndex);
+      }
+    }
+  }
+
+  private expandGroup(groupKey: string, rowIndex?: number): void {
+    console.log('Expanding group:', groupKey);
+    console.log('Current query:', this.currentQuery);
+    console.log('Category key:', this.categoryKey);
+    if (!this.currentQuery || !this.categoryKey) {
+      console.warn('Cannot expand group: missing query or category');
+      return;
+    }
+    // Mark group as expanded
+    this.expandedGroups.add(groupKey);
+    this.loadingGroups.add(groupKey);
+    // Get visible column fields for the request
+    const visibleColumns = this.getVisibleColumnFields();
+    console.log('Visible columns:', visibleColumns);
+    // Call the backend to expand the group
+    this.searchService.expandGroup(
+      this.currentQuery,
+      this.categoryKey,
+      groupKey,
+      visibleColumns
+    ).subscribe({
+      next: (response) => {
+        this.loadingGroups.delete(groupKey);
+        console.log('Group expansion response:', response);
+        // Update the grid data with expanded results
+        this.updateGridDataWithExpandedGroup(groupKey, response, rowIndex);
+      },
+      error: (error) => {
+        this.loadingGroups.delete(groupKey);
+        console.error('Error expanding group:', error);
+        this.snackBar.open('Failed to expand group. Please try again.', 'Close', {
+          duration: 3000
+        });
+        // Remove from expanded groups on error
+        this.expandedGroups.delete(groupKey);
+      }
+    });
+  }
+
+  private getVisibleColumnFields(): string[] {
+    if (!this.columnDefs) return [];
+
+    return this.columnDefs
+      .filter(col => !col.hide)
+      .map(col => col.field)
+      .filter(field => field !== undefined) as string[];
+  }
+
+    private updateGridDataWithExpandedGroup(groupKey: string, response: any, rowIndex?: number): void {
+    // Find the category data in the response
+    const categoryData = response[this.categoryKey];
+    if (!categoryData || !categoryData.data) {
+      console.warn('No data found for category:', this.categoryKey);
+      return;
+    }
+    // Emit the expanded data and rowIndex to parent component
+    this.groupExpanded.emit({
+      groupKey: groupKey,
+      expandedData: categoryData.data,
+      rowIndex: rowIndex
+    });
   }
 
   private onDocumentKeyDown(event: KeyboardEvent): void {
