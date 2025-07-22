@@ -54,7 +54,7 @@ export class SearchService {
     // Assuming your V2 endpoint for initial search (all categories, essential fields) is also /v2/search without extra params
     return this.http.get<SearchResponse>(`${this.apiUrl}/v2/search`, { params });
   }
-  
+
   /**
    * V2 Detailed: Fetches detailed data (all rows, specified columns) for a single category.
    * @param query The original search query term.
@@ -68,6 +68,27 @@ export class SearchService {
       .set('category', categoryKey)
       .set('requestedFields', requestedFields.join(','));
     // Call the V2 endpoint for detailed data
+    return this.http.get<SearchResponse>(`${this.apiUrl}/v2/search`, { params });
+  }
+
+  /**
+   * V2 Group Expansion: Expands a specific group within a category.
+   * @param query The original search query term.
+   * @param categoryKey The key of the category containing the group.
+   * @param groupKey The key of the group to expand.
+   * @param requestedFields Optional list of field names for which data is requested.
+   * @returns An Observable emitting the expanded group data.
+   */
+  expandGroup(query: string, categoryKey: string, groupKey: string, requestedFields?: string[]): Observable<SearchResponse> {
+    let params = new HttpParams()
+      .set('q', query)
+      .set('category', categoryKey)
+      .set('groupKey', groupKey);
+
+    if (requestedFields && requestedFields.length > 0) {
+      params = params.set('requestedFields', requestedFields.join(','));
+    }
+
     return this.http.get<SearchResponse>(`${this.apiUrl}/v2/search`, { params });
   }
 }
