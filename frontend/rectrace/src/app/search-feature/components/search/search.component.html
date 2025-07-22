@@ -92,7 +92,9 @@
             [rowData]="tab.data"
             [columnDefs]="tab.columnDef"
             [categoryKey]="tab.key"
-            [isGridLoading]="isLoadingCategory && selectedTabIndex === i">
+            [isGridLoading]="isLoadingCategory && selectedTabIndex === i"
+            [currentQuery]="query"
+            (groupExpanded)="onGroupExpanded($event)">
           </app-all-jobs>
         </ng-container>
       </div>
