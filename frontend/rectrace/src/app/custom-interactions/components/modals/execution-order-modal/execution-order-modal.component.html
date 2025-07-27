@@ -43,6 +43,38 @@
           </h4>
         </div>
 
+        <!-- Job Status Section -->
+        <div class="status-section" *ngIf="selectedJobDetails.status">
+          <div class="section-header">
+            <mat-icon>info</mat-icon>
+            <h4>Status</h4>
+          </div>
+          <div class="status-indicator" [ngClass]="'status-' + selectedJobDetails.status.toLowerCase()">
+            <div class="status-dot"></div>
+            <span class="status-text">{{selectedJobDetails.status}}</span>
+          </div>
+        </div>
+
+        <!-- Next Start Time Section -->
+        <div class="scheduling-section" *ngIf="selectedJobDetails.nextStartTime">
+          <div class="section-header">
+            <mat-icon>schedule</mat-icon>
+            <h4>Next Start Time</h4>
+          </div>
+          <div class="scheduling-info">
+            <div class="next-start-time">
+              <span class="time-label">Next Start:</span>
+              <span class="time-value">{{selectedJobDetails.nextStartTime}}</span>
+            </div>
+            <div class="scheduled-today" *ngIf="selectedJobDetails.isScheduledToday !== null">
+              <span class="today-label">Scheduled Today:</span>
+              <span class="today-value" [ngClass]="{'scheduled': selectedJobDetails.isScheduledToday, 'not-scheduled': !selectedJobDetails.isScheduledToday}">
+                {{selectedJobDetails.isScheduledToday ? 'Yes' : 'No'}}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <mat-list>
           <mat-list-item>
             <mat-icon matListItemIcon>business</mat-icon>

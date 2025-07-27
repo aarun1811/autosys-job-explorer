@@ -15,6 +15,10 @@ interface JobDetails {
   boxName: string;
   command: string;
   description: string;
+  // New v2 fields
+  status: string;
+  nextStartTime: string;
+  isScheduledToday: boolean;
 }
 
 interface ExecutionOrderData {

@@ -14,4 +14,11 @@ export class ExecutionOrderService {
   getExecutionOrder(jobName: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${jobName}`);
   }
+
+  /**
+   * Enhanced v2 method that includes job status and next start time
+   */
+  getExecutionOrderV2(jobName: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/v2/${jobName}`);
+  }
 }

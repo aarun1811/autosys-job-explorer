@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO;
 import com.citi.gru.rectrace.service.ExecutionOrderService;
 
@@ -20,5 +21,13 @@ public class ExecutionOrderController {
     @GetMapping("/{loadJobName}")
     public ExecutionOrderDTO getExecutionOrder(@PathVariable String loadJobName) {
         return executionOrderService.getExecutionOrder(loadJobName);
+    }
+
+    /**
+     * Enhanced v2 endpoint that includes job status and next start time
+     */
+    @GetMapping("/v2/{loadJobName}")
+    public ExecutionOrderDTO getExecutionOrderV2(@PathVariable String loadJobName) {
+        return executionOrderService.getExecutionOrderV2(loadJobName);
     }
 } 

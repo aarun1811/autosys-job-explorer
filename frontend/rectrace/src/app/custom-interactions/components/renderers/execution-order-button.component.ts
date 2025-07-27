@@ -25,6 +25,15 @@ interface ExecutionOrderResponse {
     [key: string]: {
       jobType: string;
       machine: string;
+      runCalendar: string;
+      excludeCalendar: string;
+      boxName: string;
+      command: string;
+      description: string;
+      // New v2 fields
+      status: string;
+      nextStartTime: string;
+      isScheduledToday: boolean;
       [key: string]: any;
     };
   };
@@ -172,7 +181,8 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
 
     this.isLoading = true;
 
-    this.executionOrderService.getExecutionOrder(jobName).subscribe(
+    // Use v2 API for enhanced data with job status and next start time
+    this.executionOrderService.getExecutionOrderV2(jobName).subscribe(
       (data: ExecutionOrderResponse) => {
         this.isLoading = false;
         if (!data || !data.executionSequence || data.executionSequence.length === 0) {
