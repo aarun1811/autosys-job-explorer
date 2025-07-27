@@ -47,13 +47,17 @@ export class GridConfigurationService {
     };
   }
 
-  getAutoGroupColumnDef(): ColDef<JobData | undefined | null> {
+  getAutoGroupColumnDef(context?: any): ColDef<JobData | undefined | null> {
     return {
       headerName: 'Group',
       minWidth: 200,
       cellRendererParams: {
         suppressCount: true,
-        innerRenderer: (params: any) => params.value
+        innerRenderer: (params: any) => {
+          const groupKey = params.value;
+          const isLoading = context && context.loadingGroups && context.loadingGroups.has(groupKey);
+          return `<span>${groupKey}${isLoading ? ' <span class="group-loading-spinner">⏳</span>' : ''}</span>`;
+        }
       }
     };
   }

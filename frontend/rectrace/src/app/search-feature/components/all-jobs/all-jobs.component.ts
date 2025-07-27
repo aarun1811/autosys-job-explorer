@@ -156,6 +156,10 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     // Mark group as expanded
     this.expandedGroups.add(groupKey);
     this.loadingGroups.add(groupKey);
+    // Force refresh of group cell to show spinner
+    if (this.gridApi) {
+      this.gridApi.refreshCells({ force: true });
+    }
     // Get visible column fields for the request
     const visibleColumns = this.getVisibleColumnFields();
     console.log('Visible columns:', visibleColumns);
@@ -168,12 +172,18 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     ).subscribe({
       next: (response) => {
         this.loadingGroups.delete(groupKey);
+        if (this.gridApi) {
+          this.gridApi.refreshCells({ force: true });
+        }
         console.log('Group expansion response:', response);
         // Update the grid data with expanded results
         this.updateGridDataWithExpandedGroup(groupKey, response, rowIndex);
       },
       error: (error) => {
         this.loadingGroups.delete(groupKey);
+        if (this.gridApi) {
+          this.gridApi.refreshCells({ force: true });
+        }
         console.error('Error expanding group:', error);
         this.snackBar.open('Failed to expand group. Please try again.', 'Close', {
           duration: 3000
@@ -198,6 +208,15 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     if (!categoryData || !categoryData.data) {
       console.warn('No data found for category:', this.categoryKey);
       return;
+    }
+    // Patch expanded rows to ensure group field is set
+    const groupField = this.columnDefs?.[0]?.field;
+    if (groupField) {
+      categoryData.data.forEach((row: any) => {
+        if (row[groupField] === undefined) {
+          row[groupField] = groupKey;
+        }
+      });
     }
     // Emit the expanded data and rowIndex to parent component
     this.groupExpanded.emit({
