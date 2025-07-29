@@ -233,7 +233,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     this.autocompleteTriggerNavbar?.closePanel();
 
     this.searchSubscription?.unsubscribe();
-    this.searchSubscription = this.searchService.searchV2Initial(this.query).subscribe({
+    this.searchSubscription = this.searchService.searchV3Keyword(this.query).subscribe({
       next: (searchResponse: SearchResponse) => {
         this.searchResultsService.updateSearchResults(searchResponse);
         this.searchStateService.setLoading(false);
