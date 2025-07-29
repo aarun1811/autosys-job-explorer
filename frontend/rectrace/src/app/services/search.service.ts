@@ -91,4 +91,37 @@ export class SearchService {
 
     return this.http.get<SearchResponse>(`${this.apiUrl}/v2/search`, { params });
   }
+
+  // NEW: V3 methods for simplified search architecture
+
+  /**
+   * V3 Keyword Search: Performs keyword search using the V3 endpoint.
+   * Uses Elasticsearch for fast keyword search only.
+   * @param query The user's search query string.
+   * @param category Optional category to search in. If not provided, searches all categories.
+   * @returns An Observable emitting the search results.
+   */
+  searchV3Keyword(query: string, category?: string): Observable<SearchResponse> {
+    let params = new HttpParams().set('q', query);
+    if (category) {
+      params = params.set('category', category);
+    }
+    return this.http.get<SearchResponse>(`${this.apiUrl}/v3/search/keyword`, { params });
+  }
+
+  /**
+   * V3 Group Expansion: Expands a specific group using the V3 endpoint.
+   * Uses Oracle for group expansion and detailed data.
+   * @param query The original search query term.
+   * @param category The category containing the group.
+   * @param groupKey The key of the group to expand.
+   * @returns An Observable emitting the expanded group data.
+   */
+  expandGroupV3(query: string, category: string, groupKey: string): Observable<SearchResponse> {
+    const params = new HttpParams()
+      .set('q', query)
+      .set('category', category)
+      .set('groupKey', groupKey);
+    return this.http.get<SearchResponse>(`${this.apiUrl}/v3/search/expand`, { params });
+  }
 }
