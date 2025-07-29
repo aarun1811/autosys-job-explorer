@@ -163,12 +163,11 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     // Get visible column fields for the request
     const visibleColumns = this.getVisibleColumnFields();
     console.log('Visible columns:', visibleColumns);
-    // Call the backend to expand the group
-    this.searchService.expandGroup(
+    // Call the backend to expand the group using V3 endpoint
+    this.searchService.expandGroupV3(
       this.currentQuery,
       this.categoryKey,
-      groupKey,
-      visibleColumns
+      groupKey
     ).subscribe({
       next: (response) => {
         this.loadingGroups.delete(groupKey);
