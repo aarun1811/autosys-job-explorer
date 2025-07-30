@@ -2,6 +2,7 @@ package com.citi.gru.rectrace.controller;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +11,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -117,5 +121,71 @@ public class SearchController {
             return Collections.singletonMap(category, result);
         }
         return Collections.emptyMap();
+    }
+
+    // NEW: SSRM endpoint for individual categories
+    @PostMapping("/v3/search/ssrm/{category}")
+    public Map<String, Object> getSSRMDataForCategory(
+            @PathVariable String category,
+            @RequestBody(required = false) Map<String, Object> requestBody,
+            HttpServletRequest request) {
+        String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
+        
+        logger.info("SSRM request for category: {} by user: {} with body: {}", 
+                category, loginId, requestBody);
+        
+        try {
+            // Extract SSRM parameters
+            String searchTerm = (String) requestBody.get("searchTerm");
+            List<String> groupKeys = (List<String>) requestBody.get("groupKeys");
+            String rowGroupCols = (String) requestBody.get("rowGroupCols");
+            String valueCols = (String) requestBody.get("valueCols");
+            String filterModel = (String) requestBody.get("filterModel");
+            String sortModel = (String) requestBody.get("sortModel");
+            
+            // Handle group expansion
+            if (groupKeys != null && !groupKeys.isEmpty()) {
+                String groupKey = groupKeys.get(groupKeys.size() - 1); // Get the last group key
+                SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, searchTerm);
+                
+                if (result != null && result.getData() != null) {
+                    return new HashMap<String, Object>() {{
+                        put("success", true);
+                        put("rows", result.getData());
+                        put("lastRow", result.getData().size());
+                    }};
+                }
+            } else {
+                // Initial data load for category - use Elasticsearch
+                Map<String, SearchCategoryResult> searchResults = searchServiceV3.performKeywordSearch(searchTerm, category);
+                
+                if (searchResults != null && searchResults.containsKey(category)) {
+                    SearchCategoryResult result = searchResults.get(category);
+                    if (result != null && result.getData() != null) {
+                        return new HashMap<String, Object>() {{
+                            put("success", true);
+                            put("rows", result.getData());
+                            put("lastRow", result.getData().size());
+                        }};
+                    }
+                }
+            }
+            
+            // Return empty result
+            return new HashMap<String, Object>() {{
+                put("success", true);
+                put("rows", Collections.emptyList());
+                put("lastRow", 0);
+            }};
+            
+        } catch (Exception e) {
+            logger.error("Error in SSRM request for category: {}", category, e);
+            return new HashMap<String, Object>() {{
+                put("success", false);
+                put("error", e.getMessage());
+                put("rows", Collections.emptyList());
+                put("lastRow", 0);
+            }};
+        }
     }
 }

@@ -5,6 +5,14 @@ import { environment } from 'src/environments/environment';
 // Import the new response type structure
 import { SearchResponse } from '../models/job.model';
 
+// SSRM Response interface for individual categories
+export interface SSRMResponse {
+  success: boolean;
+  rows: any[];
+  lastRow: number;
+  error?: string;
+}
+
 // Remove the old type alias if it exists
 // export type SearchResultMap = {[key: string]: JobData[]}; // No longer needed
 
@@ -123,5 +131,26 @@ export class SearchService {
       .set('category', category)
       .set('groupKey', groupKey);
     return this.http.get<SearchResponse>(`${this.apiUrl}/v3/search/expand`, { params });
+  }
+
+  /**
+   * SSRM Data for Individual Category: Fetches data for a specific category using SSRM.
+   * Each tab will have its own SSRM datasource calling this method.
+   * @param params AG Grid SSRM parameters
+   * @param category The category to fetch data for
+   * @param searchTerm The search term
+   * @returns An Observable emitting the SSRM formatted response.
+   */
+  fetchSSRMDataForCategory(params: any, category: string, searchTerm: string): Observable<SSRMResponse> {
+    const requestBody = {
+      searchTerm: searchTerm,
+      groupKeys: params.request.groupKeys || [],
+      rowGroupCols: params.request.rowGroupCols || [],
+      valueCols: params.request.valueCols || [],
+      filterModel: params.request.filterModel || {},
+      sortModel: params.request.sortModel || []
+    };
+
+    return this.http.post<SSRMResponse>(`${this.apiUrl}/v3/search/ssrm/${category}`, requestBody);
   }
 }
