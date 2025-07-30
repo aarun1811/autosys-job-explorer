@@ -140,14 +140,16 @@ export class SearchService {
    * @param category The category to fetch data for
    * @param searchTerm The search term
    * @param visibleColumns Optional list of visible columns
+   * @param deduplicate Optional flag to enable deduplication
    * @returns An Observable emitting the SSRM formatted response.
    */
-  fetchSSRMDataForCategory(params: any, category: string, searchTerm: string, visibleColumns?: string[]): Observable<SSRMResponse> {
+  fetchSSRMDataForCategory(params: any, category: string, searchTerm: string, visibleColumns?: string[], deduplicate?: boolean): Observable<SSRMResponse> {
     const requestBody = {
       searchTerm: searchTerm,
       category: category,
       groupKeys: params.request.groupKeys || [],
       visibleColumns: visibleColumns || [],
+      deduplicate: deduplicate || false,
       rowGroupCols: params.request.rowGroupCols || [],
       valueCols: params.request.valueCols || [],
       filterModel: params.request.filterModel || {},

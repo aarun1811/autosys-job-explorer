@@ -70,6 +70,7 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   private ssrmInitialized: boolean = false;
   private visibleColumns: string[] = [];
   private lastVisibleColumns: string[] = [];
+  private isDeduplicationEnabled: boolean = false;
 
   // Bound event handlers
   private boundOnFirstDataRendered = this.onFirstDataRendered.bind(this);
@@ -152,7 +153,8 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
             params,
             this.currentCategory,
             this.currentSearchTerm,
-            this.visibleColumns
+            this.visibleColumns,
+            this.isDeduplicationEnabled // Pass deduplication state
           ).toPromise();
 
           console.log('SSRM response:', response);
@@ -384,7 +386,39 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onExportClick(): void {
-    this.gridActionsService.exportToExcel(this.gridApi, this.categoryKey);
+    if (!this.gridApi) {
+      this.snackBar.open('Grid not ready for export', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      });
+      return;
+    }
+
+    // Show info about export limitations
+    this.snackBar.open('Exporting currently loaded data...', 'Close', {
+      duration: 2000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+
+    // Use AG Grid's built-in Excel export
+    this.gridApi.exportDataAsExcel({
+      fileName: `${this.currentCategory}_export_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      processCellCallback: (params) => {
+        // Return the cell value as is
+        return params.value;
+      }
+    });
+
+    // Show success message with limitation info
+    setTimeout(() => {
+      this.snackBar.open('Export completed! Note: Only currently loaded data was exported.', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      });
+    }, 1000);
   }
 
   copyToClipboard(): void {
@@ -396,9 +430,13 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       this.gridApi,
       500,
       (categoryKey: string) => {
-        this.duplicatesRemoved.emit(categoryKey);
         this.isDeduplicated = true;
+        this.isDeduplicationEnabled = true;
         this.gridStateService.setDeduplicated(true);
+        this.duplicatesRemoved.emit(categoryKey);
+
+        // Refresh SSRM data with deduplication enabled
+        this.refreshSSRMData();
       },
       this.categoryKey
     );

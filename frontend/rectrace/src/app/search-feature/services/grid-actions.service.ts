@@ -106,17 +106,10 @@ export class GridActionsService {
       .map(state => state.colId as string);
 
     const seenRows = new Map<string, any>();
-    const duplicateNodesToRemove: any[] = [];
+    const duplicateRows: any[] = [];
     let duplicateCount = 0;
 
-    const processBatch = () => {
-      if (duplicateNodesToRemove.length > 0 && gridApi) {
-        const nodesToRemove = [...duplicateNodesToRemove];
-        duplicateNodesToRemove.length = 0;
-        gridApi.applyTransactionAsync({ remove: nodesToRemove });
-      }
-    };
-
+    // Collect all rows and identify duplicates
     gridApi.forEachNode(node => {
       const row = node.data as JobData;
       if (!row) return;
@@ -129,21 +122,23 @@ export class GridActionsService {
       const key = `${groupKey}|${valueKey}`;
 
       if (seenRows.has(key)) {
-        duplicateNodesToRemove.push(row);
+        duplicateRows.push(row);
         duplicateCount++;
-        if (duplicateNodesToRemove.length >= batchSize) {
-          processBatch();
-        }
       } else {
         seenRows.set(key, row);
       }
     });
 
-    processBatch();
-
     if (duplicateCount > 0) {
-      this.showMessage(`${duplicateCount} duplicate(s) removed.`);
+      // For SSRM, we need to refresh the data source to remove duplicates
+      // This will trigger a new data fetch with the deduplication flag
+      this.showMessage(`${duplicateCount} duplicate(s) found. Refreshing data...`);
       onDuplicatesRemoved(categoryKey);
+      
+      // Refresh the grid to show deduplicated data
+      setTimeout(() => {
+        gridApi.refreshServerSide({ purge: true });
+      }, 100);
     } else {
       this.showMessage('No duplicate rows found based on visible columns.');
     }
