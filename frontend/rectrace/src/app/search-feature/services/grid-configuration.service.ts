@@ -53,11 +53,7 @@ export class GridConfigurationService {
       minWidth: 200,
       cellRendererParams: {
         suppressCount: true,
-        innerRenderer: (params: any) => {
-          const groupKey = params.value;
-          const isLoading = context && context.loadingGroups && context.loadingGroups.has(groupKey);
-          return `<span>${groupKey}${isLoading ? ' <span class="group-loading-spinner">⏳</span>' : ''}</span>`;
-        }
+        innerRenderer: (params: any) => params.value
       }
     };
   }
