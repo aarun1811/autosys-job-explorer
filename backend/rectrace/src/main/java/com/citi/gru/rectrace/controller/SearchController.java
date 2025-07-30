@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -139,9 +140,14 @@ public class SearchController {
             String searchTerm = (String) requestBody.get("searchTerm");
             List<String> groupKeys = (List<String>) requestBody.get("groupKeys");
             List<String> visibleColumns = (List<String>) requestBody.get("visibleColumns");
+            Boolean deduplicate = (Boolean) requestBody.get("deduplicate");
+            // String rowGroupCols = (String) requestBody.get("rowGroupCols");
+            // String valueCols = (String) requestBody.get("valueCols");
+            // String filterModel = (String) requestBody.get("filterModel");
+            // String sortModel = (String) requestBody.get("sortModel");
             
             // Delegate to service layer
-            return searchServiceV3.getSSRMDataForCategory(category, searchTerm, groupKeys, visibleColumns);
+            return searchServiceV3.getSSRMDataForCategory(category, searchTerm, groupKeys, visibleColumns, deduplicate);
             
         } catch (Exception e) {
             logger.error("Error in SSRM request for category: {}", category, e);
@@ -151,6 +157,44 @@ public class SearchController {
                 put("rows", Collections.emptyList());
                 put("lastRow", 0);
             }};
+        }
+    }
+
+    // NEW: Excel Export endpoint
+    @PostMapping("/v3/search/export/{category}")
+    public ResponseEntity<byte[]> exportToExcel(
+            @PathVariable String category,
+            @RequestBody(required = false) Map<String, Object> requestBody,
+            HttpServletRequest request) {
+        String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
+        
+        logger.info("Excel Export request for category: {} by user: {} with body: {}", 
+                category, loginId, requestBody);
+        
+        try {
+            // Extract export parameters
+            String searchTerm = (String) requestBody.get("searchTerm");
+            List<String> visibleColumns = (List<String>) requestBody.get("visibleColumns");
+            Boolean deduplicate = (Boolean) requestBody.get("deduplicate");
+            
+            // Delegate to service layer for Excel generation
+            byte[] excelBytes = searchServiceV3.generateExcelExport(category, searchTerm, visibleColumns, deduplicate);
+            
+            if (excelBytes.length > 0) {
+                String filename = String.format("%s_export_%s.xlsx", 
+                    category, java.time.LocalDate.now().toString());
+                
+                return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .body(excelBytes);
+            }
+            
+            return ResponseEntity.notFound().build();
+            
+        } catch (Exception e) {
+            logger.error("Error in Excel export for category: {}", category, e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

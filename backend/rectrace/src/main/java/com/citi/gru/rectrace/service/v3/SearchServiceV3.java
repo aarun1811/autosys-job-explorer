@@ -117,10 +117,11 @@ public class SearchServiceV3 {
      * @param searchTerm The search term
      * @param groupKeys Optional group keys for expansion
      * @param visibleColumns Optional list of visible columns
+     * @param deduplicate Optional flag to enable deduplication
      * @return SSRM formatted response
      */
     public Map<String, Object> getSSRMDataForCategory(String category, String searchTerm, 
-                                                     List<String> groupKeys, List<String> visibleColumns) {
+                                                     List<String> groupKeys, List<String> visibleColumns, Boolean deduplicate) {
         try {
             // Handle group expansion
             if (groupKeys != null && !groupKeys.isEmpty()) {
@@ -128,10 +129,17 @@ public class SearchServiceV3 {
                 SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, searchTerm, visibleColumns);
                 
                 if (result != null && result.getData() != null) {
+                    final List<Map<String, Object>> data;
+                    if (deduplicate != null && deduplicate) {
+                        data = deduplicateData(result.getData(), visibleColumns);
+                    } else {
+                        data = result.getData();
+                    }
+                    
                     return new HashMap<String, Object>() {{
                         put("success", true);
-                        put("rows", result.getData());
-                        put("lastRow", result.getData().size());
+                        put("rows", data);
+                        put("lastRow", data.size());
                     }};
                 }
             } else {
@@ -142,7 +150,16 @@ public class SearchServiceV3 {
                     SearchCategoryResult result = searchResults.get(category);
                     if (result != null && result.getData() != null) {
                         // Filter data by visible columns if specified
-                        List<Map<String, Object>> filteredData = filterDataByVisibleColumns(result.getData(), visibleColumns);
+                        final List<Map<String, Object>> filteredData;
+                        List<Map<String, Object>> tempData = filterDataByVisibleColumns(result.getData(), visibleColumns);
+                        
+                        // Apply deduplication if requested
+                        if (deduplicate != null && deduplicate) {
+                            filteredData = deduplicateData(tempData, visibleColumns);
+                        } else {
+                            filteredData = tempData;
+                        }
+                        
                         return new HashMap<String, Object>() {{
                             put("success", true);
                             put("rows", filteredData);
@@ -189,5 +206,92 @@ public class SearchServiceV3 {
                     return filteredRow;
                 })
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Deduplicate data based on visible columns
+     */
+    private List<Map<String, Object>> deduplicateData(List<Map<String, Object>> data, List<String> visibleColumns) {
+        if (data == null || data.isEmpty() || visibleColumns == null || visibleColumns.isEmpty()) {
+            return data;
+        }
+        
+        Map<String, Map<String, Object>> distinctMap = new HashMap<>();
+        
+        for (Map<String, Object> row : data) {
+            // Create a key based on all visible column values
+            StringBuilder keyBuilder = new StringBuilder();
+            for (String column : visibleColumns) {
+                Object value = row.get(column);
+                keyBuilder.append(value != null ? value.toString() : "null").append("|");
+            }
+            String key = keyBuilder.toString();
+            
+            // Keep only the first occurrence of each unique combination
+            if (!distinctMap.containsKey(key)) {
+                distinctMap.put(key, row);
+            }
+        }
+        
+        return new ArrayList<>(distinctMap.values());
+    }
+
+    /**
+     * Generate Excel file for export
+     * @param category The category being exported
+     * @param searchTerm The search term
+     * @param visibleColumns Optional list of visible columns
+     * @param deduplicate Optional flag to enable deduplication
+     * @return Excel file as byte array
+     */
+    public byte[] generateExcelExport(String category, String searchTerm, List<String> visibleColumns, Boolean deduplicate) {
+        try {
+            // Get complete data for export
+            Map<String, Object> ssrmResponse = getSSRMDataForCategory(category, searchTerm, null, visibleColumns, deduplicate);
+            
+            if (ssrmResponse != null && (Boolean) ssrmResponse.get("success")) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> data = (List<Map<String, Object>>) ssrmResponse.get("rows");
+                
+                // Generate Excel file
+                return generateExcelFile(data, category, visibleColumns);
+            }
+            
+            return new byte[0];
+            
+        } catch (Exception e) {
+            logger.error("Error generating Excel export for category: {}", category, e);
+            return new byte[0];
+        }
+    }
+
+    /**
+     * Generate Excel file from data
+     * @param data The data to export
+     * @param category The category name
+     * @param visibleColumns The columns to include
+     * @return Excel file as byte array
+     */
+    private byte[] generateExcelFile(List<Map<String, Object>> data, String category, List<String> visibleColumns) {
+        // For now, return a simple CSV format as Excel
+        // In a real implementation, you would use Apache POI or similar library
+        StringBuilder csv = new StringBuilder();
+        
+        // Add header
+        if (visibleColumns != null && !visibleColumns.isEmpty()) {
+            csv.append(String.join(",", visibleColumns)).append("\n");
+        }
+        
+        // Add data rows
+        for (Map<String, Object> row : data) {
+            List<String> values = new ArrayList<>();
+            for (String column : visibleColumns) {
+                Object value = row.get(column);
+                values.add(value != null ? value.toString() : "");
+            }
+            csv.append(String.join(",", values)).append("\n");
+        }
+        
+        return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 } 
