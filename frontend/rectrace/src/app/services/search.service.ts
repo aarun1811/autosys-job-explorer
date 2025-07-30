@@ -139,18 +139,21 @@ export class SearchService {
    * @param params AG Grid SSRM parameters
    * @param category The category to fetch data for
    * @param searchTerm The search term
+   * @param visibleColumns Optional list of visible columns
    * @returns An Observable emitting the SSRM formatted response.
    */
-  fetchSSRMDataForCategory(params: any, category: string, searchTerm: string): Observable<SSRMResponse> {
+  fetchSSRMDataForCategory(params: any, category: string, searchTerm: string, visibleColumns?: string[]): Observable<SSRMResponse> {
     const requestBody = {
       searchTerm: searchTerm,
+      category: category,
       groupKeys: params.request.groupKeys || [],
+      visibleColumns: visibleColumns || [],
       rowGroupCols: params.request.rowGroupCols || [],
       valueCols: params.request.valueCols || [],
       filterModel: params.request.filterModel || {},
       sortModel: params.request.sortModel || []
     };
-
+    
     return this.http.post<SSRMResponse>(`${this.apiUrl}/v3/search/ssrm/${category}`, requestBody);
   }
 }

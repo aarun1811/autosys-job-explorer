@@ -138,6 +138,7 @@ public class SearchController {
             // Extract SSRM parameters
             String searchTerm = (String) requestBody.get("searchTerm");
             List<String> groupKeys = (List<String>) requestBody.get("groupKeys");
+            List<String> visibleColumns = (List<String>) requestBody.get("visibleColumns");
             // String rowGroupCols = (String) requestBody.get("rowGroupCols");
             // String valueCols = (String) requestBody.get("valueCols");
             // String filterModel = (String) requestBody.get("filterModel");

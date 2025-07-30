@@ -68,6 +68,8 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   private currentSearchTerm: string = '';
   private currentCategory: string = '';
   private ssrmInitialized: boolean = false;
+  private visibleColumns: string[] = [];
+  private lastVisibleColumns: string[] = [];
 
   // Bound event handlers
   private boundOnFirstDataRendered = this.onFirstDataRendered.bind(this);
@@ -115,6 +117,16 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       this.currentCategory = this.categoryKey;
       this.initializeSSRM();
     }
+
+    // Initialize visible columns when columnDefs change
+    if (changes['columnDefs'] && this.columnDefs) {
+      this.visibleColumns = this.columnDefs
+        .filter(col => !col.hide)
+        .map(col => col.field)
+        .filter(field => field !== undefined) as string[];
+      this.lastVisibleColumns = [...this.visibleColumns];
+      console.log('Initial visible columns:', this.visibleColumns);
+    }
   }
 
   /**
@@ -126,6 +138,7 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         try {
           console.log('SSRM getRows called with params:', params);
           console.log('Category:', this.currentCategory, 'SearchTerm:', this.currentSearchTerm);
+          console.log('Visible columns:', this.visibleColumns);
 
           // Only show loading overlay for initial data load, not for group expansion
           const isGroupExpansion = params.request.groupKeys && params.request.groupKeys.length > 0;
@@ -137,7 +150,8 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
           const response = await this.searchService.fetchSSRMDataForCategory(
             params,
             this.currentCategory,
-            this.currentSearchTerm
+            this.currentSearchTerm,
+            this.visibleColumns
           ).toPromise();
 
           console.log('SSRM response:', response);
@@ -178,9 +192,51 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Handle column visibility changes
+   * Only re-fetch data when columns are unhidden and we need to fetch data again
+   */
+  onColumnVisibilityChange(visibleColumns: string[]): void {
+    console.log('Column visibility changed:', visibleColumns);
+    
+    // Check if any columns were unhidden (added to visible columns)
+    const newlyVisibleColumns = visibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
+    
+    if (newlyVisibleColumns.length > 0) {
+      console.log('Columns unhidden, re-fetching data:', newlyVisibleColumns);
+      
+      // Show loading overlay
+      if (this.gridApi) {
+        this.gridApi.showLoadingOverlay();
+      }
+      
+      // Update visible columns
+      this.visibleColumns = visibleColumns;
+      this.lastVisibleColumns = [...visibleColumns];
+      
+      // Re-fetch data with new visible columns
+      this.refreshSSRMData();
+    } else {
+      // Just hiding columns - no need to re-fetch
+      this.visibleColumns = visibleColumns;
+      this.lastVisibleColumns = [...visibleColumns];
+    }
+  }
+
+  /**
+   * Refresh SSRM data with current parameters
+   */
+  private refreshSSRMData(): void {
+    if (this.gridApi && this.currentSearchTerm && this.currentCategory) {
+      console.log('Refreshing SSRM data with visible columns:', this.visibleColumns);
+      (this.gridApi as any).setGridOption('serverSideDatasource', this.createSSRMDatasource());
+    }
+  }
+
   ngOnDestroy(): void {
     if (this.gridApi) {
       this.gridApi.removeEventListener('firstDataRendered', this.boundOnFirstDataRendered);
+      this.gridApi.removeEventListener('columnVisible', this.onColumnVisibilityChanged.bind(this));
     }
     document.removeEventListener('keydown', this.boundOnDocumentKeyDown);
   }
@@ -190,10 +246,34 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
 
     // Set up event listeners
     this.gridApi.addEventListener('firstDataRendered', this.boundOnFirstDataRendered);
+    this.gridApi.addEventListener('columnVisible', this.onColumnVisibilityChanged.bind(this));
 
     // Initialize SSRM if we have search parameters
     if (this.currentSearchTerm && this.currentCategory) {
       this.initializeSSRM();
+    }
+  }
+
+  /**
+   * Handle column visibility changes from AG Grid events
+   */
+  private onColumnVisibilityChanged(event: any): void {
+    // Get current visible columns
+    const currentVisibleColumns = this.gridApi.getColumnState()
+      .filter(state => !state.hide && state.colId)
+      .map(state => state.colId as string)
+      .filter(field => field !== undefined);
+    
+    // Check if columns were unhidden
+    const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
+    
+    if (newlyVisibleColumns.length > 0) {
+      console.log('Column visibility changed - columns unhidden:', newlyVisibleColumns);
+      this.onColumnVisibilityChange(currentVisibleColumns);
+    } else {
+      // Just hiding columns - update tracking
+      this.visibleColumns = currentVisibleColumns;
+      this.lastVisibleColumns = [...currentVisibleColumns];
     }
   }
 
@@ -231,7 +311,25 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleColumns(): void {
+    // First toggle the columns panel
     this.gridActionsService.toggleColumns(this.gridApi);
+    
+    // Listen for column visibility changes
+    if (this.gridApi) {
+      // Get current visible columns
+      const currentVisibleColumns = this.gridApi.getColumnState()
+        .filter(state => !state.hide && state.colId)
+        .map(state => state.colId as string)
+        .filter(field => field !== undefined);
+      
+      // Check if columns were unhidden
+      const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
+      
+      if (newlyVisibleColumns.length > 0) {
+        console.log('Columns unhidden, triggering re-fetch:', newlyVisibleColumns);
+        this.onColumnVisibilityChange(currentVisibleColumns);
+      }
+    }
   }
 
   toggleDensity(): void {
