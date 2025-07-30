@@ -120,12 +120,13 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
 
     // Initialize visible columns when columnDefs change
     if (changes['columnDefs'] && this.columnDefs) {
+      // Include both visible columns and row group columns
       this.visibleColumns = this.columnDefs
-        .filter(col => !col.hide)
+        .filter(col => (!col.hide || col.rowGroup) && col.field !== 'execution_order')
         .map(col => col.field)
         .filter(field => field !== undefined) as string[];
       this.lastVisibleColumns = [...this.visibleColumns];
-      console.log('Initial visible columns:', this.visibleColumns);
+      console.log('Initial visible columns (including row groups, excluding execution_order):', this.visibleColumns);
     }
   }
 
@@ -193,11 +194,42 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * Get all required columns including row group columns
+   * This ensures we fetch data for grouped columns even if they're hidden
+   */
+  private getAllRequiredColumns(): string[] {
+    if (!this.gridApi) {
+      return this.visibleColumns;
+    }
+
+    const columnState = this.gridApi.getColumnState();
+    const requiredColumns: string[] = [];
+
+    columnState.forEach(state => {
+      if (state.colId && (
+        !state.hide || // Visible columns
+        state.rowGroup // Row group columns (even if hidden)
+      )) {
+        // Exclude execution_order column as it's just for display purposes
+        if (state.colId !== 'execution_order') {
+          requiredColumns.push(state.colId);
+        }
+      }
+    });
+
+    return requiredColumns;
+  }
+
+  /**
    * Handle column visibility changes
    * Only re-fetch data when columns are unhidden and we need to fetch data again
    */
   onColumnVisibilityChange(visibleColumns: string[]): void {
     console.log('Column visibility changed:', visibleColumns);
+
+    // Get all required columns including row group columns
+    const allRequiredColumns = this.getAllRequiredColumns();
+    console.log('All required columns (including row groups):', allRequiredColumns);
 
     // Check if any columns were unhidden (added to visible columns)
     const newlyVisibleColumns = visibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
@@ -210,15 +242,15 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         this.gridApi.showLoadingOverlay();
       }
 
-      // Update visible columns
-      this.visibleColumns = visibleColumns;
+      // Update visible columns to include all required columns
+      this.visibleColumns = allRequiredColumns;
       this.lastVisibleColumns = [...visibleColumns];
 
       // Re-fetch data with new visible columns
       this.refreshSSRMData();
     } else {
-      // Just hiding columns - no need to re-fetch
-      this.visibleColumns = visibleColumns;
+      // Just hiding columns - update tracking but keep all required columns
+      this.visibleColumns = allRequiredColumns;
       this.lastVisibleColumns = [...visibleColumns];
     }
   }
@@ -264,15 +296,19 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       .map(state => state.colId as string)
       .filter(field => field !== undefined);
 
+    // Get all required columns including row group columns
+    const allRequiredColumns = this.getAllRequiredColumns();
+
     // Check if columns were unhidden
     const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
 
     if (newlyVisibleColumns.length > 0) {
       console.log('Column visibility changed - columns unhidden:', newlyVisibleColumns);
+      console.log('All required columns (including row groups):', allRequiredColumns);
       this.onColumnVisibilityChange(currentVisibleColumns);
     } else {
-      // Just hiding columns - update tracking
-      this.visibleColumns = currentVisibleColumns;
+      // Just hiding columns - update tracking but keep all required columns
+      this.visibleColumns = allRequiredColumns;
       this.lastVisibleColumns = [...currentVisibleColumns];
     }
   }
@@ -322,11 +358,15 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         .map(state => state.colId as string)
         .filter(field => field !== undefined);
 
+      // Get all required columns including row group columns
+      const allRequiredColumns = this.getAllRequiredColumns();
+
       // Check if columns were unhidden
       const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
 
       if (newlyVisibleColumns.length > 0) {
         console.log('Columns unhidden, triggering re-fetch:', newlyVisibleColumns);
+        console.log('All required columns (including row groups):', allRequiredColumns);
         this.onColumnVisibilityChange(currentVisibleColumns);
       }
     }
