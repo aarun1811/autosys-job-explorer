@@ -127,8 +127,9 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
           console.log('SSRM getRows called with params:', params);
           console.log('Category:', this.currentCategory, 'SearchTerm:', this.currentSearchTerm);
 
-          // Show loading state
-          if (this.gridApi) {
+          // Only show loading overlay for initial data load, not for group expansion
+          const isGroupExpansion = params.request.groupKeys && params.request.groupKeys.length > 0;
+          if (this.gridApi && !isGroupExpansion) {
             this.gridApi.showLoadingOverlay();
           }
 
@@ -156,8 +157,9 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
           console.error('Error in SSRM getRows:', error);
           params.fail();
         } finally {
-          // Hide loading state
-          if (this.gridApi) {
+          // Hide loading overlay only for initial data load
+          const isGroupExpansion = params.request.groupKeys && params.request.groupKeys.length > 0;
+          if (this.gridApi && !isGroupExpansion) {
             this.gridApi.hideOverlay();
           }
         }
