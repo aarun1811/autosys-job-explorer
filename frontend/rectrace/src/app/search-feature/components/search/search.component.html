@@ -89,12 +89,10 @@
         <ng-container *ngFor="let tab of tabs; let i = index">
            <app-all-jobs
             *ngIf="selectedTabIndex === i"
-            [rowData]="tab.data"
             [columnDefs]="tab.columnDef"
             [categoryKey]="tab.key"
             [isGridLoading]="isLoadingCategory && selectedTabIndex === i"
-            [currentQuery]="query"
-            (groupExpanded)="onGroupExpanded($event)">
+            [currentQuery]="query">
           </app-all-jobs>
         </ng-container>
       </div>
