@@ -1,6 +1,7 @@
 package com.citi.gru.rectrace.service.v3;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +61,9 @@ public class ElasticsearchSearchProviderV3 {
             logger.warn("ES V3 Keyword Search: No valid ES config found for category '{}'", categoryKey);
             return null;
         }
+        
+        logger.info("ES V3 Keyword Search: Retrieved ES config for category '{}': index={}, queryFields={}", 
+                categoryKey, esConfig.getTargetIndex(), esConfig.getQueryFields() != null ? esConfig.getQueryFields().toString() : "none");
 
         // Get category definition for building result
         SearchCategoryDefinition categoryDefinition = searchConfigServiceV3.getCategoryDefinition(categoryKey);
@@ -73,11 +77,13 @@ public class ElasticsearchSearchProviderV3 {
             SearchSourceBuilder sourceBuilder = buildKeywordSearchSourceBuilder(esConfig, searchTerm);
             
             SearchRequest searchRequest = new SearchRequest(esConfig.getTargetIndex()).source(sourceBuilder);
-            logger.debug("Executing ES V3 Keyword Search for category {}: Query DSL: {}", categoryKey, sourceBuilder);
+            logger.info("Executing ES V3 Keyword Search for category {}: Index={}, Query DSL: {}", categoryKey, esConfig.getTargetIndex(), sourceBuilder);
             
             SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+            logger.info("ES V3 Keyword Search for category {}: ES Response - Total hits: {}, Max score: {}", 
+                    categoryKey, searchResponse.getHits().getTotalHits().value, searchResponse.getHits().getMaxScore());
+            
             List<Map<String, Object>> data = extractDataFromResponse(searchResponse);
-
             logger.info("ES V3 Keyword Search for category {}: Returned {} hits.", categoryKey, data.size());
             return buildResultDto(categoryDefinition, data);
             
@@ -132,6 +138,69 @@ public class ElasticsearchSearchProviderV3 {
             return QueryBuilders.matchAllQuery();
         }
 
+        // Always use wildcard queries for all search terms
+        return buildWildcardQuery(esConfig, searchTerm);
+    }
+
+    /**
+     * Build case-insensitive wildcard query for all search terms
+     * Using a combination of analyzed fields and case-insensitive keyword fields
+     */
+    private QueryBuilder buildWildcardQuery(ElasticsearchProviderConfig esConfig, String searchTerm) {
+        // Escape special characters in search term
+        String escapedSearchTerm = escapeElasticsearchQueryString(searchTerm);
+        
+        // Build a bool query that combines analyzed and keyword fields
+        org.elasticsearch.index.query.BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        
+        // Separate analyzed fields from keyword fields
+        List<String> analyzedFields = new ArrayList<>();
+        List<String> keywordFields = new ArrayList<>();
+        
+        for (String field : esConfig.getQueryFields()) {
+            if (field.endsWith(".keyword")) {
+                keywordFields.add(field);
+            } else {
+                analyzedFields.add(field);
+            }
+        }
+        
+        // Add analyzed field queries (these are case-insensitive by default)
+        if (!analyzedFields.isEmpty()) {
+            String analyzedQueryString = "*" + escapedSearchTerm + "*";
+            Map<String, Float> analyzedFieldBoosts = new HashMap<>();
+            for (String field : analyzedFields) {
+                analyzedFieldBoosts.put(field, 1.0f);
+            }
+            
+            boolQuery.should(QueryBuilders.queryStringQuery(analyzedQueryString)
+                    .fields(analyzedFieldBoosts)
+                    .analyzeWildcard(true)
+                    .defaultOperator(Operator.OR));
+        }
+        
+        // Add case-insensitive keyword field queries
+        if (!keywordFields.isEmpty()) {
+            for (String keywordField : keywordFields) {
+                // Use wildcard query with case-insensitive pattern
+                String wildcardPattern = "*" + escapedSearchTerm.toLowerCase() + "*";
+                boolQuery.should(QueryBuilders.wildcardQuery(keywordField, wildcardPattern));
+            }
+        }
+        
+        // Apply relevance boost if configured
+        if (esConfig.getRelevanceBoost() != null) {
+            // Note: Boost is applied at the field level, so we need to handle it differently
+            // For now, we'll use the default boost of 1.0f
+        }
+        
+        return boolQuery;
+    }
+
+    /**
+     * Build multi-match query for longer search terms
+     */
+    private QueryBuilder buildMultiMatchQuery(ElasticsearchProviderConfig esConfig, String searchTerm) {
         // Escape special characters in search term
         String escapedSearchTerm = escapeElasticsearchQueryString(searchTerm);
 
@@ -191,7 +260,23 @@ public class ElasticsearchSearchProviderV3 {
             return "";
         }
         
-        // Escape special characters that have special meaning in Lucene query syntax
-        return input.replaceAll("([+\\-!(){}[\\]^\"~*?:\\\\/])", "\\\\$1");
+        // Simple character replacement for special characters
+        return input.replace("+", "\\+")
+                   .replace("-", "\\-")
+                   .replace("!", "\\!")
+                   .replace("(", "\\(")
+                   .replace(")", "\\)")
+                   .replace("{", "\\{")
+                   .replace("}", "\\}")
+                   .replace("[", "\\[")
+                   .replace("]", "\\]")
+                   .replace("^", "\\^")
+                   .replace("\"", "\\\"")
+                   .replace("~", "\\~")
+                   .replace("*", "\\*")
+                   .replace("?", "\\?")
+                   .replace(":", "\\:")
+                   .replace("\\", "\\\\")
+                   .replace("/", "\\/");
     }
 } 

@@ -18,9 +18,9 @@
             "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
       ],
       "searchProviderType": "elasticsearch", 
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ "recon", "recon.keyword" ], 
+            "providerConfig": {
+        "targetIndex": "autosys_tlm_jobs_index",
+        "queryFields": [ "recon", "recon.keyword" ],
         "resultFields": [ 
             "recon", "load_job", "box_name", "job_name", "load_file_name", "set_id", "sub_acc", "tlm_instance"
         ],
@@ -32,21 +32,14 @@
       "key": "fileName",
       "label": "File Name",
       "columns": [
-        {"field": "file_name", "headerName": "File Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "ok_file_name", "headerName": "OK File Name", "sortable": true, "filter": true},
-        {"field": "feed_id", "headerName": "Feed ID", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
         {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
-        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
-        {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
-        {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
-        {"field": "receive_path", "headerName": "Receive Path", "sortable": true, "filter": true},
-        {"field": "archival_path", "headerName": "Archival Path", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+        {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
         {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
         {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
               "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
               "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
@@ -54,19 +47,18 @@
       ],
       "searchProviderType": "elasticsearch",
       "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
+        "targetIndex": "autosys_tlm_jobs_index",
         "queryFields": [ 
-            "file_name", "file_name.keyword",
-            "ok_file_name", "ok_file_name.keyword",
-            "feed_id", "feed_id.keyword"
+            "recon", "recon.keyword",
+            "job_name", "job_name.keyword",
+            "box_name", "box_name.keyword",
+            "load_job", "load_job.keyword"
         ],
         "resultFields": [ 
-             "file_name", "ok_file_name", "feed_id", "job_name", "app_name", "app_id",
-             "support_email", "support_hotline", "receive_path", "archival_path",
-             "recon", "set_id", "sub_acc", "load_job", "box_name"
+             "recon", "job_name", "box_name", "load_job", "load_file_name", "set_id", "sub_acc", "tlm_instance"
         ],
-        "defaultSort": { "field": "file_name.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "file_name"
+        "defaultSort": { "field": "recon.keyword", "direction": "asc" },
+        "collapseOnPrecomputedField": "recon"
       }
     },
     {

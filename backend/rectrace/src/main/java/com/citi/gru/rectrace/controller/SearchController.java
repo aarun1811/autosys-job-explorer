@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.citi.gru.rectrace.dto.SearchCategoryResult;
 import com.citi.gru.rectrace.service.SuggestionService;
 import com.citi.gru.rectrace.service.v2.SearchServiceV2;
-import com.citi.gru.rectrace.service.v3.ElasticsearchSearchProviderV3;
 import com.citi.gru.rectrace.service.v3.OracleSearchProviderV3;
+import com.citi.gru.rectrace.service.v3.SearchServiceV3;
 
 @RestController
 @RequestMapping("/api")
@@ -31,17 +31,17 @@ public class SearchController {
     private final SuggestionService suggestionService;
 
     private final SearchServiceV2 searchServiceV2;
-    private final ElasticsearchSearchProviderV3 elasticsearchSearchProviderV3;
+    private final SearchServiceV3 searchServiceV3;
     private final OracleSearchProviderV3 oracleSearchProviderV3;
 
     public SearchController(
             SuggestionService suggestionService,
             SearchServiceV2 searchServiceV2,
-            ElasticsearchSearchProviderV3 elasticsearchSearchProviderV3,
+            SearchServiceV3 searchServiceV3,
             OracleSearchProviderV3 oracleSearchProviderV3) {
         this.suggestionService = suggestionService;
         this.searchServiceV2 = searchServiceV2;
-        this.elasticsearchSearchProviderV3 = elasticsearchSearchProviderV3;
+        this.searchServiceV3 = searchServiceV3;
         this.oracleSearchProviderV3 = oracleSearchProviderV3;
     }
 
@@ -94,16 +94,10 @@ public class SearchController {
         
         if (category != null) {
             // Search specific category
-            SearchCategoryResult result = elasticsearchSearchProviderV3.performKeywordSearch(category, query);
-            if (result != null) {
-                return Collections.singletonMap(category, result);
-            }
-            return Collections.emptyMap();
+            return searchServiceV3.performKeywordSearch(query, category);
         } else {
-            // Search all categories (simplified - just return first valid category for now)
-            // In a full implementation, this would search all categories
-            logger.warn("V3 Keyword Search: No category specified, returning empty result");
-            return Collections.emptyMap();
+            // Search all categories asynchronously
+            return searchServiceV3.performKeywordSearch(query);
         }
     }
 
