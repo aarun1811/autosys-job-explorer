@@ -134,7 +134,7 @@ export class GridActionsService {
       // This will trigger a new data fetch with the deduplication flag
       this.showMessage(`${duplicateCount} duplicate(s) found. Refreshing data...`);
       onDuplicatesRemoved(categoryKey);
-      
+
       // Refresh the grid to show deduplicated data
       setTimeout(() => {
         gridApi.refreshServerSide({ purge: true });
