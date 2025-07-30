@@ -242,41 +242,36 @@ ag-grid-angular {
 
 /* Modern Loading Overlay Styles */
 :host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(4px);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 200px;
-  min-height: 120px;
+  min-width: auto;
+  min-height: auto;
 }
 
 :host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 0;
 }
 
 :host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center .ag-overlay-loading-text {
-  font-family: 'Google Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: #202124;
-  margin: 0;
-  text-align: center;
+  display: none; /* Hide the "Loading" text */
 }
 
 /* Modern Spinner */
 :host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center::before {
   content: '';
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e8f0fe;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top: 3px solid #1a73e8;
   border-radius: 50%;
   animation: modern-spin 1s linear infinite;
