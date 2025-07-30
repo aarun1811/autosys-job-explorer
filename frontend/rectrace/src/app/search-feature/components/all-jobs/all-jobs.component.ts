@@ -198,22 +198,22 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
    */
   onColumnVisibilityChange(visibleColumns: string[]): void {
     console.log('Column visibility changed:', visibleColumns);
-    
+
     // Check if any columns were unhidden (added to visible columns)
     const newlyVisibleColumns = visibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
-    
+
     if (newlyVisibleColumns.length > 0) {
       console.log('Columns unhidden, re-fetching data:', newlyVisibleColumns);
-      
+
       // Show loading overlay
       if (this.gridApi) {
         this.gridApi.showLoadingOverlay();
       }
-      
+
       // Update visible columns
       this.visibleColumns = visibleColumns;
       this.lastVisibleColumns = [...visibleColumns];
-      
+
       // Re-fetch data with new visible columns
       this.refreshSSRMData();
     } else {
@@ -263,10 +263,10 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       .filter(state => !state.hide && state.colId)
       .map(state => state.colId as string)
       .filter(field => field !== undefined);
-    
+
     // Check if columns were unhidden
     const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
-    
+
     if (newlyVisibleColumns.length > 0) {
       console.log('Column visibility changed - columns unhidden:', newlyVisibleColumns);
       this.onColumnVisibilityChange(currentVisibleColumns);
@@ -313,7 +313,7 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   toggleColumns(): void {
     // First toggle the columns panel
     this.gridActionsService.toggleColumns(this.gridApi);
-    
+
     // Listen for column visibility changes
     if (this.gridApi) {
       // Get current visible columns
@@ -321,10 +321,10 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         .filter(state => !state.hide && state.colId)
         .map(state => state.colId as string)
         .filter(field => field !== undefined);
-      
+
       // Check if columns were unhidden
       const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
-      
+
       if (newlyVisibleColumns.length > 0) {
         console.log('Columns unhidden, triggering re-fetch:', newlyVisibleColumns);
         this.onColumnVisibilityChange(currentVisibleColumns);

@@ -153,7 +153,7 @@ export class SearchService {
       filterModel: params.request.filterModel || {},
       sortModel: params.request.sortModel || []
     };
-    
+
     return this.http.post<SSRMResponse>(`${this.apiUrl}/v3/search/ssrm/${category}`, requestBody);
   }
 }
