@@ -51,6 +51,10 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   defaultColDef = this.gridConfigService.getDefaultColDef();
   autoGroupColumnDef = this.gridConfigService.getAutoGroupColumnDef(this);
 
+  // SSRM Configuration
+  rowModelType: 'serverSide' = 'serverSide';
+  serverSideStoreType: 'partial' = 'partial';
+
   // Grid API
   private gridApi!: GridApi<JobData | undefined | null>;
 
@@ -60,12 +64,12 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   originalRowData: (JobData | null | undefined)[] = [];
   isProgrammaticChange: boolean = false;
 
-  // Group expansion tracking
-  private expandedGroups = new Set<string>();
-  public loadingGroups = new Set<string>();
+  // SSRM State
+  private currentSearchTerm: string = '';
+  private currentCategory: string = '';
+  private ssrmInitialized: boolean = false;
 
   // Bound event handlers
-  private boundOnRowGroupOpened = this.onRowGroupOpened.bind(this);
   private boundOnFirstDataRendered = this.onFirstDataRendered.bind(this);
   private boundOnDocumentKeyDown = this.onDocumentKeyDown.bind(this);
 
@@ -100,11 +104,80 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         this.gridApi.hideOverlay();
       }
     }
+
+    // Update SSRM state when search parameters change
+    if (changes['currentQuery']) {
+      this.currentSearchTerm = this.currentQuery;
+      this.initializeSSRM();
+    }
+
+    if (changes['categoryKey']) {
+      this.currentCategory = this.categoryKey;
+      this.initializeSSRM();
+    }
+  }
+
+  /**
+   * Create SSRM datasource for AG Grid
+   */
+  createSSRMDatasource() {
+    return {
+      getRows: async (params: any) => {
+        try {
+          console.log('SSRM getRows called with params:', params);
+          console.log('Category:', this.currentCategory, 'SearchTerm:', this.currentSearchTerm);
+
+          // Show loading state
+          if (this.gridApi) {
+            this.gridApi.showLoadingOverlay();
+          }
+
+          // Fetch data from backend
+          const response = await this.searchService.fetchSSRMDataForCategory(
+            params,
+            this.currentCategory,
+            this.currentSearchTerm
+          ).toPromise();
+
+          console.log('SSRM response:', response);
+
+          if (response && response.success) {
+            // Supply data to grid
+            params.success({
+              rowData: response.rows,
+              rowCount: response.lastRow
+            });
+          } else {
+            // Handle error
+            params.fail();
+            console.error('SSRM request failed:', response?.error);
+          }
+        } catch (error) {
+          console.error('Error in SSRM getRows:', error);
+          params.fail();
+        } finally {
+          // Hide loading state
+          if (this.gridApi) {
+            this.gridApi.hideOverlay();
+          }
+        }
+      }
+    };
+  }
+
+  /**
+   * Initialize SSRM datasource when search parameters are available
+   */
+  private initializeSSRM(): void {
+    if (this.gridApi && this.currentSearchTerm && this.currentCategory && !this.ssrmInitialized) {
+      console.log('Initializing SSRM for category:', this.currentCategory, 'searchTerm:', this.currentSearchTerm);
+      this.ssrmInitialized = true;
+      (this.gridApi as any).setGridOption('serverSideDatasource', this.createSSRMDatasource());
+    }
   }
 
   ngOnDestroy(): void {
     if (this.gridApi) {
-      this.gridApi.removeEventListener('rowGroupOpened', this.boundOnRowGroupOpened);
       this.gridApi.removeEventListener('firstDataRendered', this.boundOnFirstDataRendered);
     }
     document.removeEventListener('keydown', this.boundOnDocumentKeyDown);
@@ -113,116 +186,17 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   onGridReady(params: GridReadyEvent<JobData | undefined | null>) {
     this.gridApi = params.api;
 
-    if (this.rowData && this.rowData.length > 0 && this.originalRowData.length === 0) {
-      this.originalRowData = [...this.rowData];
-      this.gridStateService.setOriginalRowData(this.originalRowData);
-    }
-
-    if (this.isGridLoading) {
-      this.gridApi.showLoadingOverlay();
-    }
-
-    this.gridApi.addEventListener('rowGroupOpened', this.boundOnRowGroupOpened);
+    // Set up event listeners
     this.gridApi.addEventListener('firstDataRendered', this.boundOnFirstDataRendered);
+
+    // Initialize SSRM if we have search parameters
+    if (this.currentSearchTerm && this.currentCategory) {
+      this.initializeSSRM();
+    }
   }
 
   private onFirstDataRendered(event: FirstDataRenderedEvent) {
     setTimeout(() => event.api.autoSizeAllColumns(), 0);
-  }
-
-  private onRowGroupOpened(event: RowGroupOpenedEvent) {
-    // Auto-size columns
-    setTimeout(() => event.api.autoSizeAllColumns(), 50);
-
-    // Handle group expansion
-    if (event.expanded) {
-      const groupKey = event.node.key as string;
-      const rowIndex = event.node.rowIndex === null ? undefined : event.node.rowIndex;
-      // Check if we already have data for this group
-      if (!this.expandedGroups.has(groupKey)) {
-        this.expandGroup(groupKey, rowIndex);
-      }
-    }
-  }
-
-  private expandGroup(groupKey: string, rowIndex?: number): void {
-    console.log('Expanding group:', groupKey);
-    console.log('Current query:', this.currentQuery);
-    console.log('Category key:', this.categoryKey);
-    if (!this.currentQuery || !this.categoryKey) {
-      console.warn('Cannot expand group: missing query or category');
-      return;
-    }
-    // Mark group as expanded
-    this.expandedGroups.add(groupKey);
-    this.loadingGroups.add(groupKey);
-    // Force refresh of group cell to show spinner
-    if (this.gridApi) {
-      this.gridApi.refreshCells({ force: true });
-    }
-    // Get visible column fields for the request
-    const visibleColumns = this.getVisibleColumnFields();
-    console.log('Visible columns:', visibleColumns);
-    // Call the backend to expand the group using V3 endpoint
-    this.searchService.expandGroupV3(
-      this.currentQuery,
-      this.categoryKey,
-      groupKey
-    ).subscribe({
-      next: (response) => {
-        this.loadingGroups.delete(groupKey);
-        if (this.gridApi) {
-          this.gridApi.refreshCells({ force: true });
-        }
-        console.log('Group expansion response:', response);
-        // Update the grid data with expanded results
-        this.updateGridDataWithExpandedGroup(groupKey, response, rowIndex);
-      },
-      error: (error) => {
-        this.loadingGroups.delete(groupKey);
-        if (this.gridApi) {
-          this.gridApi.refreshCells({ force: true });
-        }
-        console.error('Error expanding group:', error);
-        this.snackBar.open('Failed to expand group. Please try again.', 'Close', {
-          duration: 3000
-        });
-        // Remove from expanded groups on error
-        this.expandedGroups.delete(groupKey);
-      }
-    });
-  }
-
-  private getVisibleColumnFields(): string[] {
-    if (!this.columnDefs) return [];
-    return this.columnDefs
-      .filter(col => !col.hide || col.rowGroup)
-      .map(col => col.field)
-      .filter(field => field !== undefined) as string[];
-  }
-
-    private updateGridDataWithExpandedGroup(groupKey: string, response: any, rowIndex?: number): void {
-    // Find the category data in the response
-    const categoryData = response[this.categoryKey];
-    if (!categoryData || !categoryData.data) {
-      console.warn('No data found for category:', this.categoryKey);
-      return;
-    }
-    // Patch expanded rows to ensure group field is set
-    const groupField = this.columnDefs?.[0]?.field;
-    if (groupField) {
-      categoryData.data.forEach((row: any) => {
-        if (row[groupField] === undefined) {
-          row[groupField] = groupKey;
-        }
-      });
-    }
-    // Emit the expanded data and rowIndex to parent component
-    this.groupExpanded.emit({
-      groupKey: groupKey,
-      expandedData: categoryData.data,
-      rowIndex: rowIndex
-    });
   }
 
   private onDocumentKeyDown(event: KeyboardEvent): void {
