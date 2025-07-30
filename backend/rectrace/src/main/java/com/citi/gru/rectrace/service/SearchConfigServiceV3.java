@@ -136,8 +136,23 @@ public class SearchConfigServiceV3 {
 
         SearchCategoryDefinition categoryDef = category.get();
         
-        // For now, we'll use the existing Oracle config if available
-        // In the future, we can add specific oracleConfig field
+        // First, check if there's a dedicated oracleConfig field
+        if (categoryDef.getOracleConfig() != null) {
+            OracleProviderConfig oracleConfig = categoryDef.getOracleConfig();
+            
+            // Validate essential fields
+            if (!StringUtils.hasText(oracleConfig.getQuery())) {
+                logger.warn("Category '{}' missing query in Oracle config", categoryKey);
+                return null;
+            }
+
+            logger.debug("Retrieved Oracle config for category '{}': query={}", 
+                    categoryKey, oracleConfig.getQuery());
+            
+            return oracleConfig;
+        }
+        
+        // Fallback: check if the provider config is Oracle
         if (categoryDef.getProviderConfig() instanceof OracleProviderConfig) {
             OracleProviderConfig oracleConfig = (OracleProviderConfig) categoryDef.getProviderConfig();
             
@@ -146,14 +161,9 @@ public class SearchConfigServiceV3 {
                 logger.warn("Category '{}' missing query in Oracle config", categoryKey);
                 return null;
             }
-            
-            if (!StringUtils.hasText(oracleConfig.getParameterName())) {
-                logger.warn("Category '{}' missing parameterName in Oracle config", categoryKey);
-                return null;
-            }
 
-            logger.debug("Retrieved Oracle config for category '{}': query={}, parameterName={}", 
-                    categoryKey, oracleConfig.getQuery(), oracleConfig.getParameterName());
+            logger.debug("Retrieved Oracle config from providerConfig for category '{}': query={}", 
+                    categoryKey, oracleConfig.getQuery());
             
             return oracleConfig;
         }

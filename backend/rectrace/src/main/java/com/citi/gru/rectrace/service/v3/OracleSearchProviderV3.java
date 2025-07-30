@@ -68,12 +68,19 @@ public class OracleSearchProviderV3 {
                     categoryKey, groupKey, query);
 
             try (PreparedStatement stmt = connection.prepareStatement(query)) {
+                int paramIndex = 1;
+                
                 // Set the group key parameter
-                stmt.setString(1, groupKey);
+                if (oracleConfig.getParameters() != null && oracleConfig.getParameters().containsKey("groupKey")) {
+                    stmt.setString(paramIndex++, groupKey);
+                } else {
+                    // Fallback to legacy parameterName
+                    stmt.setString(paramIndex++, groupKey);
+                }
                 
                 // Set the search term parameter if needed
                 if (StringUtils.hasText(searchTerm) && oracleConfig.getQuery().contains(":searchTerm")) {
-                    stmt.setString(2, "%" + searchTerm + "%");
+                    stmt.setString(paramIndex++, "%" + searchTerm + "%");
                 }
 
                 try (ResultSet rs = stmt.executeQuery()) {
