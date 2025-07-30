@@ -240,16 +240,4 @@ ag-grid-angular {
   }
 }
 
-.group-loading-spinner {
-  display: inline-block;
-  margin-left: 6px;
-  font-size: 14px;
-  color: #1a73e8;
-  vertical-align: middle;
-  animation: group-spin 1s linear infinite;
-}
 
-@keyframes group-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
