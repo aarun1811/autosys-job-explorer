@@ -39,64 +39,103 @@ public class OracleSearchProviderV3 {
     }
 
     /**
-     * Fetch detailed data for a specific group
-     * This is the simplified version that only handles group expansion
+     * Expand a group with detailed data from Oracle
+     * @param category The search category
+     * @param groupKey The group key to expand
+     * @param searchTerm The search term for filtering
+     * @param visibleColumns Optional list of visible columns to fetch
+     * @return SearchCategoryResult with expanded data
      */
-    public SearchCategoryResult expandGroup(String categoryKey, String groupKey, String searchTerm) {
-        logger.info("Oracle V3 Expand Group: Category: {}, Group: '{}', Term: '{}'", 
-                categoryKey, groupKey, searchTerm);
+    public SearchCategoryResult expandGroup(String category, String groupKey, String searchTerm, List<String> visibleColumns) {
+        try {
+            SearchCategoryDefinition categoryDefinition = searchConfigServiceV3.getCategoryDefinition(category);
+            if (categoryDefinition == null || categoryDefinition.getOracleConfig() == null) {
+                logger.error("Oracle configuration not found for category: {}", category);
+                return null;
+            }
 
-        // Get Oracle configuration for the category
-        OracleProviderConfig oracleConfig = searchConfigServiceV3.getGroupExpansionConfig(categoryKey);
-        if (oracleConfig == null) {
-            logger.warn("Oracle V3 Expand Group: No valid Oracle config found for category '{}'", categoryKey);
-            return null;
-        }
-
-        // Get category definition for building result
-        SearchCategoryDefinition categoryDefinition = searchConfigServiceV3.getCategoryDefinition(categoryKey);
-        if (categoryDefinition == null) {
-            logger.warn("Oracle V3 Expand Group: No category definition found for '{}'", categoryKey);
-            return null;
-        }
-
-        try (Connection connection = dataSource.getConnection()) {
-            // Build the query for group expansion
-            String query = buildGroupExpansionQuery(oracleConfig, groupKey);
+            OracleProviderConfig oracleConfig = categoryDefinition.getOracleConfig();
+            String query = oracleConfig.getQuery();
             
-            logger.debug("Executing Oracle V3 Group Expansion for category {} group {}: Query: {}", 
-                    categoryKey, groupKey, query);
+            if (query == null || query.trim().isEmpty()) {
+                logger.error("Oracle query not configured for category: {}", category);
+                return null;
+            }
 
-            try (PreparedStatement stmt = connection.prepareStatement(query)) {
-                int paramIndex = 1;
-                
-                // Set the group key parameter
-                if (oracleConfig.getParameters() != null && oracleConfig.getParameters().containsKey("groupKey")) {
-                    stmt.setString(paramIndex++, groupKey);
-                } else {
-                    // Fallback to legacy parameterName
-                    stmt.setString(paramIndex++, groupKey);
-                }
-                
-                // Set the search term parameter if needed
-                if (StringUtils.hasText(searchTerm) && oracleConfig.getQuery().contains(":searchTerm")) {
-                    stmt.setString(paramIndex++, "%" + searchTerm + "%");
-                }
+            // Build the query with visible columns
+            String finalQuery = buildGroupExpansionQuery(query, visibleColumns, oracleConfig);
+            
+            logger.info("Oracle V3 Group Expansion - Category: {}, GroupKey: {}, Query: {}", 
+                    category, groupKey, finalQuery);
 
-                try (ResultSet rs = stmt.executeQuery()) {
-                    List<Map<String, Object>> data = extractDataFromResultSet(rs);
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(finalQuery)) {
+                
+                // Set parameters
+                setQueryParameters(statement, oracleConfig, groupKey, searchTerm);
+                
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<Map<String, Object>> data = extractDataFromResultSet(resultSet, visibleColumns);
                     
-                    logger.info("Oracle V3 Expand Group for category {} group {}: Returned {} rows.",
-                            categoryKey, groupKey, data.size());
+                    // Ensure distinct records
+                    data = ensureDistinctRecords(data, visibleColumns);
                     
-                    return buildResultDto(categoryDefinition, data);
+                    SearchCategoryConfig config = new SearchCategoryConfig();
+                    config.setKey(category);
+                    config.setLabel(categoryDefinition.getLabel());
+                    
+                    return new SearchCategoryResult(config, data);
                 }
             }
-        } catch (SQLException e) {
-            logger.error("Error during Oracle V3 Expand Group for category {} group {}: {}", 
-                    categoryKey, groupKey, e.getMessage(), e);
-            return null;
+        } catch (Exception e) {
+            logger.error("Error expanding group for category: {} with groupKey: {}", category, groupKey, e);
         }
+        return null;
+    }
+
+    /**
+     * Build the Oracle query with visible columns
+     */
+    private String buildGroupExpansionQuery(String baseQuery, List<String> visibleColumns, OracleProviderConfig oracleConfig) {
+        if (visibleColumns == null || visibleColumns.isEmpty()) {
+            // If no visible columns specified, use all configured result fields
+            String[] resultFields = oracleConfig.getResultFields();
+            if (resultFields != null && resultFields.length > 0) {
+                return baseQuery.replace("SELECT *", "SELECT DISTINCT " + String.join(", ", resultFields));
+            }
+            return baseQuery.replace("SELECT *", "SELECT DISTINCT *");
+        }
+        
+        // Use only visible columns
+        return baseQuery.replace("SELECT *", "SELECT DISTINCT " + String.join(", ", visibleColumns));
+    }
+
+    /**
+     * Ensure distinct records based on visible columns
+     */
+    private List<Map<String, Object>> ensureDistinctRecords(List<Map<String, Object>> data, List<String> visibleColumns) {
+        if (data == null || data.isEmpty() || visibleColumns == null || visibleColumns.isEmpty()) {
+            return data;
+        }
+        
+        Map<String, Map<String, Object>> distinctMap = new HashMap<>();
+        
+        for (Map<String, Object> row : data) {
+            // Create a key based on all visible column values
+            StringBuilder keyBuilder = new StringBuilder();
+            for (String column : visibleColumns) {
+                Object value = row.get(column);
+                keyBuilder.append(value != null ? value.toString() : "null").append("|");
+            }
+            String key = keyBuilder.toString();
+            
+            // Keep only the first occurrence of each unique combination
+            if (!distinctMap.containsKey(key)) {
+                distinctMap.put(key, row);
+            }
+        }
+        
+        return new ArrayList<>(distinctMap.values());
     }
 
     /**
@@ -145,6 +184,47 @@ public class OracleSearchProviderV3 {
         }
         
         return data;
+    }
+
+    /**
+     * Extracts data from ResultSet into a list of maps, considering visible columns
+     */
+    private List<Map<String, Object>> extractDataFromResultSet(ResultSet rs, List<String> visibleColumns) throws SQLException {
+        List<Map<String, Object>> data = new ArrayList<>();
+        
+        while (rs.next()) {
+            Map<String, Object> row = new HashMap<>();
+            
+            // Get only visible columns
+            for (String column : visibleColumns) {
+                Object value = rs.getObject(column);
+                row.put(column, value);
+            }
+            
+            data.add(row);
+        }
+        
+        return data;
+    }
+
+    /**
+     * Sets parameters for the prepared statement
+     */
+    private void setQueryParameters(PreparedStatement stmt, OracleProviderConfig oracleConfig, String groupKey, String searchTerm) throws SQLException {
+        int paramIndex = 1;
+        
+        // Set the group key parameter
+        if (oracleConfig.getParameters() != null && oracleConfig.getParameters().containsKey("groupKey")) {
+            stmt.setString(paramIndex++, groupKey);
+        } else {
+            // Fallback to legacy parameterName
+            stmt.setString(paramIndex++, groupKey);
+        }
+        
+        // Set the search term parameter if needed
+        if (StringUtils.hasText(searchTerm) && oracleConfig.getQuery().contains(":searchTerm")) {
+            stmt.setString(paramIndex++, "%" + searchTerm + "%");
+        }
     }
 
     /**

@@ -116,7 +116,7 @@ public class SearchController {
         logger.info("V3 Group Expansion performed by user: {} for the term: {} category: {} group: {}", 
                 loginId, query, category, groupKey);
         
-        SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, query);
+        SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, query, null);
         if (result != null) {
             return Collections.singletonMap(category, result);
         }
@@ -139,45 +139,9 @@ public class SearchController {
             String searchTerm = (String) requestBody.get("searchTerm");
             List<String> groupKeys = (List<String>) requestBody.get("groupKeys");
             List<String> visibleColumns = (List<String>) requestBody.get("visibleColumns");
-            // String rowGroupCols = (String) requestBody.get("rowGroupCols");
-            // String valueCols = (String) requestBody.get("valueCols");
-            // String filterModel = (String) requestBody.get("filterModel");
-            // String sortModel = (String) requestBody.get("sortModel");
             
-            // Handle group expansion
-            if (groupKeys != null && !groupKeys.isEmpty()) {
-                String groupKey = groupKeys.get(groupKeys.size() - 1); // Get the last group key
-                SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, searchTerm);
-                
-                if (result != null && result.getData() != null) {
-                    return new HashMap<String, Object>() {{
-                        put("success", true);
-                        put("rows", result.getData());
-                        put("lastRow", result.getData().size());
-                    }};
-                }
-            } else {
-                // Initial data load for category - use Elasticsearch
-                Map<String, SearchCategoryResult> searchResults = searchServiceV3.performKeywordSearch(searchTerm, category);
-                
-                if (searchResults != null && searchResults.containsKey(category)) {
-                    SearchCategoryResult result = searchResults.get(category);
-                    if (result != null && result.getData() != null) {
-                        return new HashMap<String, Object>() {{
-                            put("success", true);
-                            put("rows", result.getData());
-                            put("lastRow", result.getData().size());
-                        }};
-                    }
-                }
-            }
-            
-            // Return empty result
-            return new HashMap<String, Object>() {{
-                put("success", true);
-                put("rows", Collections.emptyList());
-                put("lastRow", 0);
-            }};
+            // Delegate to service layer
+            return searchServiceV3.getSSRMDataForCategory(category, searchTerm, groupKeys, visibleColumns);
             
         } catch (Exception e) {
             logger.error("Error in SSRM request for category: {}", category, e);
