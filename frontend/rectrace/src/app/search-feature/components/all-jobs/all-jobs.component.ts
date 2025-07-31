@@ -271,7 +271,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     if (this.gridApi) {
       this.gridApi.removeEventListener('firstDataRendered', this.boundOnFirstDataRendered);
       this.gridApi.removeEventListener('columnVisible', this.onColumnVisibilityChanged.bind(this));
-      this.gridApi.removeEventListener('columnRowGroupChanged', this.onRowGroupChanged.bind(this));
     }
     document.removeEventListener('keydown', this.boundOnDocumentKeyDown);
   }
@@ -282,7 +281,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
     // Set up event listeners
     this.gridApi.addEventListener('firstDataRendered', this.boundOnFirstDataRendered);
     this.gridApi.addEventListener('columnVisible', this.onColumnVisibilityChanged.bind(this));
-    this.gridApi.addEventListener('columnRowGroupChanged', this.onRowGroupChanged.bind(this));
 
     // Initialize SSRM if we have search parameters
     if (this.currentSearchTerm && this.currentCategory) {
@@ -315,22 +313,6 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       this.visibleColumns = allRequiredColumns;
       this.lastVisibleColumns = [...currentVisibleColumns];
     }
-  }
-
-  /**
-   * Handle row group changes (when columns are added/removed from grouping)
-   */
-  private onRowGroupChanged(event: any): void {
-    console.log('Row group changed:', event);
-    
-    // Row grouping changes require data refresh
-    // Show loading overlay
-    if (this.gridApi) {
-      this.gridApi.showLoadingOverlay();
-    }
-    
-    // Refresh SSRM data to get correct data structure
-    this.refreshSSRMData();
   }
 
   private onFirstDataRendered(event: FirstDataRenderedEvent) {
