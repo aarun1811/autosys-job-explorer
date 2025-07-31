@@ -62,8 +62,8 @@ public class OracleSearchProviderV3 {
                 return null;
             }
 
-            // Build the query with visible columns
-            String finalQuery = buildGroupExpansionQuery(query, visibleColumns, oracleConfig);
+            // Build the optimized query with visible columns (always DISTINCT)
+            String finalQuery = buildOptimizedQuery(query, visibleColumns, oracleConfig);
             
             logger.info("Oracle V3 Group Expansion - Category: {}, GroupKey: {}, Query: {}", 
                     category, groupKey, finalQuery);
@@ -76,9 +76,6 @@ public class OracleSearchProviderV3 {
                 
                 try (ResultSet resultSet = statement.executeQuery()) {
                     List<Map<String, Object>> data = extractDataFromResultSet(resultSet, visibleColumns);
-                    
-                    // Ensure distinct records
-                    data = ensureDistinctRecords(data, visibleColumns);
                     
                     SearchCategoryConfig config = new SearchCategoryConfig();
                     config.setKey(category);
@@ -94,73 +91,109 @@ public class OracleSearchProviderV3 {
     }
 
     /**
-     * Build the Oracle query with visible columns
+     * Fetch flat data from Oracle (no grouping)
+     * Used when row groups are removed and we need flat data structure
+     * @param category The search category
+     * @param searchTerm The search term for filtering
+     * @param visibleColumns Optional list of visible columns to fetch
+     * @return SearchCategoryResult with flat data
      */
-    private String buildGroupExpansionQuery(String baseQuery, List<String> visibleColumns, OracleProviderConfig oracleConfig) {
+    public SearchCategoryResult fetchFlatData(String category, String searchTerm, 
+                                            List<String> visibleColumns) {
+        try {
+            SearchCategoryDefinition categoryDefinition = searchConfigServiceV3.getCategoryDefinition(category);
+            if (categoryDefinition == null || categoryDefinition.getOracleConfig() == null) {
+                logger.error("Oracle configuration not found for category: {}", category);
+                return null;
+            }
+
+            OracleProviderConfig oracleConfig = categoryDefinition.getOracleConfig();
+            
+            // Build an optimized flat query (always DISTINCT)
+            String flatQuery = buildOptimizedFlatQuery(visibleColumns, oracleConfig, searchTerm);
+            
+            logger.info("Oracle V3 Flat Data - Category: {}, Query: {}", category, flatQuery);
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(flatQuery)) {
+                
+                // Set search term parameter if needed
+                if (StringUtils.hasText(searchTerm)) {
+                    statement.setString(1, "%" + searchTerm + "%");
+                    statement.setString(2, "%" + searchTerm + "%");
+                    statement.setString(3, "%" + searchTerm + "%");
+                }
+                
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<Map<String, Object>> data = extractDataFromResultSet(resultSet, visibleColumns);
+                    
+                    SearchCategoryConfig config = new SearchCategoryConfig();
+                    config.setKey(category);
+                    config.setLabel(categoryDefinition.getLabel());
+                    
+                    return new SearchCategoryResult(config, data);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error fetching flat data for category: {}", category, e);
+        }
+        return null;
+    }
+
+    /**
+     * Build optimized query with column filtering (always DISTINCT)
+     */
+    private String buildOptimizedQuery(String baseQuery, List<String> visibleColumns, 
+                                     OracleProviderConfig oracleConfig) {
+        // Always use DISTINCT for Oracle queries to ensure unique records
+        String selectClause = "SELECT DISTINCT ";
+        
         if (visibleColumns == null || visibleColumns.isEmpty()) {
-            // If no visible columns specified, use all configured result fields
+            // Use all configured result fields
             String[] resultFields = oracleConfig.getResultFields();
             if (resultFields != null && resultFields.length > 0) {
-                return baseQuery.replace("SELECT *", "SELECT DISTINCT " + String.join(", ", resultFields));
+                selectClause += String.join(", ", resultFields);
+            } else {
+                selectClause += "*";
             }
-            return baseQuery.replace("SELECT *", "SELECT DISTINCT *");
+        } else {
+            // Use only visible columns
+            selectClause += String.join(", ", visibleColumns);
         }
         
-        // Use only visible columns
-        return baseQuery.replace("SELECT *", "SELECT DISTINCT " + String.join(", ", visibleColumns));
+        // Replace the SELECT clause in the base query
+        return baseQuery.replaceFirst("SELECT\\s+\\*", selectClause);
     }
 
     /**
-     * Ensure distinct records based on visible columns
+     * Build optimized flat data query (always DISTINCT)
      */
-    private List<Map<String, Object>> ensureDistinctRecords(List<Map<String, Object>> data, List<String> visibleColumns) {
-        if (data == null || data.isEmpty() || visibleColumns == null || visibleColumns.isEmpty()) {
-            return data;
-        }
+    private String buildOptimizedFlatQuery(List<String> visibleColumns, OracleProviderConfig oracleConfig, 
+                                         String searchTerm) {
+        String baseTable = "autosys_jobs"; // This should come from config
         
-        Map<String, Map<String, Object>> distinctMap = new HashMap<>();
+        // Always use DISTINCT for Oracle queries to ensure unique records
+        String selectClause = "SELECT DISTINCT ";
         
-        for (Map<String, Object> row : data) {
-            // Create a key based on all visible column values
-            StringBuilder keyBuilder = new StringBuilder();
-            for (String column : visibleColumns) {
-                Object value = row.get(column);
-                keyBuilder.append(value != null ? value.toString() : "null").append("|");
+        if (visibleColumns == null || visibleColumns.isEmpty()) {
+            // Use all configured result fields
+            String[] resultFields = oracleConfig.getResultFields();
+            if (resultFields != null && resultFields.length > 0) {
+                selectClause += String.join(", ", resultFields);
+            } else {
+                selectClause += "*";
             }
-            String key = keyBuilder.toString();
-            
-            // Keep only the first occurrence of each unique combination
-            if (!distinctMap.containsKey(key)) {
-                distinctMap.put(key, row);
-            }
+        } else {
+            // Use only visible columns
+            selectClause += String.join(", ", visibleColumns);
         }
         
-        return new ArrayList<>(distinctMap.values());
-    }
-
-    /**
-     * Builds the SQL query for group expansion
-     */
-    private String buildGroupExpansionQuery(OracleProviderConfig oracleConfig, String groupKey) {
-        // Use the configured query from the Oracle config
-        String baseQuery = oracleConfig.getQuery();
-        
-        // If the query contains :groupKey placeholder, replace it
-        if (baseQuery.contains(":groupKey")) {
-            baseQuery = baseQuery.replace(":groupKey", "?");
+        String whereClause = "";
+        if (StringUtils.hasText(searchTerm)) {
+            whereClause = " WHERE (recon LIKE ? OR load_job LIKE ? OR box_name LIKE ?)";
         }
         
-        // If the query contains :searchTerm placeholder, replace it
-        if (baseQuery.contains(":searchTerm")) {
-            baseQuery = baseQuery.replace(":searchTerm", "?");
-        }
-        
-        // Add limit if not present
-        if (!baseQuery.toLowerCase().contains("fetch first") && !baseQuery.toLowerCase().contains("rownum")) {
-            baseQuery += " FETCH FIRST " + MAX_RESULTS + " ROWS ONLY";
-        }
-        
-        return baseQuery;
+        return selectClause + " FROM " + baseTable + whereClause + " FETCH FIRST " + MAX_RESULTS + " ROWS ONLY";
     }
 
     /**

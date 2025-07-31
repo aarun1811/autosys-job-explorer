@@ -129,42 +129,51 @@ public class SearchServiceV3 {
                 SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, searchTerm, visibleColumns);
                 
                 if (result != null && result.getData() != null) {
-                    final List<Map<String, Object>> data;
-                    if (deduplicate != null && deduplicate) {
-                        data = deduplicateData(result.getData(), visibleColumns);
-                    } else {
-                        data = result.getData();
-                    }
-                    
                     return new HashMap<String, Object>() {{
                         put("success", true);
-                        put("rows", data);
-                        put("lastRow", data.size());
+                        put("rows", result.getData());
+                        put("lastRow", result.getData().size());
                     }};
                 }
             } else {
-                // Initial data load for category - use Elasticsearch
-                Map<String, SearchCategoryResult> searchResults = performKeywordSearch(searchTerm, category);
-                
-                if (searchResults != null && searchResults.containsKey(category)) {
-                    SearchCategoryResult result = searchResults.get(category);
+                // Initial data load for category - check if we should use Oracle or Elasticsearch
+                // If we have visible columns that suggest this is a row group change, use Oracle
+                if (visibleColumns != null && !visibleColumns.isEmpty()) {
+                    // Use Oracle for flat data (no grouping)
+                    SearchCategoryResult result = oracleSearchProviderV3.fetchFlatData(category, searchTerm, visibleColumns);
+                    
                     if (result != null && result.getData() != null) {
-                        // Filter data by visible columns if specified
-                        final List<Map<String, Object>> filteredData;
-                        List<Map<String, Object>> tempData = filterDataByVisibleColumns(result.getData(), visibleColumns);
-                        
-                        // Apply deduplication if requested
-                        if (deduplicate != null && deduplicate) {
-                            filteredData = deduplicateData(tempData, visibleColumns);
-                        } else {
-                            filteredData = tempData;
-                        }
-                        
                         return new HashMap<String, Object>() {{
                             put("success", true);
-                            put("rows", filteredData);
-                            put("lastRow", filteredData.size());
+                            put("rows", result.getData());
+                            put("lastRow", result.getData().size());
                         }};
+                    }
+                } else {
+                    // Use Elasticsearch for initial keyword search
+                    Map<String, SearchCategoryResult> searchResults = performKeywordSearch(searchTerm, category);
+                    
+                    if (searchResults != null && searchResults.containsKey(category)) {
+                        SearchCategoryResult result = searchResults.get(category);
+                        if (result != null && result.getData() != null) {
+                            // For Elasticsearch results, we still need to filter by visible columns in Java
+                            // since ES doesn't support column selection like Oracle
+                            final List<Map<String, Object>> filteredData;
+                            List<Map<String, Object>> tempData = filterDataByVisibleColumns(result.getData(), visibleColumns);
+                            
+                            // Apply deduplication if requested (for ES results)
+                            if (deduplicate != null && deduplicate) {
+                                filteredData = deduplicateData(tempData, visibleColumns);
+                            } else {
+                                filteredData = tempData;
+                            }
+                            
+                            return new HashMap<String, Object>() {{
+                                put("success", true);
+                                put("rows", filteredData);
+                                put("lastRow", filteredData.size());
+                            }};
+                        }
                     }
                 }
             }
