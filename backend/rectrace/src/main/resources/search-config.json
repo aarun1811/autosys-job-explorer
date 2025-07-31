@@ -28,10 +28,9 @@
         "collapseOnPrecomputedField": "recon"
       },
       "oracleConfig": {
-        "query": "SELECT recon, load_job, box_name, job_name, load_file_name, set_id, sub_acc, tlm_instance FROM autosys_jobs WHERE recon = :groupKey AND (load_job LIKE :searchTerm OR box_name LIKE :searchTerm OR job_name LIKE :searchTerm)",
+        "query": "SELECT recon, load_job, box_name, job_name, load_file_name, set_id, sub_acc, tlm_instance FROM autosys_jobs WHERE recon = :groupKey",
         "parameters": {
-          "groupKey": "recon",
-          "searchTerm": "searchTerm"
+          "groupKey": "recon"
         },
         "resultFields": ["recon", "load_job", "box_name", "job_name", "load_file_name", "set_id", "sub_acc", "tlm_instance"]
       }
@@ -69,10 +68,9 @@
         "collapseOnPrecomputedField": "recon"
       },
       "oracleConfig": {
-        "query": "SELECT recon, job_name, box_name, load_job, load_file_name, set_id, sub_acc, tlm_instance FROM autosys_jobs WHERE recon = :groupKey AND (job_name LIKE :searchTerm OR box_name LIKE :searchTerm OR load_job LIKE :searchTerm)",
+        "query": "SELECT recon, job_name, box_name, load_job, load_file_name, set_id, sub_acc, tlm_instance FROM autosys_jobs WHERE recon = :groupKey",
         "parameters": {
-          "groupKey": "recon",
-          "searchTerm": "searchTerm"
+          "groupKey": "recon"
         },
         "resultFields": ["recon", "job_name", "box_name", "load_job", "load_file_name", "set_id", "sub_acc", "tlm_instance"]
       }
