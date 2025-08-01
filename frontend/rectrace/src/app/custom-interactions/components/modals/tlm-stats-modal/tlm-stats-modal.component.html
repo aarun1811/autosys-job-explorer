@@ -1,0 +1,194 @@
+<div class="modal-header">
+  <div class="header-content">
+    <h2 mat-dialog-title>
+      <mat-icon class="header-icon">analytics</mat-icon>
+      <div class="title-content">
+        <div class="main-title">{{ getModalTitle() }}</div>
+      </div>
+    </h2>
+  </div>
+  <button mat-icon-button mat-dialog-close aria-label="Close dialog">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <div class="modal-content" [class.with-sidebar]="data.type === 'recon'">
+    <!-- Sidebar for Set ID list (only for recon type) -->
+    <div class="sidebar" *ngIf="data.type === 'recon'">
+      <div class="sidebar-header">
+        <mat-icon class="sidebar-icon">list</mat-icon>
+        <h3>Associated Set IDs</h3>
+      </div>
+      <div class="set-id-list">
+        <div
+          *ngFor="let setId of setIdList"
+          class="set-id-item"
+          [class.selected]="selectedSetId === setId"
+          (click)="onSetIdSelected(setId)">
+          <mat-icon class="set-id-icon">account_balance</mat-icon>
+          <span class="set-id-text">{{ setId }}</span>
+        </div>
+        <div *ngIf="setIdList.length === 0" class="no-set-ids">
+          <mat-icon>info</mat-icon>
+          <span>No Set IDs found</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="main-content">
+      <!-- Loading overlay -->
+      <div class="loading-overlay" *ngIf="isLoading">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading TLM Statistics...</p>
+      </div>
+
+      <!-- Stats sections -->
+      <div class="stats-container" *ngIf="!isLoading">
+
+        <!-- Break Stats Section -->
+        <div class="stats-section">
+          <div class="section-header">
+            <mat-icon class="section-icon">warning</mat-icon>
+            <h3>Break Stats</h3>
+            <mat-spinner *ngIf="isLoadingBreakStats" diameter="20" class="section-spinner"></mat-spinner>
+          </div>
+
+          <div class="section-content" [class.error]="hasBreakStatsError">
+            <div *ngIf="hasBreakStatsError" class="error-message">
+              <mat-icon>error</mat-icon>
+              <span>Failed to load break stats</span>
+            </div>
+
+            <div *ngIf="!hasBreakStatsError && breakStats.length === 0" class="empty-state">
+              <mat-icon>info</mat-icon>
+              <span>No break stats available</span>
+            </div>
+
+            <div *ngIf="!hasBreakStatsError && breakStats.length > 0" class="stats-data">
+              <div *ngFor="let stat of breakStats" class="stat-item">
+                <div class="stat-row">
+                  <span class="stat-label">Count:</span>
+                  <span class="stat-value">{{ stat.count }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Agent Code:</span>
+                  <span class="stat-value">{{ stat.agent_code }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Local Acc No:</span>
+                  <span class="stat-value">{{ stat.local_acc_no }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Branch Code:</span>
+                  <span class="stat-value">{{ stat.bran_code }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Automatch Stats Section -->
+        <div class="stats-section">
+          <div class="section-header">
+            <mat-icon class="section-icon">auto_awesome</mat-icon>
+            <h3>Automatch Stats</h3>
+            <mat-spinner *ngIf="isLoadingAutomatchStats" diameter="20" class="section-spinner"></mat-spinner>
+          </div>
+
+          <div class="section-content" [class.error]="hasAutomatchStatsError">
+            <div *ngIf="hasAutomatchStatsError" class="error-message">
+              <mat-icon>error</mat-icon>
+              <span>Failed to load automatch stats</span>
+            </div>
+
+            <div *ngIf="!hasAutomatchStatsError && automatchStats.length === 0" class="empty-state">
+              <mat-icon>info</mat-icon>
+              <span>No automatch stats available</span>
+            </div>
+
+            <div *ngIf="!hasAutomatchStatsError && automatchStats.length > 0" class="stats-data">
+              <div *ngFor="let stat of automatchStats" class="stat-item">
+                <div class="stat-row">
+                  <span class="stat-label">TLM Instance:</span>
+                  <span class="stat-value">{{ stat.tlm_instance }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Agent Code:</span>
+                  <span class="stat-value">{{ stat.agent_code }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Set ID:</span>
+                  <span class="stat-value">{{ stat.setid }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Statement Date:</span>
+                  <span class="stat-value">{{ stat.stmt_date }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Total Items:</span>
+                  <span class="stat-value">{{ stat.total_items }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Automatch Items:</span>
+                  <span class="stat-value">{{ stat.automatch_items }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Outstanding Items:</span>
+                  <span class="stat-value">{{ stat.outstanding_items }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Match Stats Section -->
+        <div class="stats-section">
+          <div class="section-header">
+            <mat-icon class="section-icon">handyman</mat-icon>
+            <h3>Manual Match Stats</h3>
+            <mat-spinner *ngIf="isLoadingManualMatchStats" diameter="20" class="section-spinner"></mat-spinner>
+          </div>
+
+          <div class="section-content" [class.error]="hasManualMatchStatsError">
+            <div *ngIf="hasManualMatchStatsError" class="error-message">
+              <mat-icon>error</mat-icon>
+              <span>Failed to load manual match stats</span>
+            </div>
+
+            <div *ngIf="!hasManualMatchStatsError && manualMatchStats.length === 0" class="empty-state">
+              <mat-icon>info</mat-icon>
+              <span>No manual match stats available</span>
+            </div>
+
+            <div *ngIf="!hasManualMatchStatsError && manualMatchStats.length > 0" class="stats-data">
+              <div *ngFor="let stat of manualMatchStats" class="stat-item">
+                <div class="stat-row">
+                  <span class="stat-label">TLM Instance:</span>
+                  <span class="stat-value">{{ stat.tlm_instance }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Agent Code:</span>
+                  <span class="stat-value">{{ stat.agent_code }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Set ID:</span>
+                  <span class="stat-value">{{ stat.setid }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Statement Date:</span>
+                  <span class="stat-value">{{ stat.stmt_date }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Total Manual Match Count:</span>
+                  <span class="stat-value">{{ stat.total_manual_match_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
