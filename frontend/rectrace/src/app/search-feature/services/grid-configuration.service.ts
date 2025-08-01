@@ -4,6 +4,8 @@ import { JobData } from '../../models/job.model';
 import { ExecutionOrderButtonComponent } from '../../custom-interactions/components/renderers/execution-order-button.component';
 import { AppIDCellRendererComponent } from '../../custom-interactions/components/renderers/app-id-cell-renderer.component';
 import { AppSupportCellRendererComponent } from '../../custom-interactions/components/renderers/app-support-cell-renderer.component';
+import { SetIdCellRendererComponent } from '../../custom-interactions/components/renderers/set-id-cell-renderer.component';
+import { ReconCellRendererComponent } from '../../custom-interactions/components/renderers/recon-cell-renderer.component';
 
 @Injectable({
   providedIn: 'root'
@@ -63,6 +65,8 @@ export class GridConfigurationService {
       executionOrderButtonRenderer: ExecutionOrderButtonComponent,
       appIDCellRenderer: AppIDCellRendererComponent,
       supportEmailCellRenderer: AppSupportCellRendererComponent,
+      setIdCellRenderer: SetIdCellRendererComponent,
+      reconCellRenderer: ReconCellRendererComponent,
     };
   }
 }
