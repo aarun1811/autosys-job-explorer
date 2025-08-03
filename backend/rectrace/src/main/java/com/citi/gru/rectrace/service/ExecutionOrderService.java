@@ -1,6 +1,9 @@
 package com.citi.gru.rectrace.service;
 
+import java.io.Reader;
+import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +27,7 @@ public class ExecutionOrderService {
 
     public ExecutionOrderDTO getExecutionOrder(String loadJobName) {
         ExecutionOrderDTO result = new ExecutionOrderDTO();
-        
+
         String sequenceSql = "SELECT "
                                 + "ts.job_name, "
                                 + "ts.load_job, "
@@ -36,7 +39,7 @@ public class ExecutionOrderService {
         Query query = em.createNativeQuery(sequenceSql);
         query.setParameter("loadJobName", loadJobName);
 
-        @SuppressWarnings("unchecked") 
+        @SuppressWarnings("unchecked")
         List<Object[]> rows = query.getResultList();
 
         if (rows.isEmpty()) {
@@ -45,9 +48,9 @@ public class ExecutionOrderService {
 
         result.setLoadJob((String) rows.get(0)[1]);
 
-        List<JobNodeDTO> sequence = new ArrayList<>();
+        List<ExecutionOrderDTO.JobNodeDTO> sequence = new ArrayList<>();
         for (Object[] row : rows) {
-            JobNodeDTO node = new JobNodeDTO();
+            ExecutionOrderDTO.JobNodeDTO node = new ExecutionOrderDTO.JobNodeDTO();
             node.setJobName((String) row[0]);
             node.setLoadJob((String) row[1]);
             node.setExecutionOrder(((BigDecimal) row[2]).intValue());
@@ -59,12 +62,13 @@ public class ExecutionOrderService {
                                 + "ad.insert_job, "
                                 + "ad.job_type, "
                                 + "ad.machine, "
-                                + "ad.run_calendar, "
-                                + "ad.exclude_calendar, "
+                                + "ad2.run_calendar, "
+                                + "ad2.exclude_calendar, "
                                 + "ad.box_name, "
                                 + "ad.command, "
                                 + "ad.description "
                                 + "FROM AUTOSYS_ALL_JOBS_DATA ad "
+                                + "LEFT JOIN AUTOSYS_ALL_JOBS_DATA ad2 ON ad2.insert_job = ad.box_name "
                                 + "WHERE ad.insert_job IN :jobNames";
 
         List<String> jobNames = new ArrayList<>();
@@ -87,9 +91,11 @@ public class ExecutionOrderService {
             details.setRunCalendar((String) row[3]);
             details.setExcludeCalendar((String) row[4]);
             details.setBoxName((String) row[5]);
+//            details.setCommand(clobToString((Clob) row[6]));
+//            details.setDescription(clobToString((Clob) row[7]));
             details.setCommand("");
             details.setDescription("");
-            
+
             jobDetails.put((String) row[0], details);
         }
         result.setJobDetails(jobDetails);
@@ -97,92 +103,19 @@ public class ExecutionOrderService {
         return result;
     }
 
-    /**
-     * Enhanced version of getExecutionOrder that includes job status and next start time
-     */
-    public ExecutionOrderDTO getExecutionOrderV2(String loadJobName) {
-        ExecutionOrderDTO result = new ExecutionOrderDTO();
-        
-        // Get execution sequence (same as v1)
-        String sequenceSql = "SELECT "
-                                + "ts.job_name, "
-                                + "ts.load_job, "
-                                + "ts.exec_order "
-                                + "FROM AUTOSYS_TLM_RECON_SEQUENCES ts "
-                                + "WHERE ts.load_job = :loadJobName "
-                                + "ORDER BY ts.exec_order";
-
-        Query query = em.createNativeQuery(sequenceSql);
-        query.setParameter("loadJobName", loadJobName);
-
-        @SuppressWarnings("unchecked") 
-        List<Object[]> rows = query.getResultList();
-
-        if (rows.isEmpty()) {
-            return result;
+    private String clobToString(Clob clob) {
+        if (clob == null) return "";
+        try (Reader reader = clob.getCharacterStream();
+             StringWriter writer = new StringWriter()) {
+            char[] buffer = new char[2048];
+            int bytesRead;
+            while ((bytesRead = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, bytesRead);
+            }
+            return writer.toString();
+        } catch (Exception e) {
+            System.err.println("Error reading CLOB");
+            return "";
         }
-
-        result.setLoadJob((String) rows.get(0)[1]);
-
-        List<JobNodeDTO> sequence = new ArrayList<>();
-        for (Object[] row : rows) {
-            JobNodeDTO node = new JobNodeDTO();
-            node.setJobName((String) row[0]);
-            node.setLoadJob((String) row[1]);
-            node.setExecutionOrder(((BigDecimal) row[2]).intValue());
-            sequence.add(node);
-        }
-        result.setExecutionSequence(sequence);
-
-        // Get job details with status and next start time
-        // TODO: Replace this query with the actual Oracle query provided by the user
-        String jobDetailsSql = "SELECT "
-                                + "ad.insert_job, "
-                                + "ad.job_type, "
-                                + "ad.machine, "
-                                + "ad.run_calendar, "
-                                + "ad.exclude_calendar, "
-                                + "ad.box_name, "
-                                + "ad.command, "
-                                + "ad.description, "
-                                + "ad.status, "
-                                + "ad.next_start_time, "
-                                + "ad.is_scheduled_today "
-                                + "FROM AUTOSYS_ALL_JOBS_DATA ad "
-                                + "WHERE ad.insert_job IN :jobNames";
-
-        List<String> jobNames = new ArrayList<>();
-        for (JobNodeDTO node : sequence) {
-            jobNames.add(node.getJobName());
-        }
-        jobNames.add(result.getLoadJob()); // Add load job to get its details too
-
-        Query detailsQuery = em.createNativeQuery(jobDetailsSql);
-        detailsQuery.setParameter("jobNames", jobNames);
-
-        @SuppressWarnings("unchecked")
-        List<Object[]> detailsRows = detailsQuery.getResultList();
-
-        Map<String, JobDetailsDTO> jobDetails = new HashMap<>();
-        for (Object[] row : detailsRows) {
-            JobDetailsDTO details = new JobDetailsDTO();
-            details.setJobType((String) row[1]);
-            details.setMachine((String) row[2]);
-            details.setRunCalendar((String) row[3]);
-            details.setExcludeCalendar((String) row[4]);
-            details.setBoxName((String) row[5]);
-            details.setCommand((String) row[6]);
-            details.setDescription((String) row[7]);
-            
-            // New v2 fields
-            details.setStatus((String) row[8]);
-            details.setNextStartTime((String) row[9]);
-            details.setIsScheduledToday((Boolean) row[10]);
-            
-            jobDetails.put((String) row[0], details);
-        }
-        result.setJobDetails(jobDetails);
-
-        return result;
     }
-} 
+}

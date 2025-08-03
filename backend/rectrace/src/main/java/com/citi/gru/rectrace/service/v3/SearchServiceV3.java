@@ -28,8 +28,8 @@ public class SearchServiceV3 {
 
     @Autowired
     public SearchServiceV3(SearchConfigServiceV3 searchConfigServiceV3,
-                          ElasticsearchSearchProviderV3 elasticsearchSearchProviderV3,
-                          OracleSearchProviderV3 oracleSearchProviderV3) {
+            ElasticsearchSearchProviderV3 elasticsearchSearchProviderV3,
+            OracleSearchProviderV3 oracleSearchProviderV3) {
         this.searchConfigServiceV3 = searchConfigServiceV3;
         this.elasticsearchSearchProviderV3 = elasticsearchSearchProviderV3;
         this.oracleSearchProviderV3 = oracleSearchProviderV3;
@@ -40,7 +40,7 @@ public class SearchServiceV3 {
      */
     public Map<String, SearchCategoryResult> performKeywordSearch(String query) {
         logger.info("V3 Keyword Search: Performing search across all categories for query: '{}'", query);
-        
+
         Map<String, SearchCategoryResult> finalResults = new HashMap<>();
         List<SearchCategoryDefinition> validCategories = searchConfigServiceV3.getValidSearchCategories();
 
@@ -73,7 +73,7 @@ public class SearchServiceV3 {
             }
         }
 
-        logger.info("V3 Keyword Search completed for query '{}'. Found results for {} categories.", 
+        logger.info("V3 Keyword Search completed for query '{}'. Found results for {} categories.",
                 query, finalResults.size());
         return finalResults;
     }
@@ -83,7 +83,7 @@ public class SearchServiceV3 {
      */
     public Map<String, SearchCategoryResult> performKeywordSearch(String query, String category) {
         logger.info("V3 Keyword Search: Performing search for category '{}' with query: '{}'", category, query);
-        
+
         SearchCategoryResult result = elasticsearchSearchProviderV3.performKeywordSearch(category, query);
         if (result != null && result.getData() != null && !result.getData().isEmpty()) {
             return Collections.singletonMap(category, result);
@@ -95,95 +95,103 @@ public class SearchServiceV3 {
     public CompletableFuture<Map.Entry<String, SearchCategoryResult>> asyncFetchCategoryData(
             SearchCategoryDefinition categoryConfig, String query) {
         logger.debug("Async V3 Fetch for category: {}", categoryConfig.getKey());
-        
+
         try {
-            SearchCategoryResult result = elasticsearchSearchProviderV3.performKeywordSearch(categoryConfig.getKey(), query);
+            SearchCategoryResult result = elasticsearchSearchProviderV3.performKeywordSearch(categoryConfig.getKey(),
+                    query);
             if (result != null && result.getData() != null && !result.getData().isEmpty()) {
                 return CompletableFuture.completedFuture(
-                    new AbstractMap.SimpleEntry<>(categoryConfig.getKey(), result)
-                );
+                        new AbstractMap.SimpleEntry<>(categoryConfig.getKey(), result));
             }
         } catch (Exception e) {
             logger.error("Error during async V3 fetch for category {}: {}", categoryConfig.getKey(), e.getMessage(), e);
         }
-        
+
         return CompletableFuture.completedFuture(null);
     }
 
     /**
      * Perform SSRM data fetch for a specific category
      * This method handles both initial data load and group expansion
-     * @param category The category to fetch data for
-     * @param searchTerm The search term
-     * @param groupKeys Optional group keys for expansion
+     * @param category       The category to fetch data for
+     * @param searchTerm     The search term
+     * @param groupKeys      Optional group keys for expansion
      * @param visibleColumns Optional list of visible columns
-     * @param deduplicate Optional flag to enable deduplication
+     * @param deduplicate    Optional flag to deduplicate results
      * @return SSRM formatted response
      */
-    public Map<String, Object> getSSRMDataForCategory(String category, String searchTerm, 
-                                                     List<String> groupKeys, List<String> visibleColumns, Boolean deduplicate) {
+    public Map<String, Object> getSSRMDataForCategory(String category, String searchTerm,
+            List<String> groupKeys, List<String> visibleColumns, Boolean deduplicate) {
         try {
             // Handle group expansion
             if (groupKeys != null && !groupKeys.isEmpty()) {
                 String groupKey = groupKeys.get(groupKeys.size() - 1); // Get the last group key
                 SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, searchTerm, visibleColumns);
-                
+
                 if (result != null && result.getData() != null) {
                     final List<Map<String, Object>> data;
                     if (deduplicate != null && deduplicate) {
+                        // Deduplicate data if requested
                         data = deduplicateData(result.getData(), visibleColumns);
                     } else {
                         data = result.getData();
                     }
-                    
-                    return new HashMap<String, Object>() {{
-                        put("success", true);
-                        put("rows", data);
-                        put("lastRow", data.size());
-                    }};
+                    return new HashMap<String, Object>() {
+                        {
+                            put("success", true);
+                            put("rows", data);
+                            put("lastRow", data.size());
+                        }
+                    };
                 }
             } else {
                 // Initial data load for category - use Elasticsearch
                 Map<String, SearchCategoryResult> searchResults = performKeywordSearch(searchTerm, category);
-                
+
                 if (searchResults != null && searchResults.containsKey(category)) {
                     SearchCategoryResult result = searchResults.get(category);
                     if (result != null && result.getData() != null) {
                         // Filter data by visible columns if specified
                         final List<Map<String, Object>> filteredData;
                         List<Map<String, Object>> tempData = filterDataByVisibleColumns(result.getData(), visibleColumns);
-                        
+
                         // Apply deduplication if requested
                         if (deduplicate != null && deduplicate) {
                             filteredData = deduplicateData(tempData, visibleColumns);
                         } else {
                             filteredData = tempData;
                         }
-                        
-                        return new HashMap<String, Object>() {{
-                            put("success", true);
-                            put("rows", filteredData);
-                            put("lastRow", filteredData.size());
-                        }};
+
+                        return new HashMap<String, Object>() {
+                            {
+                                put("success", true);
+                                put("rows", filteredData);
+                                put("lastRow", filteredData.size());
+                            }
+                        };
                     }
                 }
             }
-            
+
             // Return empty result
-            return new HashMap<String, Object>() {{
-                put("success", true);
-                put("rows", Collections.emptyList());
-                put("lastRow", 0);
-            }};
-            
+            return new HashMap<String, Object>() {
+                {
+                    put("success", true);
+                    put("rows", Collections.emptyList());
+                    put("lastRow", 0);
+                }
+            };
+
         } catch (Exception e) {
             logger.error("Error in SSRM request for category: {}", category, e);
-            return new HashMap<String, Object>() {{
-                put("success", false);
-                put("error", e.getMessage());
-                put("rows", Collections.emptyList());
-                put("lastRow", 0);
-            }};
+            return new HashMap<String, Object>() {
+                {
+                    put("success", false);
+                    put("error", e.getMessage());
+                    put("rows", Collections.emptyList());
+                    put("lastRow", 0);
+                }
+            };
         }
     }
 
@@ -194,7 +202,7 @@ public class SearchServiceV3 {
         if (visibleColumns == null || visibleColumns.isEmpty()) {
             return data;
         }
-        
+
         return data.stream()
                 .map(row -> {
                     Map<String, Object> filteredRow = new HashMap<>();
@@ -215,9 +223,9 @@ public class SearchServiceV3 {
         if (data == null || data.isEmpty() || visibleColumns == null || visibleColumns.isEmpty()) {
             return data;
         }
-        
+
         Map<String, Map<String, Object>> distinctMap = new HashMap<>();
-        
+
         for (Map<String, Object> row : data) {
             // Create a key based on all visible column values
             StringBuilder keyBuilder = new StringBuilder();
@@ -226,13 +234,13 @@ public class SearchServiceV3 {
                 keyBuilder.append(value != null ? value.toString() : "null").append("|");
             }
             String key = keyBuilder.toString();
-            
+
             // Keep only the first occurrence of each unique combination
             if (!distinctMap.containsKey(key)) {
                 distinctMap.put(key, row);
             }
         }
-        
+
         return new ArrayList<>(distinctMap.values());
     }
-} 
+}

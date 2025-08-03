@@ -22,12 +22,4 @@ public class ExecutionOrderController {
     public ExecutionOrderDTO getExecutionOrder(@PathVariable String loadJobName) {
         return executionOrderService.getExecutionOrder(loadJobName);
     }
-
-    /**
-     * Enhanced v2 endpoint that includes job status and next start time
-     */
-    @GetMapping("/v2/{loadJobName}")
-    public ExecutionOrderDTO getExecutionOrderV2(@PathVariable String loadJobName) {
-        return executionOrderService.getExecutionOrderV2(loadJobName);
-    }
 } 

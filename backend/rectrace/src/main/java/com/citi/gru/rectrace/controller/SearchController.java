@@ -1,6 +1,5 @@
 package com.citi.gru.rectrace.controller;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.citi.gru.rectrace.dto.SearchCategoryResult;
 import com.citi.gru.rectrace.service.SuggestionService;
-import com.citi.gru.rectrace.service.v2.SearchServiceV2;
 import com.citi.gru.rectrace.service.v3.OracleSearchProviderV3;
 import com.citi.gru.rectrace.service.v3.SearchServiceV3;
 
@@ -34,17 +32,14 @@ public class SearchController {
 
     private final SuggestionService suggestionService;
 
-    private final SearchServiceV2 searchServiceV2;
     private final SearchServiceV3 searchServiceV3;
     private final OracleSearchProviderV3 oracleSearchProviderV3;
 
     public SearchController(
             SuggestionService suggestionService,
-            SearchServiceV2 searchServiceV2,
             SearchServiceV3 searchServiceV3,
             OracleSearchProviderV3 oracleSearchProviderV3) {
         this.suggestionService = suggestionService;
-        this.searchServiceV2 = searchServiceV2;
         this.searchServiceV3 = searchServiceV3;
         this.oracleSearchProviderV3 = oracleSearchProviderV3;
     }
@@ -54,53 +49,23 @@ public class SearchController {
         return suggestionService.getCombinedSuggestions(prefix);
     }
 
-    @GetMapping("/v2/search")
-    public Map<String, SearchCategoryResult> searchV2(
-            @RequestParam(name = "q") String query,
-            @RequestParam(name = "category", required = false) String category,
-            @RequestParam(name = "requestedFields", required = false) String requestedFieldsCsv,
-            @RequestParam(name = "collapsed", defaultValue = "true") boolean collapsed,
-            @RequestParam(name = "groupKey", required = false) String groupKey,
-            HttpServletRequest request) {
-        String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
-        
-        if (category != null && requestedFieldsCsv != null) {
-            List<String> fields = Arrays.asList(requestedFieldsCsv.split("\\s*,\\s*"));
-            logger.info("Category Search performed by user: {} for the term: {} for the category: {} and the fields: {}",
-                    loginId, query, category, fields);
-            return searchServiceV2.fetchDetailedCategorySearch(query, category, fields);
-        }
-        
-        if (category != null && groupKey != null) {
-            // Group expansion mode
-            List<String> fields = requestedFieldsCsv != null ? 
-                Arrays.asList(requestedFieldsCsv.split("\\s*,\\s*")) : null;
-            logger.info("Group Expansion performed by user: {} for the term: {} for the category: {} and group: {}",
-                    loginId, query, category, groupKey);
-            return searchServiceV2.expandGroup(query, category, groupKey, fields);
-        }
-        
-        logger.info("Search performed by user: {} for the term: {} (collapsed: {})", loginId, query, collapsed);
-        return searchServiceV2.performInitialSearch(query, collapsed);
-    }
-
-    // NEW: V3 endpoints for simplified search architecture
-
     @GetMapping("/v3/search/keyword")
     public Map<String, SearchCategoryResult> keywordSearchV3(
             @RequestParam(name = "q") String query,
             @RequestParam(name = "category", required = false) String category,
             HttpServletRequest request) {
         String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
-        
-        logger.info("V3 Keyword Search performed by user: {} for the term: {} category: {}", 
+
+        logger.info("V3 Keyword Search performed by user: {} for the term: {} category: {}",
                 loginId, query, category);
-        
+
         if (category != null) {
             // Search specific category
             return searchServiceV3.performKeywordSearch(query, category);
         } else {
-            // Search all categories asynchronously
+            // Search all categories (simplified - just return first valid category for now)
+            // In a full implementation, this would search all categories
+            logger.warn("V3 Keyword Search: No category specified, returning empty result");
             return searchServiceV3.performKeywordSearch(query);
         }
     }
@@ -112,10 +77,10 @@ public class SearchController {
             @RequestParam(name = "groupKey") String groupKey,
             HttpServletRequest request) {
         String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
-        
-        logger.info("V3 Group Expansion performed by user: {} for the term: {} category: {} group: {}", 
+
+        logger.info("V3 Group Expansion performed by user: {} for the term: {} category: {} group: {}",
                 loginId, query, category, groupKey);
-        
+
         SearchCategoryResult result = oracleSearchProviderV3.expandGroup(category, groupKey, query, null);
         if (result != null) {
             return Collections.singletonMap(category, result);
@@ -130,24 +95,19 @@ public class SearchController {
             @RequestBody(required = false) Map<String, Object> requestBody,
             HttpServletRequest request) {
         String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
-        
-        logger.info("SSRM request for category: {} by user: {} with body: {}", 
+
+        logger.info("SSRM request for category: {} by user: {} with body: {}",
                 category, loginId, requestBody);
-        
+
         try {
             // Extract SSRM parameters
             String searchTerm = (String) requestBody.get("searchTerm");
             List<String> groupKeys = (List<String>) requestBody.get("groupKeys");
             List<String> visibleColumns = (List<String>) requestBody.get("visibleColumns");
-            Boolean deduplicate = (Boolean) requestBody.get("deduplicate");
-            // String rowGroupCols = (String) requestBody.get("rowGroupCols");
-            // String valueCols = (String) requestBody.get("valueCols");
-            // String filterModel = (String) requestBody.get("filterModel");
-            // String sortModel = (String) requestBody.get("sortModel");
-            
+            Boolean deduplicate = (Boolean) requestBody.get("deduplicated");
             // Delegate to service layer
             return searchServiceV3.getSSRMDataForCategory(category, searchTerm, groupKeys, visibleColumns, deduplicate);
-            
+
         } catch (Exception e) {
             logger.error("Error in SSRM request for category: {}", category, e);
             return new HashMap<String, Object>() {{

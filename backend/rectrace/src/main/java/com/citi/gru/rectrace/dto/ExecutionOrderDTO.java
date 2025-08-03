@@ -48,10 +48,6 @@ public class ExecutionOrderDTO {
         private String boxName;
         private String command;
         private String description;
-        // New fields for v2
-        private String status;
-        private String nextStartTime;
-        private Boolean isScheduledToday;
 
         public String getJobType() {
             return jobType;
@@ -107,31 +103,6 @@ public class ExecutionOrderDTO {
 
         public void setDescription(String description) {
             this.description = description;
-        }
-
-        // New getters and setters for v2
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public String getNextStartTime() {
-            return nextStartTime;
-        }
-
-        public void setNextStartTime(String nextStartTime) {
-            this.nextStartTime = nextStartTime;
-        }
-
-        public Boolean getIsScheduledToday() {
-            return isScheduledToday;
-        }
-
-        public void setIsScheduledToday(Boolean isScheduledToday) {
-            this.isScheduledToday = isScheduledToday;
         }
     }
 
