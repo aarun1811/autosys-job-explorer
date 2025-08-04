@@ -20,10 +20,6 @@ interface JobDetails {
   boxName: string;
   command: string;
   description: string;
-  // New v2 fields
-  status: string;
-  nextStartTime: string;
-  isScheduledToday: boolean;
 }
 
 @Component({
@@ -168,24 +164,6 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
     this.cy.ready(() => {
       console.log('Cytoscape graph loaded with elements:', this.cy?.elements().length);
 
-      // Apply individual node styling based on status
-      this.cy?.nodes().forEach(node => {
-        const jobName = node.data('id');
-        const jobDetails = this.jobDetails[jobName];
-        const status = jobDetails?.status;
-        const backgroundColor = this.getStatusColor(status);
-        const isFailure = status?.toUpperCase() === 'FAILURE';
-
-        node.style({
-          'background-color': backgroundColor,
-          'color': isFailure ? '#FFFFFF' : '#1A73E8',
-          'font-weight': isFailure ? '600' : '500',
-          'border-width': isFailure ? 2 : 1,
-          'border-color': isFailure ? '#D32F2F' : '#E8EAED',
-          'border-opacity': isFailure ? 1 : 0.6
-        });
-      });
-
       // Update zoom level
       this.updateZoomDisplay();
     });
@@ -284,61 +262,6 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
       });
     }
     return edges;
-  }
-
-  private getStatusColor(status: string): string {
-    switch (status?.toUpperCase()) {
-      case 'SUCCESS':
-        return '#4CAF50'; // Green
-      case 'RUNNING':
-        return '#2196F3'; // Blue
-      case 'STARTING':
-        return '#03A9F4'; // Light Blue
-      case 'ACTIVATED':
-        return '#FF9800'; // Orange
-      case 'FAILURE':
-        return '#F44336'; // Red (prominent)
-      case 'TERMINATED':
-        return '#D32F2F'; // Dark Red
-      case 'ON_HOLD':
-        return '#9E9E9E'; // Gray
-      case 'ON_ICE':
-        return '#BDBDBD'; // Light Gray
-      case 'INACTIVE':
-        return '#F5F5F5'; // Very Light Gray
-      default:
-        return '#E8F0FE'; // Default blue
-    }
-  }
-
-  private getNodeStyle(jobName: string) {
-    const jobDetails = this.jobDetails[jobName];
-    const status = jobDetails?.status;
-    const backgroundColor = this.getStatusColor(status);
-    const isFailure = status?.toUpperCase() === 'FAILURE';
-
-    return {
-      'background-color': backgroundColor,
-      'label': 'data(label)',
-      'text-valign': 'center',
-      'color': isFailure ? '#FFFFFF' : '#1A73E8', // White text for failure, blue for others
-      'font-family': 'Google Sans, sans-serif',
-      'font-size': '13px',
-      'font-weight': isFailure ? '600' : '500', // Bold for failure
-      'text-wrap': 'wrap',
-      'text-max-width': (ele: { data: (arg0: string) => any;}) => Math.max(100, ele.data('label').length * 9) - 6 + 'px',
-      'width': (ele: { data: (arg0: string) => any;}) => Math.max(100, ele.data('label').length * 9) + 'px',
-      'height': '32px',
-      'padding': '4px 12px',
-      'shape': 'round-rectangle',
-      'border-width': isFailure ? 2 : 1, // Thicker border for failure
-      'border-color': isFailure ? '#D32F2F' : '#E8EAED',
-      'border-opacity': isFailure ? 1 : 0.6,
-      'border-style': 'solid',
-      'background-opacity': 1,
-      'transition-property': 'background-color, border-color, border-opacity',
-      'transition-duration': 200
-    };
   }
 
   // Zoom control methods

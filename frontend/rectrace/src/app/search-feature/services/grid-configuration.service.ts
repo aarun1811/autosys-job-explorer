@@ -4,8 +4,8 @@ import { JobData } from '../../models/job.model';
 import { ExecutionOrderButtonComponent } from '../../custom-interactions/components/renderers/execution-order-button.component';
 import { AppIDCellRendererComponent } from '../../custom-interactions/components/renderers/app-id-cell-renderer.component';
 import { AppSupportCellRendererComponent } from '../../custom-interactions/components/renderers/app-support-cell-renderer.component';
-import { SetIdCellRendererComponent } from '../../custom-interactions/components/renderers/set-id-cell-renderer.component';
-import { ReconCellRendererComponent } from '../../custom-interactions/components/renderers/recon-cell-renderer.component';
+import { SetIdCellRendererComponent } from 'src/app/custom-interactions/components/renderers/set-id-cell-renderer.component';
+import { ReconCellRendererComponent } from 'src/app/custom-interactions/components/renderers/recon-cell-renderer.component';
 
 @Injectable({
   providedIn: 'root'
@@ -23,13 +23,6 @@ export class GridConfigurationService {
           labelKey: 'columnsToolPanelKey',
           iconKey: 'columns'
         },
-        {
-          id: 'filters',
-          labelDefault: 'Filters',
-          toolPanel: 'agFiltersToolPanel',
-          labelKey: 'filtersToolPanelKey',
-          iconKey: 'filter'
-        }
       ],
       defaultToolPanel: ''
     };
@@ -39,8 +32,6 @@ export class GridConfigurationService {
     return {
       resizable: true,
       sortable: true,
-      filter: true,
-      enableRowGroup: true,
       filterParams: {
         buttons: ['apply', 'clear'],
         closeOnApply: true,
@@ -66,7 +57,7 @@ export class GridConfigurationService {
       appIDCellRenderer: AppIDCellRendererComponent,
       supportEmailCellRenderer: AppSupportCellRendererComponent,
       setIdCellRenderer: SetIdCellRendererComponent,
-      reconCellRenderer: ReconCellRendererComponent,
+      reconCellRenderer: ReconCellRendererComponent
     };
   }
 }

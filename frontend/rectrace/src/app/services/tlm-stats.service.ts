@@ -57,7 +57,7 @@ export interface ManualMatchStatsData {
   providedIn: 'root'
 })
 export class TlmStatsService {
-  private readonly baseUrl = 'http://localhost:8080/api/tlm-stats';
+  private readonly baseUrl = environment.tlmStatsUrl;
 
   constructor(private http: HttpClient) {}
 

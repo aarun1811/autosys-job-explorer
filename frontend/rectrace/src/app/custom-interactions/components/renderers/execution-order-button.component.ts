@@ -25,15 +25,6 @@ interface ExecutionOrderResponse {
     [key: string]: {
       jobType: string;
       machine: string;
-      runCalendar: string;
-      excludeCalendar: string;
-      boxName: string;
-      command: string;
-      description: string;
-      // New v2 fields
-      status: string;
-      nextStartTime: string;
-      isScheduledToday: boolean;
       [key: string]: any;
     };
   };
@@ -157,7 +148,6 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
   }
 
   refresh(params: ExecutionOrderButtonParams): boolean {
-    // return false;
     this.params = params;
     this.setJobNameFromData();
     return true;

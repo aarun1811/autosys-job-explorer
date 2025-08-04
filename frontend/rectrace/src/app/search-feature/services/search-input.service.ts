@@ -102,10 +102,9 @@ export class SearchInputService {
 
   getCurrentTryButtonText(): string {
     const foundItem = this.tryButtonTexts.find(item => item.name === this.tryButtonText$.value);
-    if (foundItem && foundItem.options.length > 0) {
-      return foundItem.options[Math.floor(Math.random() * foundItem.options.length)];
-    }
-    return '';
+    if (!foundItem?.options) return '';
+    const randomOption = foundItem.options[Math.floor(Math.random() * foundItem.options.length)];
+    return randomOption;
   }
 
   getCurrentPlaceholder(): string {

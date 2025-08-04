@@ -130,14 +130,12 @@ export class GridActionsService {
     });
 
     if (duplicateCount > 0) {
-      // For SSRM, we need to refresh the data source to remove duplicates
-      // This will trigger a new data fetch with the deduplication flag
       this.showMessage(`${duplicateCount} duplicate(s) found. Refreshing data...`);
       onDuplicatesRemoved(categoryKey);
 
       // Refresh the grid to show deduplicated data
       setTimeout(() => {
-        gridApi.refreshServerSide({ purge: true });
+        gridApi.refreshServerSide({ purge: true })
       }, 100);
     } else {
       this.showMessage('No duplicate rows found based on visible columns.');

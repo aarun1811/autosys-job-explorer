@@ -100,8 +100,6 @@ export class SearchService {
     return this.http.get<SearchResponse>(`${this.apiUrl}/v2/search`, { params });
   }
 
-  // NEW: V3 methods for simplified search architecture
-
   /**
    * V3 Keyword Search: Performs keyword search using the V3 endpoint.
    * Uses Elasticsearch for fast keyword search only.

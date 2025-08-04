@@ -11,12 +11,13 @@ import 'ag-grid-enterprise';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { JobData, SearchColumnDefinition } from '../../../models/job.model';
 import { LicenseManager } from "ag-grid-enterprise";
-import { SearchService } from '../../../services/search.service';
 
 // Import our new services
 import { GridStateService } from '../../services/grid-state.service';
 import { GridActionsService } from '../../services/grid-actions.service';
 import { GridConfigurationService } from '../../services/grid-configuration.service';
+import { SearchService } from '../../../services/search.service';
+import { environment } from 'src/environments/environment';
 
 export interface ColumnVisibleEvent {
   categoryKey: string;
@@ -28,7 +29,7 @@ interface FilterInstance extends IFilter {
   hidePopup?: () => void;
 }
 
-LicenseManager.setLicenseKey("license_value");
+LicenseManager.setLicenseKey(environment.agGridLicenseKey);
 
 @Component({
   selector: 'app-all-jobs',
@@ -212,8 +213,7 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         !state.hide || // Visible columns
         state.rowGroup // Row group columns (even if hidden)
       )) {
-        // Exclude execution_order column as it's just for display purposes
-        if (state.colId !== 'execution_order') {
+        if (state.colId !== 'execution_order' && state.colId !== 'ag-Grid-AutoColumn') {
           requiredColumns.push(state.colId);
         }
       }
