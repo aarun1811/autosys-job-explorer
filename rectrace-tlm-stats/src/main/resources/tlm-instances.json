@@ -1,0 +1,76 @@
+{
+  "tlmInstances": [
+    {
+      "instanceName": "TLM1",
+      "host": "tlm1-host",
+      "port": "1521",
+      "serviceName": "tlm1_service",
+      "username": "tlm1_user",
+      "dbSchema": "tlm1_schema"
+    },
+    {
+      "instanceName": "TLM2",
+      "host": "tlm2-host",
+      "port": "1521",
+      "serviceName": "tlm2_service",
+      "username": "tlm2_user",
+      "dbSchema": "tlm2_schema"
+    },
+    {
+      "instanceName": "TLM3",
+      "host": "tlm3-host",
+      "port": "1521",
+      "serviceName": "tlm3_service",
+      "username": "tlm3_user",
+      "dbSchema": "tlm3_schema"
+    },
+    {
+      "instanceName": "TLM4",
+      "host": "tlm4-host",
+      "port": "1521",
+      "serviceName": "tlm4_service",
+      "username": "tlm4_user",
+      "dbSchema": "tlm4_schema"
+    },
+    {
+      "instanceName": "TLM5",
+      "host": "tlm5-host",
+      "port": "1521",
+      "serviceName": "tlm5_service",
+      "username": "tlm5_user",
+      "dbSchema": "tlm5_schema"
+    },
+    {
+      "instanceName": "TLM6",
+      "host": "tlm6-host",
+      "port": "1521",
+      "serviceName": "tlm6_service",
+      "username": "tlm6_user",
+      "dbSchema": "tlm6_schema"
+    },
+    {
+      "instanceName": "TLM7",
+      "host": "tlm7-host",
+      "port": "1521",
+      "serviceName": "tlm7_service",
+      "username": "tlm7_user",
+      "dbSchema": "tlm7_schema"
+    },
+    {
+      "instanceName": "TLM8",
+      "host": "tlm8-host",
+      "port": "1521",
+      "serviceName": "tlm8_service",
+      "username": "tlm8_user",
+      "dbSchema": "tlm8_schema"
+    },
+    {
+      "instanceName": "TLM9",
+      "host": "tlm9-host",
+      "port": "1521",
+      "serviceName": "tlm9_service",
+      "username": "tlm9_user",
+      "dbSchema": "tlm9_schema"
+    }
+  ]
+} 

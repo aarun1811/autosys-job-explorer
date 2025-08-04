@@ -33,7 +33,7 @@ public class SuggestionService {
 
     private final RestHighLevelClient restHighLevelClient;
 
-    @Value("${es.index.name:autosys_jobs_index}")
+    @Value("${es.index.name:rectrace_core_index}")
     private String esIndexName;
 
     // Define the fields we want to get suggestions from

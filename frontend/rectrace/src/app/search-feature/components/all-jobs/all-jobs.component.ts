@@ -11,12 +11,13 @@ import 'ag-grid-enterprise';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { JobData, SearchColumnDefinition } from '../../../models/job.model';
 import { LicenseManager } from "ag-grid-enterprise";
-import { SearchService } from '../../../services/search.service';
 
 // Import our new services
 import { GridStateService } from '../../services/grid-state.service';
 import { GridActionsService } from '../../services/grid-actions.service';
 import { GridConfigurationService } from '../../services/grid-configuration.service';
+import { SearchService } from '../../../services/search.service';
+import { environment } from 'src/environments/environment';
 
 export interface ColumnVisibleEvent {
   categoryKey: string;
@@ -28,7 +29,7 @@ interface FilterInstance extends IFilter {
   hidePopup?: () => void;
 }
 
-LicenseManager.setLicenseKey("license_value");
+LicenseManager.setLicenseKey(environment.agGridLicenseKey);
 
 @Component({
   selector: 'app-all-jobs',
@@ -51,6 +52,10 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   defaultColDef = this.gridConfigService.getDefaultColDef();
   autoGroupColumnDef = this.gridConfigService.getAutoGroupColumnDef(this);
 
+  // SSRM Configuration
+  rowModelType: 'serverSide' = 'serverSide';
+  serverSideStoreType: 'partial' = 'partial';
+
   // Grid API
   private gridApi!: GridApi<JobData | undefined | null>;
 
@@ -60,12 +65,15 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   originalRowData: (JobData | null | undefined)[] = [];
   isProgrammaticChange: boolean = false;
 
-  // Group expansion tracking
-  private expandedGroups = new Set<string>();
-  public loadingGroups = new Set<string>();
+  // SSRM State
+  private currentSearchTerm: string = '';
+  private currentCategory: string = '';
+  private ssrmInitialized: boolean = false;
+  private visibleColumns: string[] = [];
+  private lastVisibleColumns: string[] = [];
+  private isDeduplicationEnabled: boolean = false;
 
   // Bound event handlers
-  private boundOnRowGroupOpened = this.onRowGroupOpened.bind(this);
   private boundOnFirstDataRendered = this.onFirstDataRendered.bind(this);
   private boundOnDocumentKeyDown = this.onDocumentKeyDown.bind(this);
 
@@ -100,12 +108,169 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
         this.gridApi.hideOverlay();
       }
     }
+
+    // Update SSRM state when search parameters change
+    if (changes['currentQuery']) {
+      this.currentSearchTerm = this.currentQuery;
+      this.initializeSSRM();
+    }
+
+    if (changes['categoryKey']) {
+      this.currentCategory = this.categoryKey;
+      this.initializeSSRM();
+    }
+
+    // Initialize visible columns when columnDefs change
+    if (changes['columnDefs'] && this.columnDefs) {
+      // Include both visible columns and row group columns
+      this.visibleColumns = this.columnDefs
+        .filter(col => (!col.hide || col.rowGroup) && col.field !== 'execution_order')
+        .map(col => col.field)
+        .filter(field => field !== undefined) as string[];
+      this.lastVisibleColumns = [...this.visibleColumns];
+      console.log('Initial visible columns (including row groups, excluding execution_order):', this.visibleColumns);
+    }
+  }
+
+  /**
+   * Create SSRM datasource for AG Grid
+   */
+  createSSRMDatasource() {
+    return {
+      getRows: async (params: any) => {
+        try {
+          console.log('SSRM getRows called with params:', params);
+          console.log('Category:', this.currentCategory, 'SearchTerm:', this.currentSearchTerm);
+          console.log('Visible columns:', this.visibleColumns);
+
+          // Only show loading overlay for initial data load, not for group expansion
+          const isGroupExpansion = params.request.groupKeys && params.request.groupKeys.length > 0;
+          if (this.gridApi && !isGroupExpansion) {
+            this.gridApi.showLoadingOverlay();
+          }
+
+          // Fetch data from backend
+          const response = await this.searchService.fetchSSRMDataForCategory(
+            params,
+            this.currentCategory,
+            this.currentSearchTerm,
+            this.visibleColumns,
+            this.isDeduplicationEnabled // Pass deduplication state
+          ).toPromise();
+
+          console.log('SSRM response:', response);
+
+          if (response && response.success) {
+            // Supply data to grid
+            params.success({
+              rowData: response.rows,
+              rowCount: response.lastRow
+            });
+          } else {
+            // Handle error
+            params.fail();
+            console.error('SSRM request failed:', response?.error);
+          }
+        } catch (error) {
+          console.error('Error in SSRM getRows:', error);
+          params.fail();
+        } finally {
+          // Hide loading overlay only for initial data load
+          const isGroupExpansion = params.request.groupKeys && params.request.groupKeys.length > 0;
+          if (this.gridApi && !isGroupExpansion) {
+            this.gridApi.hideOverlay();
+          }
+        }
+      }
+    };
+  }
+
+  /**
+   * Initialize SSRM datasource when search parameters are available
+   */
+  private initializeSSRM(): void {
+    if (this.gridApi && this.currentSearchTerm && this.currentCategory && !this.ssrmInitialized) {
+      console.log('Initializing SSRM for category:', this.currentCategory, 'searchTerm:', this.currentSearchTerm);
+      this.ssrmInitialized = true;
+      (this.gridApi as any).setGridOption('serverSideDatasource', this.createSSRMDatasource());
+    }
+  }
+
+  /**
+   * Get all required columns including row group columns
+   * This ensures we fetch data for grouped columns even if they're hidden
+   */
+  private getAllRequiredColumns(): string[] {
+    if (!this.gridApi) {
+      return this.visibleColumns;
+    }
+
+    const columnState = this.gridApi.getColumnState();
+    const requiredColumns: string[] = [];
+
+    columnState.forEach(state => {
+      if (state.colId && (
+        !state.hide || // Visible columns
+        state.rowGroup // Row group columns (even if hidden)
+      )) {
+        if (state.colId !== 'execution_order' && state.colId !== 'ag-Grid-AutoColumn') {
+          requiredColumns.push(state.colId);
+        }
+      }
+    });
+
+    return requiredColumns;
+  }
+
+  /**
+   * Handle column visibility changes
+   * Only re-fetch data when columns are unhidden and we need to fetch data again
+   */
+  onColumnVisibilityChange(visibleColumns: string[]): void {
+    console.log('Column visibility changed:', visibleColumns);
+
+    // Get all required columns including row group columns
+    const allRequiredColumns = this.getAllRequiredColumns();
+    console.log('All required columns (including row groups):', allRequiredColumns);
+
+    // Check if any columns were unhidden (added to visible columns)
+    const newlyVisibleColumns = visibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
+
+    if (newlyVisibleColumns.length > 0) {
+      console.log('Columns unhidden, re-fetching data:', newlyVisibleColumns);
+
+      // Show loading overlay
+      if (this.gridApi) {
+        this.gridApi.showLoadingOverlay();
+      }
+
+      // Update visible columns to include all required columns
+      this.visibleColumns = allRequiredColumns;
+      this.lastVisibleColumns = [...visibleColumns];
+
+      // Re-fetch data with new visible columns
+      this.refreshSSRMData();
+    } else {
+      // Just hiding columns - update tracking but keep all required columns
+      this.visibleColumns = allRequiredColumns;
+      this.lastVisibleColumns = [...visibleColumns];
+    }
+  }
+
+  /**
+   * Refresh SSRM data with current parameters
+   */
+  private refreshSSRMData(): void {
+    if (this.gridApi && this.currentSearchTerm && this.currentCategory) {
+      console.log('Refreshing SSRM data with visible columns:', this.visibleColumns);
+      (this.gridApi as any).setGridOption('serverSideDatasource', this.createSSRMDatasource());
+    }
   }
 
   ngOnDestroy(): void {
     if (this.gridApi) {
-      this.gridApi.removeEventListener('rowGroupOpened', this.boundOnRowGroupOpened);
       this.gridApi.removeEventListener('firstDataRendered', this.boundOnFirstDataRendered);
+      this.gridApi.removeEventListener('columnVisible', this.onColumnVisibilityChanged.bind(this));
     }
     document.removeEventListener('keydown', this.boundOnDocumentKeyDown);
   }
@@ -113,117 +278,45 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   onGridReady(params: GridReadyEvent<JobData | undefined | null>) {
     this.gridApi = params.api;
 
-    if (this.rowData && this.rowData.length > 0 && this.originalRowData.length === 0) {
-      this.originalRowData = [...this.rowData];
-      this.gridStateService.setOriginalRowData(this.originalRowData);
-    }
-
-    if (this.isGridLoading) {
-      this.gridApi.showLoadingOverlay();
-    }
-
-    this.gridApi.addEventListener('rowGroupOpened', this.boundOnRowGroupOpened);
+    // Set up event listeners
     this.gridApi.addEventListener('firstDataRendered', this.boundOnFirstDataRendered);
+    this.gridApi.addEventListener('columnVisible', this.onColumnVisibilityChanged.bind(this));
+
+    // Initialize SSRM if we have search parameters
+    if (this.currentSearchTerm && this.currentCategory) {
+      this.initializeSSRM();
+    }
+  }
+
+  /**
+   * Handle column visibility changes from AG Grid events
+   */
+  private onColumnVisibilityChanged(event: any): void {
+    // Get current visible columns
+    const currentVisibleColumns = this.gridApi.getColumnState()
+      .filter(state => !state.hide && state.colId)
+      .map(state => state.colId as string)
+      .filter(field => field !== undefined);
+
+    // Get all required columns including row group columns
+    const allRequiredColumns = this.getAllRequiredColumns();
+
+    // Check if columns were unhidden
+    const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
+
+    if (newlyVisibleColumns.length > 0) {
+      console.log('Column visibility changed - columns unhidden:', newlyVisibleColumns);
+      console.log('All required columns (including row groups):', allRequiredColumns);
+      this.onColumnVisibilityChange(currentVisibleColumns);
+    } else {
+      // Just hiding columns - update tracking but keep all required columns
+      this.visibleColumns = allRequiredColumns;
+      this.lastVisibleColumns = [...currentVisibleColumns];
+    }
   }
 
   private onFirstDataRendered(event: FirstDataRenderedEvent) {
     setTimeout(() => event.api.autoSizeAllColumns(), 0);
-  }
-
-  private onRowGroupOpened(event: RowGroupOpenedEvent) {
-    // Auto-size columns
-    setTimeout(() => event.api.autoSizeAllColumns(), 50);
-
-    // Handle group expansion
-    if (event.expanded) {
-      const groupKey = event.node.key as string;
-      const rowIndex = event.node.rowIndex === null ? undefined : event.node.rowIndex;
-      // Check if we already have data for this group
-      if (!this.expandedGroups.has(groupKey)) {
-        this.expandGroup(groupKey, rowIndex);
-      }
-    }
-  }
-
-  private expandGroup(groupKey: string, rowIndex?: number): void {
-    console.log('Expanding group:', groupKey);
-    console.log('Current query:', this.currentQuery);
-    console.log('Category key:', this.categoryKey);
-    if (!this.currentQuery || !this.categoryKey) {
-      console.warn('Cannot expand group: missing query or category');
-      return;
-    }
-    // Mark group as expanded
-    this.expandedGroups.add(groupKey);
-    this.loadingGroups.add(groupKey);
-    // Force refresh of group cell to show spinner
-    if (this.gridApi) {
-      this.gridApi.refreshCells({ force: true });
-    }
-    // Get visible column fields for the request
-    const visibleColumns = this.getVisibleColumnFields();
-    console.log('Visible columns:', visibleColumns);
-    // Call the backend to expand the group
-    this.searchService.expandGroup(
-      this.currentQuery,
-      this.categoryKey,
-      groupKey,
-      visibleColumns
-    ).subscribe({
-      next: (response) => {
-        this.loadingGroups.delete(groupKey);
-        if (this.gridApi) {
-          this.gridApi.refreshCells({ force: true });
-        }
-        console.log('Group expansion response:', response);
-        // Update the grid data with expanded results
-        this.updateGridDataWithExpandedGroup(groupKey, response, rowIndex);
-      },
-      error: (error) => {
-        this.loadingGroups.delete(groupKey);
-        if (this.gridApi) {
-          this.gridApi.refreshCells({ force: true });
-        }
-        console.error('Error expanding group:', error);
-        this.snackBar.open('Failed to expand group. Please try again.', 'Close', {
-          duration: 3000
-        });
-        // Remove from expanded groups on error
-        this.expandedGroups.delete(groupKey);
-      }
-    });
-  }
-
-  private getVisibleColumnFields(): string[] {
-    if (!this.columnDefs) return [];
-    return this.columnDefs
-      .filter(col => !col.hide || col.rowGroup)
-      .map(col => col.field)
-      .filter(field => field !== undefined) as string[];
-  }
-
-    private updateGridDataWithExpandedGroup(groupKey: string, response: any, rowIndex?: number): void {
-    // Find the category data in the response
-    const categoryData = response[this.categoryKey];
-    if (!categoryData || !categoryData.data) {
-      console.warn('No data found for category:', this.categoryKey);
-      return;
-    }
-    // Patch expanded rows to ensure group field is set
-    const groupField = this.columnDefs?.[0]?.field;
-    if (groupField) {
-      categoryData.data.forEach((row: any) => {
-        if (row[groupField] === undefined) {
-          row[groupField] = groupKey;
-        }
-      });
-    }
-    // Emit the expanded data and rowIndex to parent component
-    this.groupExpanded.emit({
-      groupKey: groupKey,
-      expandedData: categoryData.data,
-      rowIndex: rowIndex
-    });
   }
 
   private onDocumentKeyDown(event: KeyboardEvent): void {
@@ -256,7 +349,29 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   toggleColumns(): void {
+    // First toggle the columns panel
     this.gridActionsService.toggleColumns(this.gridApi);
+
+    // Listen for column visibility changes
+    if (this.gridApi) {
+      // Get current visible columns
+      const currentVisibleColumns = this.gridApi.getColumnState()
+        .filter(state => !state.hide && state.colId)
+        .map(state => state.colId as string)
+        .filter(field => field !== undefined);
+
+      // Get all required columns including row group columns
+      const allRequiredColumns = this.getAllRequiredColumns();
+
+      // Check if columns were unhidden
+      const newlyVisibleColumns = currentVisibleColumns.filter(col => !this.lastVisibleColumns.includes(col));
+
+      if (newlyVisibleColumns.length > 0) {
+        console.log('Columns unhidden, triggering re-fetch:', newlyVisibleColumns);
+        console.log('All required columns (including row groups):', allRequiredColumns);
+        this.onColumnVisibilityChange(currentVisibleColumns);
+      }
+    }
   }
 
   toggleDensity(): void {
@@ -271,7 +386,39 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onExportClick(): void {
-    this.gridActionsService.exportToExcel(this.gridApi, this.categoryKey);
+    if (!this.gridApi) {
+      this.snackBar.open('Grid not ready for export', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      });
+      return;
+    }
+
+    // Show info about export limitations
+    this.snackBar.open('Exporting currently loaded data...', 'Close', {
+      duration: 2000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom'
+    });
+
+    // Use AG Grid's built-in Excel export
+    this.gridApi.exportDataAsExcel({
+      fileName: `${this.currentCategory}_export_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      processCellCallback: (params) => {
+        // Return the cell value as is
+        return params.value;
+      }
+    });
+
+    // Show success message with limitation info
+    setTimeout(() => {
+      this.snackBar.open('Export completed! Note: Only currently loaded data was exported.', 'Close', {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom'
+      });
+    }, 1000);
   }
 
   copyToClipboard(): void {
@@ -283,9 +430,13 @@ export class AllJobsComponent implements OnInit, OnChanges, OnDestroy {
       this.gridApi,
       500,
       (categoryKey: string) => {
-        this.duplicatesRemoved.emit(categoryKey);
         this.isDeduplicated = true;
+        this.isDeduplicationEnabled = true;
         this.gridStateService.setDeduplicated(true);
+        this.duplicatesRemoved.emit(categoryKey);
+
+        // Refresh SSRM data with deduplication enabled
+        this.refreshSSRMData();
       },
       this.categoryKey
     );

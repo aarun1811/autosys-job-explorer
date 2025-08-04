@@ -5,6 +5,14 @@ import { environment } from 'src/environments/environment';
 // Import the new response type structure
 import { SearchResponse } from '../models/job.model';
 
+// SSRM Response interface for individual categories
+export interface SSRMResponse {
+  success: boolean;
+  rows: any[];
+  lastRow: number;
+  error?: string;
+}
+
 // Remove the old type alias if it exists
 // export type SearchResultMap = {[key: string]: JobData[]}; // No longer needed
 
@@ -90,5 +98,62 @@ export class SearchService {
     }
 
     return this.http.get<SearchResponse>(`${this.apiUrl}/v2/search`, { params });
+  }
+
+  /**
+   * V3 Keyword Search: Performs keyword search using the V3 endpoint.
+   * Uses Elasticsearch for fast keyword search only.
+   * @param query The user's search query string.
+   * @param category Optional category to search in. If not provided, searches all categories.
+   * @returns An Observable emitting the search results.
+   */
+  searchV3Keyword(query: string, category?: string): Observable<SearchResponse> {
+    let params = new HttpParams().set('q', query);
+    if (category) {
+      params = params.set('category', category);
+    }
+    return this.http.get<SearchResponse>(`${this.apiUrl}/v3/search/keyword`, { params });
+  }
+
+  /**
+   * V3 Group Expansion: Expands a specific group using the V3 endpoint.
+   * Uses Oracle for group expansion and detailed data.
+   * @param query The original search query term.
+   * @param category The category containing the group.
+   * @param groupKey The key of the group to expand.
+   * @returns An Observable emitting the expanded group data.
+   */
+  expandGroupV3(query: string, category: string, groupKey: string): Observable<SearchResponse> {
+    const params = new HttpParams()
+      .set('q', query)
+      .set('category', category)
+      .set('groupKey', groupKey);
+    return this.http.get<SearchResponse>(`${this.apiUrl}/v3/search/expand`, { params });
+  }
+
+  /**
+   * SSRM Data for Individual Category: Fetches data for a specific category using SSRM.
+   * Each tab will have its own SSRM datasource calling this method.
+   * @param params AG Grid SSRM parameters
+   * @param category The category to fetch data for
+   * @param searchTerm The search term
+   * @param visibleColumns Optional list of visible columns
+   * @param deduplicate Optional flag to enable deduplication
+   * @returns An Observable emitting the SSRM formatted response.
+   */
+  fetchSSRMDataForCategory(params: any, category: string, searchTerm: string, visibleColumns?: string[], deduplicate?: boolean): Observable<SSRMResponse> {
+    const requestBody = {
+      searchTerm: searchTerm,
+      category: category,
+      groupKeys: params.request.groupKeys || [],
+      visibleColumns: visibleColumns || [],
+      deduplicate: deduplicate || false,
+      rowGroupCols: params.request.rowGroupCols || [],
+      valueCols: params.request.valueCols || [],
+      filterModel: params.request.filterModel || {},
+      sortModel: params.request.sortModel || []
+    };
+
+    return this.http.post<SSRMResponse>(`${this.apiUrl}/v3/search/ssrm/${category}`, requestBody);
   }
 }

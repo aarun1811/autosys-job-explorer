@@ -1,276 +1,414 @@
 {
   "searchCategories": [
-    {
-      "key": "reconName",
-      "label": "Recon Name",
-      "columns": [
-        {"field": "recon", "headerName": "Recon Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "load_file_name", "headerName": "Load file name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
-        {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-            "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-            "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-            "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch", 
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ "recon", "recon.keyword" ], 
-        "resultFields": [ 
-            "recon", "load_job", "box_name", "job_name", "load_file_name", "set_id", "sub_acc", "tlm_instance"
-        ],
-        "defaultSort": { "field": "recon.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "recon"
-      }
-    },
-    {
-      "key": "fileName",
-      "label": "File Name",
-      "columns": [
-        {"field": "file_name", "headerName": "File Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "ok_file_name", "headerName": "OK File Name", "sortable": true, "filter": true},
-        {"field": "feed_id", "headerName": "Feed ID", "sortable": true, "filter": true},
-        {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
-        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
-        {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
-        {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
-        {"field": "receive_path", "headerName": "Receive Path", "sortable": true, "filter": true},
-        {"field": "archival_path", "headerName": "Archival Path", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
-        {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-              "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-              "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-              "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch",
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ 
-            "file_name", "file_name.keyword",
-            "ok_file_name", "ok_file_name.keyword",
-            "feed_id", "feed_id.keyword"
-        ],
-        "resultFields": [ 
-             "file_name", "ok_file_name", "feed_id", "job_name", "app_name", "app_id",
-             "support_email", "support_hotline", "receive_path", "archival_path",
-             "recon", "set_id", "sub_acc", "load_job", "box_name"
-        ],
-        "defaultSort": { "field": "file_name.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "file_name"
-      }
-    },
-    {
-      "key": "boxName",
-      "label": "Box Name",
-      "columns": [
-        {"field": "box_name", "headerName": "Box Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
-        {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
-        {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-            "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-            "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-            "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch",
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ "box_name", "box_name.keyword" ],
-        "resultFields": [
-            "box_name", "job_name", "recon", "load_job", "machine", "run_calendar", "exclude_calendar"
-         ],
-        "defaultSort": { "field": "box_name.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "box_name"
-      }
-    },
-    {
-      "key": "setId",
-      "label": "Set ID",
-      "columns": [
-        {"field": "set_id", "headerName": "Set ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
-        {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-            "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-            "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-            "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch",
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ "set_id", "set_id.keyword" ],
-         "resultFields": [
-             "set_id", "recon", "sub_acc", "load_file_name", "load_job", "box_name", "tlm_instance"
+      {
+          "key": "fileName",
+          "label": "File Name",
+          "columns": [
+              {"field": "file_name_pattern", "headerName": "File Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+              {"field": "ok_file_name", "headerName": "OK File Name", "sortable": true, "filter": true},
+              {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+              {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+              {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
+              {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
+              {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
+              {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
+              {"field": "receive_path", "headerName": "Receive Path", "sortable": true, "filter": true},
+              {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+              {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide":  true},
+              {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide":  true},
+              {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+              {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+              {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+                  "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+                  "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+                  "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
           ],
-        "defaultSort": { "field": "set_id.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "set_id"
+          "searchProviderType": "elasticsearch",
+          "providerConfig": {
+              "targetIndex": "rectrace_core_index",
+              "queryFields": [ "file_name_pattern", "file_name_pattern.keyword" ],
+              "resultFields": [ "file_name_pattern" ],
+              "collapseOnPrecomputedField": "file_name_pattern.keyword",
+              "defaultSort": { "field": "file_name_pattern.keyword", "direction": "asc" }
+          },
+          "oracleConfig": {
+              "query": "SELECT * FROM rectrace_core WHERE file_name_pattern = :groupKey",
+              "parameters": {
+                  "groupKey": "file_name_pattern"
+              }
+          }
+      },
+{
+  "key": "reconName",
+  "label": "Recon Name",
+  "columns": [
+      {"field": "recon", "headerName": "Recon Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true,
+          "sort": "asc"
+      },
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+      {"field": "load_file_name", "headerName": "Load file name", "sortable": true, "filter": true},
+      {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true},
+      {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide": true},
+      {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "recon", "recon.keyword" ],
+      "resultFields": [ "recon" ],
+      "collapseOnPrecomputedField": "recon.keyword",
+      "defaultSort": { "field": "recon.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE recon = :groupKey",
+      "parameters": {
+          "groupKey": "recon"
       }
-    },
-    {
-      "key": "subAcc",
-      "label": "Sub Acc",
-       "columns": [
-        {"field": "sub_acc", "headerName": "Sub Account", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
-        {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-            "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-            "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-            "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch",
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ "sub_acc", "sub_acc.keyword" ],
-        "resultFields": [
-             "sub_acc", "recon", "set_id", "load_file_name", "load_job", "box_name", "tlm_instance"
-         ],
-        "defaultSort": { "field": "sub_acc.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "sub_acc"
+  }
+},
+{
+  "key": "boxName",
+  "label": "Box Name",
+  "columns": [
+      {"field": "box_name", "headerName": "Box Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+      {"field": "recon", "headerName": "Recon", "sortable": true, "filter": true},
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
+      {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
+      {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true},
+      {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "box_name", "box_name.keyword" ],
+      "resultFields": [ "box_name" ],
+      "collapseOnPrecomputedField": "box_name.keyword",
+      "defaultSort": { "field": "box_name.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE box_name = :groupKey",
+      "parameters": {
+          "groupKey": "box_name"
       }
-    },
-     {
-      "key": "loadFileName",
-      "label": "Load File Name",
-      "columns": [
-        {"field": "load_file_name", "headerName": "Load File Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
-        {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-            "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-            "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-            "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch",
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-         
-        "queryFields": [ "load_file_name", "load_file_name.keyword" ],
-         "resultFields": [
-             "load_file_name", "recon", "load_job", "box_name", "set_id", "sub_acc", "tlm_instance"
+  }
+},
+{
+  "key": "setId",
+  "label": "Set ID",
+  "columns": [
+      {"field": "set_id", "headerName": "Set ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
+      {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "set_id", "set_id.keyword" ],
+      "resultFields": [ "set_id" ],
+      "collapseOnPrecomputedField": "set_id.keyword",
+      "defaultSort": { "field": "set_id.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE set_id = :groupKey",
+      "parameters": {
+          "groupKey": "set_id"
+      }
+  }
+},
+{
+  "key": "subAcc",
+  "label": "Sub Acc",
+  "columns": [
+      {"field": "sub_acc", "headerName": "Sub Account", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
+      {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "sub_acc", "sub_acc.keyword" ],
+      "resultFields": [ "sub_acc" ],
+      "collapseOnPrecomputedField": "sub_acc.keyword",
+      "defaultSort": { "field": "sub_acc.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE sub_acc = :groupKey",
+      "parameters": {
+          "groupKey": "sub_acc"
+      }
+  }
+},
+{
+  "key": "loadFileName",
+  "label": "Load File Name",
+  "columns": [
+      {"field": "load_file_name_pattern", "headerName": "Load File Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide":  true },
+      {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide":  true },
+      {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "load_file_name_pattern", "load_file_name_pattern.keyword" ],
+      "resultFields": [ "load_file_name_pattern" ],
+      "collapseOnPrecomputedField": "load_file_name_pattern.keyword",
+      "defaultSort": { "field": "load_file_name_pattern.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE load_file_name_pattern = :groupKey",
+      "parameters": {
+          "groupKey": "load_file_name_pattern"
+      }
+  }
+},
+{
+  "key": "jobName",
+  "label": "Job Name",
+  "columns": [
+      {"field": "job_name", "headerName": "Job Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
+      {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
+      {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true},
+      {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
+      {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
+      {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
+      {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "job_name", "job_name.keyword" ],
+      "resultFields": [ "job_name" ],
+      "collapseOnPrecomputedField": "job_name.keyword",
+      "defaultSort": { "field": "job_name.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE job_name = :groupKey",
+      "parameters": {
+          "groupKey": "job_name"
+      }
+  }
+},
+{
+  "key": "machineName",
+  "label": "Machine Name",
+  "columns": [
+      {"field": "machine", "headerName": "Machine", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
+      {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "machine", "machine.keyword" ],
+      "resultFields": [ "machine" ],
+      "collapseOnPrecomputedField": "machine.keyword",
+      "defaultSort": { "field": "machine.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE machine = :groupKey",
+      "parameters": {
+          "groupKey": "machine"
+      }
+  }
+},
+{
+  "key": "runCalendar",
+  "label": "Run Calendar",
+  "columns": [
+      {"field": "run_calendar", "headerName": "Run Calendar", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
+      {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "run_calendar", "run_calendar.keyword" ],
+      "resultFields": [ "run_calendar" ],
+      "collapseOnPrecomputedField": "run_calendar.keyword",
+      "defaultSort": { "field": "run_calendar.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE run_calendar = :groupKey",
+      "parameters": {
+          "groupKey": "run_calendar"
+      }
+  }
+},
+{
+  "key": "excludeCalendar",
+  "label": "Exclude Calendar",
+  "columns": [
+      {"field": "exclude_calendar", "headerName": "Exclude Calendar", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
+      {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "exclude_calendar", "exclude_calendar.keyword" ],
+      "resultFields": [ "exclude_calendar" ],
+      "collapseOnPrecomputedField": "exclude_calendar.keyword",
+      "defaultSort": { "field":  "exclude_calendar.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE exclude_calendar = :groupKey",
+      "parameters": {
+          "groupKey": "exclude_calendar"
+      }
+  }
+},
+{
+  "key": "tlm_instance",
+  "label": "TLM Instance",
+  "columns": [
+      {"field": "tlm_instance", "headerName": "Exclude Calendar", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
+      {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "tlm_instance", "tlm_instance.keyword" ],
+      "resultFields": [ "tlm_instance" ],
+      "collapseOnPrecomputedField": "tlm_instance.keyword",
+      "defaultSort": { "field":  "tlm_instance.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE tlm_instance = :groupKey",
+      "parameters": {
+          "groupKey": "tlm_instance"
+      }
+  }
+},
+{
+  "key": "reconId",
+  "label": "Recon ID",
+  "columns": [
+      {"field": "recon_id", "headerName": "Recon ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true,
+          "sort": "asc"
+      },
+      {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true },
+      {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+      {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+      {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+      {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+      {"field": "load_file_name", "headerName": "Load file name", "sortable": true, "filter": true},
+      {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true},
+      {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide": true},
+      {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+      {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+          "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+          "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+          "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
+  ],
+  "searchProviderType": "elasticsearch",
+  "providerConfig": {
+      "targetIndex": "rectrace_core_index",
+      "queryFields": [ "recon_id", "recon_id.keyword" ],
+      "resultFields": [ "recon_id" ],
+      "collapseOnPrecomputedField": "recon_id.keyword",
+      "defaultSort": { "field": "recon_id.keyword", "direction": "asc" }
+  },
+  "oracleConfig": {
+      "query": "SELECT * FROM rectrace_core WHERE recon_id = :groupKey",
+      "parameters": {
+          "groupKey": "recon_id"
+      }
+  }
+},
+      {
+          "key": "recPortalId",
+          "label": "Recon Portal ID",
+          "columns": [
+              {"field": "rec_portal_id", "headerName": "Recon Portal ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true,
+                  "sort": "asc"
+              },
+              {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true },
+              {"field": "recon_engine", "headerName":  "Recon Engine", "sortable": true, "filter":  true},
+              {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
+              {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+              {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
+              {"field": "load_file_name", "headerName": "Load file name", "sortable": true, "filter": true},
+              {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true},
+              {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide": true},
+              {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+              {"field": "execution_order", "headerName": "Execution Order", "width": 100,
+                  "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
+                  "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
+                  "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
           ],
-        "defaultSort": { "field": "load_file_name.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "load_file_name"
+          "searchProviderType": "elasticsearch",
+          "providerConfig": {
+              "targetIndex": "rectrace_core_index",
+              "queryFields": [ "rec_portal_id", "rec_portal_id.keyword" ],
+              "resultFields": [ "rec_portal_id" ],
+              "collapseOnPrecomputedField": "rec_portal_id.keyword",
+              "defaultSort": { "field": "rec_portal_id.keyword", "direction": "asc" }
+          },
+          "oracleConfig": {
+              "query": "SELECT * FROM rectrace_core WHERE rec_portal_id = :groupKey",
+              "parameters": {
+                  "groupKey": "recon_portal_id"
+              }
+          }
       }
-    },
-    {
-      "key": "jobName",
-      "label": "Job Name",
-      "columns": [
-        {"field": "job_name", "headerName": "Job Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
-        {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
-        {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
-        {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true},
-        {"field": "feed_id", "headerName": "Feed ID", "sortable": true, "filter": true},
-        {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
-        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
-        {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
-        {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
-        {"field": "execution_order", "headerName": "Execution Order", "width": 100,
-            "cellRenderer": "executionOrderButtonRenderer", "cellRendererParams": {"jobNameField":  "load_job"},
-            "cellStyle":{"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
-            "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ],
-      "searchProviderType": "elasticsearch",
-      "providerConfig": {
-        "targetIndex": "autosys_jobs_index",
-        "queryFields": [ "job_name", "job_name.keyword" ], 
-         "resultFields": [
-             "job_name", "box_name", "recon", "load_job", "machine", "run_calendar", "exclude_calendar",
-             "feed_id", "app_name", "app_id", "support_email", "support_hotline"
-         ],
-        "defaultSort": { "field": "job_name.keyword", "direction": "asc" },
-        "collapseOnPrecomputedField": "job_name"
-      }
-    },
-     {
-      "key": "machineName",
-      "label": "Machine Name",
-      "columns": [
-        {"field": "machine", "headerName": "Machine", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
-        {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true}
-      ],
-       "searchProviderType": "elasticsearch",
-       "providerConfig": {
-           "targetIndex": "autosys_jobs_index",
-           "queryFields": [ "machine", "machine.keyword" ],
-            "resultFields": [
-                "machine", "job_name", "box_name", "run_calendar", "exclude_calendar"
-            ],
-           "defaultSort": { "field": "machine.keyword", "direction": "asc" },
-           "collapseOnPrecomputedField": "machine"
-       }
-    },
-     {
-      "key": "runCalendar",
-      "label": "Run Calendar",
-      "columns": [
-        {"field": "run_calendar", "headerName": "Run Calendar", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true}
-      ],
-       "searchProviderType": "elasticsearch",
-       "providerConfig": {
-           "targetIndex": "autosys_jobs_index",
-           "queryFields": [ "run_calendar", "run_calendar.keyword" ],
-            "resultFields": [
-                "run_calendar", "job_name", "box_name", "exclude_calendar"
-            ],
-            "defaultSort": { "field": "run_calendar.keyword", "direction": "asc" },
-            "collapseOnPrecomputedField": "run_calendar"
-       }
-    },
-    {
-      "key": "excludeCalendar",
-      "label": "Exclude Calendar",
-       "columns": [
-        {"field": "exclude_calendar", "headerName": "Exclude Calendar", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true}
-      ],
-       "searchProviderType": "elasticsearch",
-       "providerConfig": {
-           "targetIndex": "autosys_jobs_index",
-           "queryFields": [ "exclude_calendar", "exclude_calendar.keyword" ],
-            "resultFields": [
-                "exclude_calendar", "job_name", "box_name", "run_calendar"
-            ],
-           "defaultSort": { "field": "exclude_calendar.keyword", "direction": "asc" },
-           "collapseOnPrecomputedField": "exclude_calendar"
-       }
-    }
   ]
 }

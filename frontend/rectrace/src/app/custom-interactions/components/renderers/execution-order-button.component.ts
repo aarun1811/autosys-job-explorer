@@ -148,7 +148,6 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
   }
 
   refresh(params: ExecutionOrderButtonParams): boolean {
-    // return false;
     this.params = params;
     this.setJobNameFromData();
     return true;
@@ -172,7 +171,8 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
 
     this.isLoading = true;
 
-    this.executionOrderService.getExecutionOrder(jobName).subscribe(
+    // Use v2 API for enhanced data with job status and next start time
+    this.executionOrderService.getExecutionOrderV2(jobName).subscribe(
       (data: ExecutionOrderResponse) => {
         this.isLoading = false;
         if (!data || !data.executionSequence || data.executionSequence.length === 0) {

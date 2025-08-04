@@ -55,7 +55,7 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
 
   private renderGraph() {
     const elements = [ ...this.getNodes(), ...this.getEdges() ];
-    
+
     const config: CytoscapeOptions = {
       container: this.cyElement.nativeElement,
       elements: elements,
@@ -234,7 +234,7 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
       this.updateZoomDisplay();
     });
   }
-  
+
   private updateZoomDisplay() {
     this.currentZoom = this.cy?.zoom() ?? 1;
   }
@@ -328,5 +328,5 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
     if (nodeCount <= 20) return 0.7;
     if (nodeCount <= 30) return 0.6;
     return Math.max(0.5, 25 / nodeCount);
-  }  
+  }
 }

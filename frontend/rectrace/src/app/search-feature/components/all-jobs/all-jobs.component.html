@@ -52,7 +52,7 @@
 
   <ag-grid-angular
     class="ag-theme-alpine"
-    [rowData]="rowData"
+    [rowModelType]="'serverSide'"
     [columnDefs]="columnDefs"
     [defaultColDef]="defaultColDef"
     [autoGroupColumnDef]="autoGroupColumnDef"
@@ -69,7 +69,6 @@
     [tooltipHideDelay]="2000"
     [rowSelection]="'multiple'"
     [components]="components"
-    rowGroupPanelShow="always"
     (gridReady)="onGridReady($event)">
   </ag-grid-angular>
 </div>

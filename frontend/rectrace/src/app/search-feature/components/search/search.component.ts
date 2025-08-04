@@ -233,7 +233,7 @@ export class SearchComponent implements OnInit, OnDestroy {
     this.autocompleteTriggerNavbar?.closePanel();
 
     this.searchSubscription?.unsubscribe();
-    this.searchSubscription = this.searchService.searchV2Initial(this.query).subscribe({
+    this.searchSubscription = this.searchService.searchV3Keyword(this.query).subscribe({
       next: (searchResponse: SearchResponse) => {
         this.searchResultsService.updateSearchResults(searchResponse);
         this.searchStateService.setLoading(false);
@@ -283,28 +283,6 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   onSearchIconClick(): void {
     this.doSearch();
-  }
-
-  onGroupExpanded(event: {groupKey: string, expandedData: any[], rowIndex?: number}): void {
-    // Find the current tab
-    const currentTabKey = this.getCurrentTabKey();
-    if (!currentTabKey) return;
-    const tab = this.tabs.find(t => t.key === currentTabKey);
-    if (!tab) return;
-
-    // Use rowIndex if provided, otherwise fallback to group key search
-    let insertIndex = event.rowIndex;
-    if (insertIndex === undefined) {
-      const groupField = tab.columnDef[0]?.field;
-      if (!groupField) return;
-      insertIndex = tab.data.findIndex(row => row[groupField] === event.groupKey);
-      if (insertIndex === -1) return;
-    }
-
-    // Remove the collapsed group row and insert expanded rows
-    tab.data.splice(insertIndex, 1, ...event.expandedData);
-    // Force change detection by reassigning the array
-    tab.data = [...tab.data];
   }
 
   private selectTabByKey(key?: string | null, updateUrl: boolean = true): void {
