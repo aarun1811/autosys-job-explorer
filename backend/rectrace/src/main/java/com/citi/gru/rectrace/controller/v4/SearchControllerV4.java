@@ -93,17 +93,33 @@ public class SearchControllerV4 {
         try {
             log.info("Export request - category: {}, user: {}", category, userId);
             
+            // Set category in request if not present
+            if (request.getCategory() == null) {
+                request.setCategory(category);
+            }
+            
+            // Generate Excel file
+            byte[] excelBytes = searchService.exportToExcel(category, request);
+            
             // Set response headers for Excel download
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename=" + category + "_export.xlsx");
+            response.setHeader("Content-Disposition", "attachment; filename=" + category + "_export_" + System.currentTimeMillis() + ".xlsx");
+            response.setContentLength(excelBytes.length);
             
-            // TODO: Implement export functionality
-            // For now, return empty response
-            response.getWriter().write("Export functionality not yet implemented");
+            // Write Excel bytes to response
+            response.getOutputStream().write(excelBytes);
+            response.getOutputStream().flush();
+            
+            log.info("Export completed successfully for category: {}", category);
             
         } catch (Exception e) {
             log.error("Error exporting data", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try {
+                response.getWriter().write("Export failed: " + e.getMessage());
+            } catch (Exception ex) {
+                // Ignore write error
+            }
         }
     }
     
