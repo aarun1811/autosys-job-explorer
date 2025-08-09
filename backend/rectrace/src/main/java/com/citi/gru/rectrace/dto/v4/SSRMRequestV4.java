@@ -18,7 +18,7 @@ public class SSRMRequestV4 {
     private List<String> rowGroupCols;
     private List<String> groupKeys;
     private List<SortModel> sortModel;
-    private Map<String, FilterModel> filterModel;
+    private Map<String, Object> filterModel;  // AG-Grid filter model
     private int startRow;
     private int endRow;
 }
