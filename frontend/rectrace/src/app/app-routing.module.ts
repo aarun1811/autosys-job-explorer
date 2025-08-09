@@ -8,6 +8,11 @@ const routes: Routes = [
     path: 'search',
     component: SearchComponent
   },
+  // Route for the new V4 search functionality
+  {
+    path: 'search-v4',
+    loadChildren: () => import('./search-v4/search-v4.module').then(m => m.SearchV4Module)
+  },
   // Default route: Redirect any empty path to '/search'
   {
     path: '', // The default path (e.g., http://localhost:4200/)
