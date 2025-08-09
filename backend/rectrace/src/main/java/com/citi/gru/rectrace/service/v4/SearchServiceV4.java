@@ -2,10 +2,14 @@ package com.citi.gru.rectrace.service.v4;
 
 import com.citi.gru.rectrace.dto.v4.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -145,6 +149,94 @@ public class SearchServiceV4 {
                     .columns(category.getColumns())
                     .build();
             return CompletableFuture.completedFuture(emptyResult);
+        }
+    }
+    
+    public byte[] exportToExcel(String categoryKey, ExportRequestV4 request) throws IOException {
+        log.info("Starting Excel export for category: {}", categoryKey);
+        
+        CategoryConfigV4 config = configService.getCategoryConfig(categoryKey);
+        
+        // Fetch all data for export (without pagination)
+        SSRMRequestV4 ssrmRequest = SSRMRequestV4.builder()
+                .category(categoryKey)
+                .initialFilter(request.getInitialFilter())
+                .startRow(0)
+                .endRow(10000)  // Fetch max 10000 rows for export
+                .rowGroupCols(new ArrayList<>())
+                .groupKeys(new ArrayList<>())
+                .sortModel(request.getSortModel() != null ? request.getSortModel() : new ArrayList<>())
+                .filterModel(request.getFilterModel() != null ? request.getFilterModel() : new HashMap<>())
+                .build();
+        
+        SSRMResponseV4 data = oracleService.fetchSSRMData(config, ssrmRequest);
+        
+        // Create Excel workbook
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            
+            Sheet sheet = workbook.createSheet(config.getLabel());
+            
+            // Create header row style
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            List<String> columns = request.getColumns() != null ? request.getColumns() : 
+                    config.getColumns().stream()
+                            .filter(col -> !Boolean.TRUE.equals(col.getHide()))
+                            .map(ColumnDefinition::getField)
+                            .collect(Collectors.toList());
+            
+            // Find column definitions for headers
+            Map<String, String> fieldToHeader = new HashMap<>();
+            for (ColumnDefinition colDef : config.getColumns()) {
+                fieldToHeader.put(colDef.getField(), colDef.getHeaderName());
+            }
+            
+            // Create headers
+            for (int i = 0; i < columns.size(); i++) {
+                Cell cell = headerRow.createCell(i);
+                String headerName = fieldToHeader.getOrDefault(columns.get(i), columns.get(i));
+                cell.setCellValue(headerName);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // Add data rows
+            int rowNum = 1;
+            for (Map<String, Object> rowData : data.getRows()) {
+                Row row = sheet.createRow(rowNum++);
+                for (int i = 0; i < columns.size(); i++) {
+                    Cell cell = row.createCell(i);
+                    Object value = rowData.get(columns.get(i));
+                    if (value != null) {
+                        if (value instanceof Number) {
+                            cell.setCellValue(((Number) value).doubleValue());
+                        } else {
+                            cell.setCellValue(value.toString());
+                        }
+                    }
+                }
+            }
+            
+            // Auto-size columns
+            for (int i = 0; i < columns.size(); i++) {
+                sheet.autoSizeColumn(i);
+                // Set max width to prevent extremely wide columns
+                int columnWidth = sheet.getColumnWidth(i);
+                if (columnWidth > 15000) {
+                    sheet.setColumnWidth(i, 15000);
+                }
+            }
+            
+            workbook.write(outputStream);
+            log.info("Excel export completed. Rows exported: {}", data.getRows().size());
+            return outputStream.toByteArray();
         }
     }
 }
