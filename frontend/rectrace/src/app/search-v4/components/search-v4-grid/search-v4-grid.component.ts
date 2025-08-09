@@ -52,7 +52,12 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       rowGroup: col.rowGroup || false,
       hide: col.hide || false,
       sortable: col.sortable !== false,
-      filter: col.filter !== false,
+      filter: col.filter !== false ? 'agTextColumnFilter' : false,  // Use text filter for all columns
+      filterParams: {
+        buttons: ['reset', 'apply'],
+        closeOnApply: true,
+        suppressAndOrCondition: true  // Simplify filter UI
+      },
       resizable: col.resizable !== false,
       width: col.width,
       cellRenderer: col.cellRenderer,
@@ -121,6 +126,22 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
           // Get the search column from the first column that's row grouped
           const searchColumnField = this.columns.find(col => col.rowGroup)?.field || this.searchColumn;
           
+          // Convert AG-Grid filter model to our format
+          const filterModel: any = {};
+          if (params.request.filterModel) {
+            const agFilterModel = params.request.filterModel as any;
+            Object.keys(agFilterModel).forEach(field => {
+              const agFilter = agFilterModel[field];
+              if (agFilter && agFilter.filter) {
+                filterModel[field] = {
+                  filterType: agFilter.filterType || 'text',
+                  type: agFilter.type || 'contains',
+                  filter: agFilter.filter
+                };
+              }
+            });
+          }
+          
           const request: SSRMRequestV4 = {
             category: this.category,
             initialFilter: {
@@ -132,7 +153,7 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
             startRow: params.request.startRow || 0,
             endRow: params.request.endRow || 100,
             sortModel: params.request.sortModel || [],
-            filterModel: {}  // Simplified for now
+            filterModel: filterModel
           };
           
           const response = await this.searchService.fetchSSRMData(request).toPromise();
