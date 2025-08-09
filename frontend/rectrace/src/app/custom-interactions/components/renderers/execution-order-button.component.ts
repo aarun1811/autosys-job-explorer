@@ -171,8 +171,8 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
 
     this.isLoading = true;
 
-    // Use v2 API for enhanced data with job status and next start time
-    this.executionOrderService.getExecutionOrderV2(jobName).subscribe(
+    // Use API for enhanced data with job status and next start time
+    this.executionOrderService.getExecutionOrder(jobName).subscribe(
       (data: ExecutionOrderResponse) => {
         this.isLoading = false;
         if (!data || !data.executionSequence || data.executionSequence.length === 0) {
@@ -188,7 +188,7 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
           autoFocus: false
         });
       },
-      (error) => {
+      (error: any) => {
         console.error('Error fetching execution order:', error);
         this.isLoading = false;
         this.showError('Failed to load execution order');
