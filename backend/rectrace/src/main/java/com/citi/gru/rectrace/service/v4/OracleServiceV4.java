@@ -101,6 +101,9 @@ public class OracleServiceV4 {
         String groupValue = request.getGroupKeys().get(0);
         
         // First get count for the expanded group
+        List<Object> countParams = new ArrayList<>(filterValues);
+        countParams.add(groupValue);
+        
         String countSql = String.format(
             "SELECT COUNT(*) FROM %s WHERE %s IN (%s) AND %s = ?",
             config.getOracle().getTable(),
@@ -109,12 +112,16 @@ public class OracleServiceV4 {
             groupColumn
         );
         
-        List<Object> countParams = new ArrayList<>(filterValues);
-        countParams.add(groupValue);
+        // Add filter clauses to count query
+        String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+        countSql += filterClause;
         
         Integer totalCount = jdbcTemplate.queryForObject(countSql, countParams.toArray(), Integer.class);
         
         // Build data query with sorting and pagination
+        List<Object> dataParams = new ArrayList<>(filterValues);
+        dataParams.add(groupValue);
+        
         StringBuilder dataSql = new StringBuilder(String.format(
             "SELECT * FROM %s WHERE %s IN (%s) AND %s = ?",
             config.getOracle().getTable(),
@@ -122,6 +129,9 @@ public class OracleServiceV4 {
             String.join(",", Collections.nCopies(filterValues.size(), "?")),
             groupColumn
         ));
+        
+        // Add filter clauses to data query
+        dataSql.append(buildFilterClause(request.getFilterModel(), dataParams));
         
         // Add sorting if specified
         String orderByClause = buildOrderByClause(request);
@@ -132,8 +142,6 @@ public class OracleServiceV4 {
         // Add pagination
         dataSql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         
-        List<Object> dataParams = new ArrayList<>(filterValues);
-        dataParams.add(groupValue);
         dataParams.add(request.getStartRow());
         dataParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
         
@@ -153,7 +161,10 @@ public class OracleServiceV4 {
     private SSRMResponseV4 fetchFlatData(CategoryConfigV4 config, SSRMRequestV4 request) {
         List<String> filterValues = request.getInitialFilter().getValues();
         
-        // Get total count
+        // Prepare parameters for count query
+        List<Object> countParams = new ArrayList<>(filterValues);
+        
+        // Get total count with filters
         String countSql = String.format(
             "SELECT COUNT(*) FROM %s WHERE %s IN (%s)",
             config.getOracle().getTable(),
@@ -161,15 +172,23 @@ public class OracleServiceV4 {
             String.join(",", Collections.nCopies(filterValues.size(), "?"))
         );
         
-        Integer totalCount = jdbcTemplate.queryForObject(countSql, filterValues.toArray(), Integer.class);
+        // Add filter clauses to count query
+        String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+        countSql += filterClause;
+        
+        Integer totalCount = jdbcTemplate.queryForObject(countSql, countParams.toArray(), Integer.class);
         
         // Build data query
+        List<Object> dataParams = new ArrayList<>(filterValues);
         StringBuilder dataSql = new StringBuilder(String.format(
             "SELECT * FROM %s WHERE %s IN (%s)",
             config.getOracle().getTable(),
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?"))
         ));
+        
+        // Add filter clauses to data query
+        dataSql.append(buildFilterClause(request.getFilterModel(), dataParams));
         
         // Add sorting if specified
         String orderByClause = buildOrderByClause(request);
@@ -180,13 +199,13 @@ public class OracleServiceV4 {
         // Add pagination
         dataSql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         
-        List<Object> params = new ArrayList<>(filterValues);
-        params.add(request.getStartRow());
-        params.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
+        dataParams.add(request.getStartRow());
+        dataParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
         
-        log.debug("Executing flat data query with {} filter values", filterValues.size());
+        log.debug("Executing flat data query with {} filter values and {} filters", 
+                filterValues.size(), request.getFilterModel() != null ? request.getFilterModel().size() : 0);
         
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(dataSql.toString(), params.toArray());
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(dataSql.toString(), dataParams.toArray());
         
         // Convert column names to lowercase for consistency
         List<Map<String, Object>> normalizedRows = normalizeColumnNames(rows);
@@ -207,6 +226,58 @@ public class OracleServiceV4 {
             .collect(Collectors.joining(", "));
         
         return "ORDER BY " + orderBy;
+    }
+    
+    private String buildFilterClause(Map<String, Object> filterModel, List<Object> params) {
+        if (filterModel == null || filterModel.isEmpty()) {
+            return "";
+        }
+        
+        List<String> filterClauses = new ArrayList<>();
+        
+        for (Map.Entry<String, Object> entry : filterModel.entrySet()) {
+            String column = entry.getKey();
+            Map<String, Object> filterDef = (Map<String, Object>) entry.getValue();
+            
+            if (filterDef != null && filterDef.get("filter") != null) {
+                String filterValue = filterDef.get("filter").toString();
+                String filterType = filterDef.getOrDefault("type", "contains").toString();
+                
+                switch (filterType.toLowerCase()) {
+                    case "equals":
+                        filterClauses.add(column + " = ?");
+                        params.add(filterValue);
+                        break;
+                    case "notequal":
+                        filterClauses.add(column + " != ?");
+                        params.add(filterValue);
+                        break;
+                    case "contains":
+                        filterClauses.add("UPPER(" + column + ") LIKE UPPER(?)");
+                        params.add("%" + filterValue + "%");
+                        break;
+                    case "notcontains":
+                        filterClauses.add("UPPER(" + column + ") NOT LIKE UPPER(?)");
+                        params.add("%" + filterValue + "%");
+                        break;
+                    case "startswith":
+                        filterClauses.add("UPPER(" + column + ") LIKE UPPER(?)");
+                        params.add(filterValue + "%");
+                        break;
+                    case "endswith":
+                        filterClauses.add("UPPER(" + column + ") LIKE UPPER(?)");
+                        params.add("%" + filterValue);
+                        break;
+                    default:
+                        // Default to contains
+                        filterClauses.add("UPPER(" + column + ") LIKE UPPER(?)");
+                        params.add("%" + filterValue + "%");
+                        break;
+                }
+            }
+        }
+        
+        return filterClauses.isEmpty() ? "" : " AND " + String.join(" AND ", filterClauses);
     }
     
     private List<Map<String, Object>> normalizeColumnNames(List<Map<String, Object>> rows) {
