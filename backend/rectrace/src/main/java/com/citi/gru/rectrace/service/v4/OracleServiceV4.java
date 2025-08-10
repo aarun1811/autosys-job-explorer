@@ -57,25 +57,40 @@ public class OracleServiceV4 {
         String groupColumn = request.getRowGroupCols().get(0);
         List<String> filterValues = request.getInitialFilter().getValues();
         
-        // Build SQL for grouped view
-        String sql = String.format(
-            "SELECT DISTINCT %s as group_value FROM %s WHERE %s IN (%s) ORDER BY %s OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+        // Build parameters for count subquery
+        List<Object> countParams = new ArrayList<>(filterValues);
+        
+        // Build SQL for grouped view with count check to exclude empty groups
+        StringBuilder sqlBuilder = new StringBuilder(String.format(
+            "SELECT %s as group_value FROM (SELECT %s, COUNT(*) as cnt FROM %s WHERE %s IN (%s)",
+            groupColumn,
             groupColumn,
             config.getOracle().getTable(),
             config.getSearchColumn(),
-            String.join(",", Collections.nCopies(filterValues.size(), "?")),
-            groupColumn
-        );
+            String.join(",", Collections.nCopies(filterValues.size(), "?"))
+        ));
         
-        // Build parameters
-        List<Object> params = new ArrayList<>(filterValues);
+        // Add filter clauses to subquery
+        String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+        sqlBuilder.append(filterClause);
+        
+        // Complete subquery with GROUP BY and HAVING to exclude empty groups
+        sqlBuilder.append(String.format(" GROUP BY %s HAVING COUNT(*) > 0) subq ORDER BY %s", 
+            groupColumn, groupColumn));
+        
+        // Add pagination
+        sqlBuilder.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        
+        // Build final parameters
+        List<Object> params = new ArrayList<>(countParams);
         params.add(request.getStartRow());
         params.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
         
-        log.debug("Executing grouped query with {} filter values", filterValues.size());
+        log.debug("Executing grouped query with {} filter values and {} filters", 
+                filterValues.size(), request.getFilterModel() != null ? request.getFilterModel().size() : 0);
         
         // Execute query
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, params.toArray());
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlBuilder.toString(), params.toArray());
         
         // Transform to AG-Grid format
         List<Map<String, Object>> gridRows = rows.stream()
