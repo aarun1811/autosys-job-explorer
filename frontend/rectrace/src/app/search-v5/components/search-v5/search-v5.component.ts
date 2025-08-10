@@ -175,6 +175,8 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.showNoResultsMessage = false;
     this.errorMessage = '';
     this.selectedTab = 0;
+    // Clear suggestions when resetting
+    this.searchInput$.next('');
     // Clear URL parameters
     this.updateUrlWithState();
   }
@@ -210,6 +212,9 @@ export class SearchV5Component implements OnInit, OnDestroy {
       this.errorMessage = 'Please enter a search term';
       return;
     }
+    
+    // Clear suggestions after search
+    this.searchInput$.next('');
     
     this.errorMessage = '';
     this.isLoading = true;
@@ -266,6 +271,8 @@ export class SearchV5Component implements OnInit, OnDestroy {
   
   clearSearch(): void {
     this.searchTerm = '';
+    // Clear suggestions when clearing search
+    this.searchInput$.next('');
     // Don't reset hasSearched to keep navbar visible
     // Just clear the search term and keep user on the results page
     // Focus the input after clearing
