@@ -3,8 +3,8 @@
     <div class="grid-actions">
       <!-- View Controls Group -->
       <div class="grid-actions-group">
-        <button (click)="toggleColumns()" matTooltip="Show/Hide Columns">
-          <mat-icon>view_column</mat-icon>
+        <button (click)="toggleSidePanel()" matTooltip="Toggle Tools Panel">
+          <mat-icon>tune</mat-icon>
         </button>
 
         <button [class.active]="isCompactView" (click)="toggleDensity()" matTooltip="Toggle Row Height">

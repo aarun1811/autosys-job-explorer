@@ -114,6 +114,46 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
       suppressCellFocus: false,
       suppressColumnVirtualisation: true,
       groupDefaultExpanded: 0,
+      sideBar: {
+        toolPanels: [
+          {
+            id: 'columns',
+            labelDefault: 'Columns',
+            labelKey: 'columns',
+            iconKey: 'columns',
+            toolPanel: 'agColumnsToolPanel',
+            minWidth: 225,
+            width: 225,
+            maxWidth: 400,
+            toolPanelParams: {
+              suppressRowGroups: false,
+              suppressValues: true,
+              suppressPivots: true,
+              suppressPivotMode: true,
+              suppressColumnFilter: false,
+              suppressColumnSelectAll: false,
+              suppressColumnExpandAll: false
+            }
+          },
+          {
+            id: 'filters',
+            labelDefault: 'Filters',
+            labelKey: 'filters',
+            iconKey: 'filter',
+            toolPanel: 'agFiltersToolPanel',
+            minWidth: 200,
+            width: 250,
+            maxWidth: 400,
+            toolPanelParams: {
+              suppressFilterSearch: false,
+              suppressExpandAll: false
+            }
+          }
+        ],
+        position: 'right',
+        defaultToolPanel: '',  // Don't open by default
+        hiddenByDefault: false
+      },
       components: {
         appIDCellRenderer: AppIDCellRendererComponent,
         supportEmailCellRenderer: AppSupportCellRendererComponent,
@@ -311,9 +351,15 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
   }
   
   // Toolbar Actions - Old module style
-  toggleColumns(): void {
+  toggleSidePanel(): void {
     if (this.gridApi) {
-      this.gridApi.showColumnChooser();
+      const sideBarVisible = this.gridApi.isSideBarVisible();
+      this.gridApi.setSideBarVisible(!sideBarVisible);
+      
+      // If opening side bar and nothing is selected, open columns panel by default
+      if (!sideBarVisible) {
+        this.gridApi.openToolPanel('columns');
+      }
     }
   }
   
