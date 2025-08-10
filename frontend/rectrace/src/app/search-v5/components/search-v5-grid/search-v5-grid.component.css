@@ -10,6 +10,11 @@
   z-index: 0;
 }
 
+/* When row group panel is visible, adjust grid height */
+:host ::ng-deep .ag-root-wrapper.ag-layout-normal .ag-root {
+  height: 100%;
+}
+
 .grid-header {
   display: flex;
   justify-content: space-between;
@@ -305,4 +310,51 @@ ag-grid-angular {
 
 :host ::ng-deep .ag-theme-alpine .ag-row-group.ag-row-loading .ag-group-expanded-indicator {
   color: #1a73e8;
+}
+
+/* Row Group Panel Styling */
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dadce0;
+  padding: 8px 12px;
+  min-height: 42px;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  color: #5f6368;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel-label {
+  margin-right: 12px;
+  font-weight: 500;
+  color: #5f6368;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group-leaf-group {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 16px;
+  padding: 4px 12px;
+  margin: 0 4px;
+  font-size: 12px;
+  color: #202124;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group-leaf-group:hover {
+  background-color: #e8f0fe;
+  border-color: #1a73e8;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel .ag-icon {
+  color: #5f6368;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel .ag-icon-grip {
+  margin-right: 4px;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel-empty-message {
+  color: #5f6368;
+  font-style: italic;
+  font-size: 12px;
+  padding: 4px 8px;
 }

@@ -66,6 +66,7 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
       headerName: col.headerName,
       rowGroup: col.rowGroup || false,
       hide: col.hide || false,
+      enableRowGroup: true,  // Enable drag-and-drop grouping for all columns
       sortable: col.sortable !== false,
       filter: col.filter !== false ? 'agTextColumnFilter' : false,  // Use text filter for all columns
       filterParams: {
@@ -114,6 +115,10 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
       suppressCellFocus: false,
       suppressColumnVirtualisation: true,
       groupDefaultExpanded: 0,
+      // Row grouping panel settings
+      rowGroupPanelShow: 'always',  // Show the row group panel
+      suppressMakeColumnVisibleAfterUnGroup: true,  // Keep columns hidden after ungrouping
+      groupSelectsChildren: false,  // Don't select children when selecting group
       sideBar: {
         toolPanels: [
           {
@@ -165,6 +170,7 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
       onFilterChanged: this.onFilterChanged.bind(this),
       onColumnVisible: this.onColumnVisibilityChanged.bind(this),
       onRowGroupOpened: this.onRowGroupOpened.bind(this),
+      onColumnRowGroupChanged: this.onColumnRowGroupChanged.bind(this),  // Handle drag-drop grouping
       getRowId: (params) => {
         // Simple approach: use JSON stringification of the entire row data
         // This ensures uniqueness since each row should have some different combination of values
@@ -243,6 +249,20 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
       } else {
         this.expandedGroupIds.delete(groupId);
       }
+    }
+  }
+  
+  onColumnRowGroupChanged(event: any): void {
+    // When users drag-drop columns to change grouping, refresh the grid
+    if (this.gridApi) {
+      // Clear expanded groups as the structure has changed
+      this.expandedGroupIds.clear();
+      
+      // Refresh the grid with new grouping
+      this.gridApi.refreshServerSide({
+        purge: true,
+        route: []
+      });
     }
   }
   
