@@ -745,3 +745,8 @@ mat-label {
   font-weight: 500;
   cursor: default; 
 }
+
+/* Hide inactive grids but keep them in DOM for state preservation */
+app-search-v5-grid[hidden] {
+  display: none !important;
+}

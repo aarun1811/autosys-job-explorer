@@ -89,7 +89,7 @@
       <div class="tab-content">
         <ng-container *ngFor="let category of searchResults; let i = index">
           <app-search-v5-grid
-            *ngIf="selectedTab === i"
+            [hidden]="selectedTab !== i"
             [category]="category.key"
             [categoryLabel]="category.label"
             [initialFilter]="category.values"
