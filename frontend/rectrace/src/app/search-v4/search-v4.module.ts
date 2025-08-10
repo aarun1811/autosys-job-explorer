@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Custom modules
 import { CustomInteractionsModule } from '../custom-interactions/custom-interactions.module';
@@ -39,6 +40,7 @@ import { SearchV4RoutingModule } from './search-v4-routing.module';
     MatIconModule,
     MatProgressSpinnerModule,
     MatToolbarModule,
+    MatTooltipModule,
     CustomInteractionsModule,
     SearchV4RoutingModule
   ]
