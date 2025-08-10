@@ -12,8 +12,6 @@ import {
   ColumnDefinition, 
   SSRMRequestV4 
 } from '../../../services/search-v4.service';
-import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
 
 // Import custom cell renderers
 import { AppIDCellRendererComponent } from '../../../custom-interactions/components/renderers/app-id-cell-renderer.component';
@@ -41,20 +39,22 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   gridColumnApi: any;
   isExporting = false;  // Track export status
   expandedGroupIds: Set<string> = new Set();  // Track expanded groups
-  private filterChanged$ = new Subject<void>();  // Subject for debouncing
-  private isRefreshing = false;  // Prevent concurrent refreshes
+  private columnVisibilityTimer: any;  // Timer for column visibility changes
+  private lastFilterModel: string = '';  // Track last filter to avoid duplicate refreshes
+  private shouldRestoreState = false;  // Flag to indicate state should be restored after next load
+  
+  // Define frontend-only columns that don't exist in database
+  private readonly FRONTEND_ONLY_COLUMNS = new Set([
+    'execution_order',
+    'actions',
+    'ag-Grid-AutoColumn',  // AG-Grid's auto-generated group column
+    // Add other non-DB columns here as needed
+  ]);
   
   constructor(private searchService: SearchServiceV4) {}
   
   ngOnInit(): void {
     this.setupGridOptions();
-    
-    // Set up debounced filter changes
-    this.filterChanged$
-      .pipe(debounceTime(300))  // Wait 300ms after last change
-      .subscribe(() => {
-        this.applyFilterChanges();
-      });
   }
   
   setupGridOptions(): void {
@@ -69,14 +69,18 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       filterParams: {
         buttons: ['reset', 'apply'],
         closeOnApply: true,
-        suppressAndOrCondition: true  // Simplify filter UI
+        suppressAndOrCondition: true,  // Simplify filter UI
+        refreshValuesOnOpen: false,  // Don't refresh on open
+        debounceMs: 0  // We handle debouncing ourselves
       },
       resizable: col.resizable !== false,
       width: col.width,
       cellRenderer: col.cellRenderer,
       cellRendererParams: col.cellRendererParams,
       cellStyle: col.cellStyle,
-      pinned: col.pinned as any
+      pinned: col.pinned as any,
+      suppressMenu: false,  // Enable column menu for visibility toggling
+      menuTabs: ['generalMenuTab', 'columnsMenuTab']  // Include columns tab for visibility control
     }));
     
     this.gridOptions = {
@@ -101,6 +105,7 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       animateRows: true,
       suppressRowClickSelection: true,
       rowSelection: 'multiple',
+      suppressServerSideInfiniteScroll: false,
       components: {
         appIDCellRenderer: AppIDCellRendererComponent,
         supportEmailCellRenderer: AppSupportCellRendererComponent,
@@ -110,6 +115,8 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       },
       onGridReady: this.onGridReady.bind(this),
       onFilterChanged: this.onFilterChanged.bind(this),
+      onColumnVisible: this.onColumnVisibilityChanged.bind(this),
+      onRowGroupOpened: this.onRowGroupOpened.bind(this),
       getRowId: (params) => {
         // Simple approach: use JSON stringification of the entire row data
         // This ensures uniqueness since each row should have some different combination of values
@@ -150,53 +157,84 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   }
   
   onFilterChanged(): void {
-    // Don't trigger if we're already refreshing (prevents double calls)
-    if (!this.isRefreshing) {
-      // Trigger debounced filter change
-      this.filterChanged$.next();
+    if (this.gridApi) {
+      const currentFilterModel = JSON.stringify(this.gridApi.getFilterModel() || {});
+      
+      if (currentFilterModel !== this.lastFilterModel) {
+        this.lastFilterModel = currentFilterModel;
+        // Set flag to restore expanded state after AG-Grid's automatic refresh
+        this.shouldRestoreState = true;
+      }
     }
   }
   
-  private applyFilterChanges(): void {
-    // Prevent concurrent refreshes
-    if (this.isRefreshing) {
-      console.log('Refresh already in progress, skipping...');
+  onRowGroupOpened(event: any): void {
+    // Track expanded state in real-time as users expand/collapse groups
+    if (!event || !event.node) {
       return;
     }
     
-    this.isRefreshing = true;
+    const node = event.node;
     
-    // Save expanded state before refresh
-    this.saveExpandedState();
+    // Build the full path for this node
+    let groupPath: string[] = [];
+    let currentNode = node;
     
-    if (this.gridApi) {
-      // Try a targeted refresh first - only refresh root level
-      // The expanded groups will be restored in the datasource getRows callback
-      this.gridApi.refreshServerSide({
-        purge: true,  // We still need to purge to handle removed groups
-        route: [],    // Refresh from root
-      });
-      
-      // Mark as not refreshing after a short delay
-      // The expansion will happen in the datasource callback
-      setTimeout(() => {
-        this.isRefreshing = false;
-      }, 300);
-    } else {
-      this.isRefreshing = false;
+    while (currentNode) {
+      if (currentNode.key) {
+        groupPath.unshift(currentNode.key);
+      }
+      currentNode = currentNode.parent;
     }
+    
+    if (groupPath.length > 0) {
+      const groupId = groupPath.join('|');
+      
+      if (node.expanded) {
+        this.expandedGroupIds.add(groupId);
+      } else {
+        this.expandedGroupIds.delete(groupId);
+      }
+    }
+  }
+  
+  onColumnVisibilityChanged(event: any): void {
+    // Only trigger refresh if this is a user-initiated column visibility change
+    // Check if the event source is from column menu (not from group expansion)
+    if (!event || !event.column || event.source === 'gridInitializing') {
+      return;
+    }
+    
+    // Skip if this is the auto-generated group column
+    const columnId = event.column.getColId();
+    if (columnId === 'ag-Grid-AutoColumn' || this.FRONTEND_ONLY_COLUMNS.has(columnId)) {
+      return;
+    }
+    
+    // Clear any existing timer
+    if (this.columnVisibilityTimer) {
+      clearTimeout(this.columnVisibilityTimer);
+    }
+    
+    // Set a new timer to refresh after column changes stabilize
+    this.columnVisibilityTimer = setTimeout(() => {
+      if (this.gridApi) {
+        // Set flag to restore state after refresh
+        this.shouldRestoreState = true;
+        
+        // Refresh the grid to apply SELECT DISTINCT with new visible columns
+        this.gridApi.refreshServerSide({
+          purge: true,
+          route: []
+        });
+      }
+    }, 500); // Wait 500ms after last column change
   }
   
   createSSRMDatasource(): IServerSideDatasource {
     return {
       getRows: async (params: IServerSideGetRowsParams) => {
         try {
-          console.log('SSRM request for category:', this.category, 'Params:', {
-            startRow: params.request.startRow,
-            endRow: params.request.endRow,
-            rowGroupCols: params.request.rowGroupCols,
-            groupKeys: params.request.groupKeys
-          });
           
           // Get the search column from the first column that's row grouped
           const searchColumnField = this.columns.find(col => col.rowGroup)?.field || this.searchColumn;
@@ -228,46 +266,30 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
             startRow: params.request.startRow || 0,
             endRow: params.request.endRow || 100,
             sortModel: params.request.sortModel || [],
-            filterModel: filterModel
+            filterModel: filterModel,
+            visibleColumns: this.getVisibleColumns()  // Add visible columns for SELECT DISTINCT
           };
           
           const response = await this.searchService.fetchSSRMData(request).toPromise();
           
           if (response) {
-            console.log(`Received ${response.rows.length} rows, total: ${response.lastRow}`);
-            
             params.success({
               rowData: response.rows,
               rowCount: response.lastRow
             });
             
-            // Re-expand previously expanded groups after data loads
-            // Handle multi-level grouping
-            if (params.request.rowGroupCols && params.request.rowGroupCols.length > 0) {
-              const currentDepth = params.request.groupKeys ? params.request.groupKeys.length : 0;
-              const groupCol = params.request.rowGroupCols[currentDepth];
-              const groupColField = typeof groupCol === 'string' ? groupCol : groupCol?.field;
+            // Restore expanded groups after root level loads if flag is set
+            const isRootLevel = !params.request.groupKeys || params.request.groupKeys.length === 0;
+            const hasGroups = params.request.rowGroupCols && params.request.rowGroupCols.length > 0;
+            
+            if (isRootLevel && hasGroups && this.shouldRestoreState && this.expandedGroupIds.size > 0) {
+              // Reset flag
+              this.shouldRestoreState = false;
               
-              if (groupColField && typeof groupColField === 'string') {
-                setTimeout(() => {
-                  response.rows.forEach((row: any) => {
-                    const groupValue = row[groupColField];
-                    if (groupValue) {
-                      // Build the group path for multi-level
-                      const groupPath = [...(params.request.groupKeys || []), groupValue];
-                      const groupId = groupPath.join('|'); // Use | as separator for multi-level
-                      
-                      if (this.expandedGroupIds.has(groupId)) {
-                        const node = this.gridApi.getRowNode(groupValue);
-                        if (node && node.group) {
-                          console.log('Re-expanding group after load:', groupId);
-                          node.setExpanded(true);
-                        }
-                      }
-                    }
-                  });
-                }, 50);
-              }
+              // Delay to ensure nodes are rendered
+              setTimeout(() => {
+                this.restoreExpandedState();
+              }, 100);
             }
           } else {
             params.fail();
@@ -371,67 +393,44 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   
   clearFilters(): void {
     if (this.gridApi) {
-      // Save expanded state before clearing
-      this.saveExpandedState();
-      
       this.gridApi.setFilterModel(null);
-      
-      // The expansion will be restored in the datasource callback
-      // No need to manually restore here
-    }
-  }
-  
-  private saveExpandedState(): void {
-    this.expandedGroupIds.clear();
-    if (this.gridApi) {
-      this.gridApi.forEachNode((node: any) => {
-        if (node.group && node.expanded) {
-          // For multi-level grouping, build the full path
-          let groupPath: string[] = [];
-          let currentNode = node;
-          
-          // Walk up the tree to build the full path
-          while (currentNode) {
-            if (currentNode.key) {
-              groupPath.unshift(currentNode.key); // Add to beginning
-            }
-            currentNode = currentNode.parent;
-          }
-          
-          if (groupPath.length > 0) {
-            const groupId = groupPath.join('|'); // Use | as separator
-            console.log('Saving expanded group:', groupId);
-            this.expandedGroupIds.add(groupId);
-          }
-        }
-      });
-      console.log('Saved expanded groups:', Array.from(this.expandedGroupIds));
     }
   }
   
   private restoreExpandedState(): void {
-    if (this.gridApi && this.expandedGroupIds.size > 0) {
-      console.log('Restoring expanded groups:', Array.from(this.expandedGroupIds));
-      
-      // Use onRowDataUpdated to ensure data is loaded before expanding
-      const expandGroups = () => {
-        this.gridApi.forEachNode((node: any) => {
-          if (node.group) {
-            const groupKey = node.key;
-            if (groupKey && this.expandedGroupIds.has(groupKey)) {
-              console.log('Expanding group:', groupKey);
-              node.setExpanded(true);
-            }
-          }
-        });
-      };
-      
-      // Try to expand immediately
-      expandGroups();
-      
-      // Also try again after a short delay in case nodes aren't ready
-      setTimeout(() => expandGroups(), 100);
+    if (!this.gridApi || this.expandedGroupIds.size === 0) {
+      return;
     }
+    
+    const groupsToRestore = new Set(this.expandedGroupIds);
+    
+    // Iterate through all nodes and restore expansion state
+    this.gridApi.forEachNode((node: any) => {
+      if (node.group && !node.expanded) {
+        // Build the path for this node
+        let groupPath: string[] = [];
+        let currentNode = node;
+        
+        while (currentNode) {
+          if (currentNode.key) {
+            groupPath.unshift(currentNode.key);
+          }
+          currentNode = currentNode.parent;
+        }
+        
+        const groupId = groupPath.join('|');
+        
+        if (this.expandedGroupIds.has(groupId)) {
+          node.setExpanded(true);
+          groupsToRestore.delete(groupId);
+        }
+      }
+    });
+    
+    // Remove groups that no longer exist from our tracking
+    groupsToRestore.forEach(groupId => {
+      this.expandedGroupIds.delete(groupId);
+    });
   }
   
   expandAll(): void {
@@ -446,9 +445,33 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
     }
   }
   
+  private getVisibleColumns(): string[] {
+    const visibleCols: string[] = [];
+    
+    if (this.gridApi) {
+      // Get all visible columns from grid state
+      this.gridApi.getColumnState().forEach((col: any) => {
+        if (!col.hide && col.colId && !this.FRONTEND_ONLY_COLUMNS.has(col.colId)) {
+          visibleCols.push(col.colId);
+        }
+      });
+    }
+    
+    // Always include grouped columns (even if hidden) to maintain grouping functionality
+    this.columns.filter(c => c.rowGroup).forEach(col => {
+      if (col.field && !visibleCols.includes(col.field) && !this.FRONTEND_ONLY_COLUMNS.has(col.field)) {
+        visibleCols.push(col.field);
+      }
+    });
+    
+    return visibleCols;
+  }
+  
   ngOnDestroy(): void {
-    // Cleanup subscriptions
-    this.filterChanged$.complete();
+    // Clear any pending timers
+    if (this.columnVisibilityTimer) {
+      clearTimeout(this.columnVisibilityTimer);
+    }
     
     // Cleanup grid
     if (this.gridApi) {

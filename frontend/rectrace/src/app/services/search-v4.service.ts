@@ -43,6 +43,7 @@ export interface SSRMRequestV4 {
   endRow: number;
   sortModel?: SortModel[];
   filterModel?: { [key: string]: FilterModel };
+  visibleColumns?: string[];  // Currently visible columns for SELECT DISTINCT
 }
 
 export interface InitialFilter {
