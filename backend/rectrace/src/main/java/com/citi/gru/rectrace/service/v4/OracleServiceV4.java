@@ -92,6 +92,20 @@ public class OracleServiceV4 {
         // Execute query
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlBuilder.toString(), params.toArray());
         
+        // Get total count of groups after filtering
+        List<Object> totalCountParams = new ArrayList<>(countParams);
+        StringBuilder countSqlBuilder = new StringBuilder(String.format(
+            "SELECT COUNT(DISTINCT %s) FROM %s WHERE %s IN (%s)",
+            groupColumn,
+            config.getOracle().getTable(),
+            config.getSearchColumn(),
+            String.join(",", Collections.nCopies(filterValues.size(), "?"))
+        ));
+        countSqlBuilder.append(buildFilterClause(request.getFilterModel(), totalCountParams));
+        
+        Integer totalGroups = jdbcTemplate.queryForObject(countSqlBuilder.toString(), 
+                totalCountParams.toArray(), Integer.class);
+        
         // Transform to AG-Grid format
         List<Map<String, Object>> gridRows = rows.stream()
             .map(row -> {
@@ -106,7 +120,7 @@ public class OracleServiceV4 {
         
         return SSRMResponseV4.builder()
             .rows(gridRows)
-            .lastRow(filterValues.size())  // Total count is the number of unique values
+            .lastRow(totalGroups != null ? totalGroups : gridRows.size())  // Actual count of groups after filtering
             .build();
     }
     
