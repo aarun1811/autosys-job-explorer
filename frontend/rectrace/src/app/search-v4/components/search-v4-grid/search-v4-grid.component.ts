@@ -42,6 +42,7 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   isExporting = false;  // Track export status
   expandedGroupIds: Set<string> = new Set();  // Track expanded groups
   private filterChanged$ = new Subject<void>();  // Subject for debouncing
+  private isRefreshing = false;  // Prevent concurrent refreshes
   
   constructor(private searchService: SearchServiceV4) {}
   
@@ -131,18 +132,33 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   }
   
   private applyFilterChanges(): void {
+    // Prevent concurrent refreshes
+    if (this.isRefreshing) {
+      console.log('Refresh already in progress, skipping...');
+      return;
+    }
+    
+    this.isRefreshing = true;
+    
     // Save expanded state before refresh
     this.saveExpandedState();
     
-    // Use a less aggressive refresh that tries to preserve state
+    // We need to purge to avoid infinite loops when groups are removed by filters
+    // But we'll restore the expanded state manually
     if (this.gridApi) {
       this.gridApi.refreshServerSide({
-        purge: false,  // Don't purge cache completely
-        route: [],     // Refresh from root
+        purge: true,  // Must purge to avoid stale node issues
+        route: [],    // Refresh from root
       });
       
       // Restore expanded state after refresh completes
-      setTimeout(() => this.restoreExpandedState(), 200);
+      // Need a longer delay when purging
+      setTimeout(() => {
+        this.restoreExpandedState();
+        this.isRefreshing = false;
+      }, 500);
+    } else {
+      this.isRefreshing = false;
     }
   }
   
@@ -316,26 +332,41 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
     if (this.gridApi) {
       this.gridApi.forEachNode((node: any) => {
         if (node.group && node.expanded) {
-          // Store the group key path
-          const groupKey = node.key || (node.data && node.data[this.columns[0]?.field]);
+          // Store the group key - this is the actual value being grouped
+          // For root level groups, the key is in node.key
+          const groupKey = node.key;
           if (groupKey) {
+            console.log('Saving expanded group:', groupKey);
             this.expandedGroupIds.add(groupKey);
           }
         }
       });
+      console.log('Saved expanded groups:', Array.from(this.expandedGroupIds));
     }
   }
   
   private restoreExpandedState(): void {
     if (this.gridApi && this.expandedGroupIds.size > 0) {
-      this.gridApi.forEachNode((node: any) => {
-        if (node.group) {
-          const groupKey = node.key || (node.data && node.data[this.columns[0]?.field]);
-          if (groupKey && this.expandedGroupIds.has(groupKey)) {
-            node.setExpanded(true);
+      console.log('Restoring expanded groups:', Array.from(this.expandedGroupIds));
+      
+      // Use onRowDataUpdated to ensure data is loaded before expanding
+      const expandGroups = () => {
+        this.gridApi.forEachNode((node: any) => {
+          if (node.group) {
+            const groupKey = node.key;
+            if (groupKey && this.expandedGroupIds.has(groupKey)) {
+              console.log('Expanding group:', groupKey);
+              node.setExpanded(true);
+            }
           }
-        }
-      });
+        });
+      };
+      
+      // Try to expand immediately
+      expandGroups();
+      
+      // Also try again after a short delay in case nodes aren't ready
+      setTimeout(() => expandGroups(), 100);
     }
   }
   
