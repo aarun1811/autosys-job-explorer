@@ -57,8 +57,8 @@ public class OracleServiceV4 {
         String groupColumn = request.getRowGroupCols().get(0);
         List<String> filterValues = request.getInitialFilter().getValues();
         
-        // Build parameters for count subquery
-        List<Object> countParams = new ArrayList<>(filterValues);
+        // Build parameters for subquery
+        List<Object> subqueryParams = new ArrayList<>(filterValues);
         
         // Build SQL for grouped view with count check to exclude empty groups
         StringBuilder sqlBuilder = new StringBuilder(String.format(
@@ -71,7 +71,7 @@ public class OracleServiceV4 {
         ));
         
         // Add filter clauses to subquery
-        String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+        String filterClause = buildFilterClause(request.getFilterModel(), subqueryParams);
         sqlBuilder.append(filterClause);
         
         // Complete subquery with GROUP BY and HAVING to exclude empty groups
@@ -81,8 +81,8 @@ public class OracleServiceV4 {
         // Add pagination
         sqlBuilder.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         
-        // Build final parameters
-        List<Object> params = new ArrayList<>(countParams);
+        // Build final parameters for main query
+        List<Object> params = new ArrayList<>(subqueryParams);
         params.add(request.getStartRow());
         params.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
         
@@ -91,20 +91,6 @@ public class OracleServiceV4 {
         
         // Execute query
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlBuilder.toString(), params.toArray());
-        
-        // Get total count of groups after filtering
-        List<Object> totalCountParams = new ArrayList<>(countParams);
-        StringBuilder countSqlBuilder = new StringBuilder(String.format(
-            "SELECT COUNT(DISTINCT %s) FROM %s WHERE %s IN (%s)",
-            groupColumn,
-            config.getOracle().getTable(),
-            config.getSearchColumn(),
-            String.join(",", Collections.nCopies(filterValues.size(), "?"))
-        ));
-        countSqlBuilder.append(buildFilterClause(request.getFilterModel(), totalCountParams));
-        
-        Integer totalGroups = jdbcTemplate.queryForObject(countSqlBuilder.toString(), 
-                totalCountParams.toArray(), Integer.class);
         
         // Transform to AG-Grid format
         List<Map<String, Object>> gridRows = rows.stream()
@@ -118,9 +104,11 @@ public class OracleServiceV4 {
             })
             .collect(Collectors.toList());
         
+        // For groups, we use -1 to indicate unknown total (AG-Grid will handle this)
+        // This avoids the extra count query and the parameter mismatch issue
         return SSRMResponseV4.builder()
             .rows(gridRows)
-            .lastRow(totalGroups != null ? totalGroups : gridRows.size())  // Actual count of groups after filtering
+            .lastRow(rows.size() < BATCH_SIZE ? request.getStartRow() + rows.size() : -1)
             .build();
     }
     
