@@ -21,4 +21,5 @@ public class SSRMRequestV4 {
     private Map<String, Object> filterModel;  // AG-Grid filter model
     private int startRow;
     private int endRow;
+    private List<String> visibleColumns;  // Currently visible columns in grid
 }

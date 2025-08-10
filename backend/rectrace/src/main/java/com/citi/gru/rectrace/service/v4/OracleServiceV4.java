@@ -15,6 +15,13 @@ public class OracleServiceV4 {
     
     private static final int BATCH_SIZE = 100;
     
+    // Define frontend-only columns that don't exist in database
+    private static final Set<String> FRONTEND_ONLY_COLUMNS = new HashSet<>(Arrays.asList(
+        "execution_order",
+        "actions",
+        "ag-Grid-AutoColumn"
+    ));
+    
     @Autowired
     private JdbcTemplate jdbcTemplate;
     
@@ -198,25 +205,48 @@ public class OracleServiceV4 {
         
         // Build WHERE clause for all group levels
         StringBuilder whereClause = new StringBuilder();
-        List<Object> countParams = new ArrayList<>(filterValues);
         
         // Add conditions for each group level
         for (int i = 0; i < groupColumns.size() && i < groupValues.size(); i++) {
             whereClause.append(" AND ").append(groupColumns.get(i)).append(" = ?");
-            countParams.add(groupValues.get(i));
         }
         
-        String countSql = String.format(
-            "SELECT COUNT(*) FROM %s WHERE %s IN (%s)%s",
-            config.getOracle().getTable(),
-            config.getSearchColumn(),
-            String.join(",", Collections.nCopies(filterValues.size(), "?")),
-            whereClause.toString()
-        );
+        // Build SELECT clause based on visible columns
+        String selectClause = buildSelectClause(request.getVisibleColumns(), groupColumns);
         
-        // Add filter clauses to count query
-        String filterClause = buildFilterClause(request.getFilterModel(), countParams);
-        countSql += filterClause;
+        // For count query with DISTINCT, we need to count distinct combinations
+        List<Object> countParams = new ArrayList<>(filterValues);
+        for (String groupValue : groupValues) {
+            countParams.add(groupValue);
+        }
+        
+        String countSql;
+        if (selectClause.startsWith("DISTINCT ")) {
+            // When using DISTINCT, count the distinct rows
+            String distinctColumns = selectClause.substring("DISTINCT ".length());
+            countSql = String.format(
+                "SELECT COUNT(*) FROM (SELECT DISTINCT %s FROM %s WHERE %s IN (%s)%s",
+                distinctColumns,
+                config.getOracle().getTable(),
+                config.getSearchColumn(),
+                String.join(",", Collections.nCopies(filterValues.size(), "?")),
+                whereClause.toString()
+            );
+            // Add filter clauses to count query
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            countSql += filterClause + ")";
+        } else {
+            countSql = String.format(
+                "SELECT COUNT(*) FROM %s WHERE %s IN (%s)%s",
+                config.getOracle().getTable(),
+                config.getSearchColumn(),
+                String.join(",", Collections.nCopies(filterValues.size(), "?")),
+                whereClause.toString()
+            );
+            // Add filter clauses to count query
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            countSql += filterClause;
+        }
         
         Integer totalCount = jdbcTemplate.queryForObject(countSql, countParams.toArray(), Integer.class);
         
@@ -229,7 +259,8 @@ public class OracleServiceV4 {
         }
         
         StringBuilder dataSql = new StringBuilder(String.format(
-            "SELECT * FROM %s WHERE %s IN (%s)%s",
+            "SELECT %s FROM %s WHERE %s IN (%s)%s",
+            selectClause,
             config.getOracle().getTable(),
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?")),
@@ -267,27 +298,46 @@ public class OracleServiceV4 {
     private SSRMResponseV4 fetchFlatData(CategoryConfigV4 config, SSRMRequestV4 request) {
         List<String> filterValues = request.getInitialFilter().getValues();
         
+        // Build SELECT clause based on visible columns
+        String selectClause = buildSelectClause(request.getVisibleColumns(), request.getRowGroupCols());
+        
         // Prepare parameters for count query
         List<Object> countParams = new ArrayList<>(filterValues);
         
         // Get total count with filters
-        String countSql = String.format(
-            "SELECT COUNT(*) FROM %s WHERE %s IN (%s)",
-            config.getOracle().getTable(),
-            config.getSearchColumn(),
-            String.join(",", Collections.nCopies(filterValues.size(), "?"))
-        );
-        
-        // Add filter clauses to count query
-        String filterClause = buildFilterClause(request.getFilterModel(), countParams);
-        countSql += filterClause;
+        String countSql;
+        if (selectClause.startsWith("DISTINCT ")) {
+            // When using DISTINCT, count the distinct rows
+            String distinctColumns = selectClause.substring("DISTINCT ".length());
+            countSql = String.format(
+                "SELECT COUNT(*) FROM (SELECT DISTINCT %s FROM %s WHERE %s IN (%s)",
+                distinctColumns,
+                config.getOracle().getTable(),
+                config.getSearchColumn(),
+                String.join(",", Collections.nCopies(filterValues.size(), "?"))
+            );
+            // Add filter clauses to count query
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            countSql += filterClause + ")";
+        } else {
+            countSql = String.format(
+                "SELECT COUNT(*) FROM %s WHERE %s IN (%s)",
+                config.getOracle().getTable(),
+                config.getSearchColumn(),
+                String.join(",", Collections.nCopies(filterValues.size(), "?"))
+            );
+            // Add filter clauses to count query
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            countSql += filterClause;
+        }
         
         Integer totalCount = jdbcTemplate.queryForObject(countSql, countParams.toArray(), Integer.class);
         
         // Build data query
         List<Object> dataParams = new ArrayList<>(filterValues);
         StringBuilder dataSql = new StringBuilder(String.format(
-            "SELECT * FROM %s WHERE %s IN (%s)",
+            "SELECT %s FROM %s WHERE %s IN (%s)",
+            selectClause,
             config.getOracle().getTable(),
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?"))
@@ -398,5 +448,38 @@ public class OracleServiceV4 {
                 return normalizedRow;
             })
             .collect(Collectors.toList());
+    }
+    
+    private String buildSelectClause(List<String> visibleColumns, List<String> groupColumns) {
+        if (visibleColumns == null || visibleColumns.isEmpty()) {
+            return "*";  // Default to all columns if none specified
+        }
+        
+        // Create a set of columns to select (removes duplicates)
+        Set<String> columnsToSelect = new LinkedHashSet<>();
+        
+        // Add visible columns (excluding frontend-only columns)
+        for (String col : visibleColumns) {
+            if (!FRONTEND_ONLY_COLUMNS.contains(col)) {
+                columnsToSelect.add(col);
+            }
+        }
+        
+        // Always include grouped columns (even if not in visible list)
+        if (groupColumns != null) {
+            for (String col : groupColumns) {
+                if (!FRONTEND_ONLY_COLUMNS.contains(col)) {
+                    columnsToSelect.add(col);
+                }
+            }
+        }
+        
+        // If no valid columns, default to all
+        if (columnsToSelect.isEmpty()) {
+            return "*";
+        }
+        
+        // Build the SELECT clause with DISTINCT
+        return "DISTINCT " + String.join(", ", columnsToSelect);
     }
 }
