@@ -12,6 +12,8 @@ import {
   ColumnDefinition, 
   SSRMRequestV4 
 } from '../../../services/search-v4.service';
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 // Import custom cell renderers
 import { AppIDCellRendererComponent } from '../../../custom-interactions/components/renderers/app-id-cell-renderer.component';
@@ -37,11 +39,21 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   gridOptions: GridOptions = {};
   gridApi: any;
   gridColumnApi: any;
+  isExporting = false;  // Track export status
+  expandedGroupIds: Set<string> = new Set();  // Track expanded groups
+  private filterChanged$ = new Subject<void>();  // Subject for debouncing
   
   constructor(private searchService: SearchServiceV4) {}
   
   ngOnInit(): void {
     this.setupGridOptions();
+    
+    // Set up debounced filter changes
+    this.filterChanged$
+      .pipe(debounceTime(300))  // Wait 300ms after last change
+      .subscribe(() => {
+        this.applyFilterChanges();
+      });
   }
   
   setupGridOptions(): void {
@@ -96,6 +108,7 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
         setIdCellRenderer: SetIdCellRendererComponent
       },
       onGridReady: this.onGridReady.bind(this),
+      onFilterChanged: this.onFilterChanged.bind(this),
       getRowId: (params) => {
         // Generate unique row ID
         return params.data ? JSON.stringify(params.data) : Math.random().toString();
@@ -110,6 +123,27 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
     // Set up SSRM datasource
     const datasource = this.createSSRMDatasource();
     (this.gridApi as any).setGridOption('serverSideDatasource', datasource);
+  }
+  
+  onFilterChanged(): void {
+    // Trigger debounced filter change
+    this.filterChanged$.next();
+  }
+  
+  private applyFilterChanges(): void {
+    // Save expanded state before refresh
+    this.saveExpandedState();
+    
+    // Use a less aggressive refresh that tries to preserve state
+    if (this.gridApi) {
+      this.gridApi.refreshServerSide({
+        purge: false,  // Don't purge cache completely
+        route: [],     // Refresh from root
+      });
+      
+      // Restore expanded state after refresh completes
+      setTimeout(() => this.restoreExpandedState(), 200);
+    }
   }
   
   createSSRMDatasource(): IServerSideDatasource {
@@ -177,16 +211,59 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   }
   
   exportToExcel(): void {
+    // Get current filter model from grid
+    const currentFilterModel = this.gridApi ? this.gridApi.getFilterModel() : {};
+    
+    // Convert AG-Grid filter model to our format
+    const filterModel: any = {};
+    if (currentFilterModel) {
+      Object.keys(currentFilterModel).forEach(field => {
+        const agFilter = (currentFilterModel as any)[field];
+        if (agFilter && agFilter.filter) {
+          filterModel[field] = {
+            filterType: agFilter.filterType || 'text',
+            type: agFilter.type || 'contains',
+            filter: agFilter.filter
+          };
+        }
+      });
+    }
+    
+    // Get the grouped column first, then other visible columns
+    const groupedColumn = this.columns.find(col => col.rowGroup)?.field;
+    const exportColumns: string[] = [];
+    
+    // Add grouped column first if it exists
+    if (groupedColumn) {
+      exportColumns.push(groupedColumn);
+    }
+    
+    // Add other visible columns (excluding the grouped one to avoid duplicates)
+    this.columns
+      .filter(col => !col.hide && col.field !== groupedColumn)
+      .forEach(col => {
+        if (col.field) {
+          exportColumns.push(col.field);
+        }
+      });
+    
     const request = {
       category: this.category,
       initialFilter: {
         column: this.searchColumn,
         values: this.initialFilter
       },
-      columns: this.columns
-        .filter(col => !col.hide)
-        .map(col => col.field)
+      columns: exportColumns,
+      filterModel: filterModel
     };
+    
+    // Set loading state
+    this.isExporting = true;
+    
+    // Show loading overlay on grid
+    if (this.gridApi) {
+      this.gridApi.showLoadingOverlay();
+    }
     
     this.searchService.exportData(this.category, request).subscribe({
       next: (blob) => {
@@ -196,10 +273,22 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
         link.download = `${this.category}_export_${new Date().getTime()}.xlsx`;
         link.click();
         window.URL.revokeObjectURL(url);
+        
+        // Clear loading state
+        this.isExporting = false;
+        if (this.gridApi) {
+          this.gridApi.hideOverlay();
+        }
       },
       error: (error) => {
         console.error('Export failed', error);
         alert('Export failed. Please try again.');
+        
+        // Clear loading state
+        this.isExporting = false;
+        if (this.gridApi) {
+          this.gridApi.hideOverlay();
+        }
       }
     });
   }
@@ -212,7 +301,41 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   
   clearFilters(): void {
     if (this.gridApi) {
+      // Save expanded state before clearing
+      this.saveExpandedState();
+      
       this.gridApi.setFilterModel(null);
+      
+      // Restore expanded state after a short delay
+      setTimeout(() => this.restoreExpandedState(), 100);
+    }
+  }
+  
+  private saveExpandedState(): void {
+    this.expandedGroupIds.clear();
+    if (this.gridApi) {
+      this.gridApi.forEachNode((node: any) => {
+        if (node.group && node.expanded) {
+          // Store the group key path
+          const groupKey = node.key || (node.data && node.data[this.columns[0]?.field]);
+          if (groupKey) {
+            this.expandedGroupIds.add(groupKey);
+          }
+        }
+      });
+    }
+  }
+  
+  private restoreExpandedState(): void {
+    if (this.gridApi && this.expandedGroupIds.size > 0) {
+      this.gridApi.forEachNode((node: any) => {
+        if (node.group) {
+          const groupKey = node.key || (node.data && node.data[this.columns[0]?.field]);
+          if (groupKey && this.expandedGroupIds.has(groupKey)) {
+            node.setExpanded(true);
+          }
+        }
+      });
     }
   }
   
@@ -229,7 +352,10 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   }
   
   ngOnDestroy(): void {
-    // Cleanup if needed
+    // Cleanup subscriptions
+    this.filterChanged$.complete();
+    
+    // Cleanup grid
     if (this.gridApi) {
       this.gridApi.destroy();
     }
