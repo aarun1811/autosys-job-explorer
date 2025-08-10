@@ -17,8 +17,9 @@
       <button mat-icon-button (click)="refreshGrid()" matTooltip="Refresh">
         <mat-icon>refresh</mat-icon>
       </button>
-      <button mat-icon-button (click)="exportToExcel()" matTooltip="Export to Excel">
-        <mat-icon>file_download</mat-icon>
+      <button mat-icon-button (click)="exportToExcel()" [disabled]="isExporting" 
+              [matTooltip]="isExporting ? 'Exporting...' : 'Export to Excel'">
+        <mat-icon>{{ isExporting ? 'hourglass_empty' : 'file_download' }}</mat-icon>
       </button>
     </div>
   </div>
