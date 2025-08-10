@@ -24,6 +24,12 @@
 
       <!-- Data Controls -->
       <div class="grid-actions-group">
+        <button (click)="clearFilters()" matTooltip="Clear All Filters">
+          <mat-icon>filter_alt_off</mat-icon>
+        </button>
+        <button (click)="refreshGrid()" matTooltip="Refresh Grid">
+          <mat-icon>refresh</mat-icon>
+        </button>
         <button (click)="removeDuplicates()" [class.active]="isDeduplicated" matTooltip="Remove Duplicate Rows">
           <mat-icon>filter_list_off</mat-icon>
         </button>
