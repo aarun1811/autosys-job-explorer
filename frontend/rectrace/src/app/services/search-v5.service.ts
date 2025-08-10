@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 // DTOs matching backend
@@ -124,6 +124,19 @@ export class SearchServiceV5 {
   exportData(category: string, request: ExportRequestV4): Observable<Blob> {
     return this.http.post(`${this.apiUrl}/export/${category}`, request, {
       responseType: 'blob',
+      headers: this.getHeaders()
+    });
+  }
+  
+  getSuggestions(query: string): Observable<string[]> {
+    // Don't hit backend for very short prefixes (e.g., less than 2 chars)
+    if (!query || query.trim().length < 2) {
+      return of([]); // Return an observable of an empty array
+    }
+    
+    // Call the actual backend suggestions endpoint
+    return this.http.get<string[]>(`${environment.apiUrl}/search/suggest`, {
+      params: { prefix: query.trim() },
       headers: this.getHeaders()
     });
   }

@@ -15,9 +15,11 @@
               (keyup.enter)="performSearch()"
               (focus)="onSearchFocus()"
               (blur)="onSearchBlur()"
+              (input)="onSearchInput()"
               placeholder="Search by {{currentPlaceholder}}"
               class="search-input"
               [class.has-value]="searchTerm"
+              [matAutocomplete]="autoNavbar"
               aria-label="Search Jobs"
             />
             <mat-icon class="clear-icon" *ngIf="searchTerm" (click)="clearSearch()" style="cursor: pointer;">close</mat-icon>
@@ -64,9 +66,11 @@
             (keyup.enter)="performSearch()"
             (focus)="onSearchFocus()"
             (blur)="onSearchBlur()"
+            (input)="onSearchInput()"
             placeholder="Are you looking for {{currentPlaceholder}} ?"
             class="search-input"
             [class.has-value]="searchTerm"
+            [matAutocomplete]="autoCentered"
             aria-label="Search Jobs"
           />
           <mat-icon class="clear-icon" *ngIf="searchTerm" (click)="clearSearch()" style="cursor: pointer;">close</mat-icon>
@@ -107,3 +111,16 @@
     </div>
   </div>
 </div>
+
+<!-- Autocomplete panels -->
+<mat-autocomplete #autoNavbar="matAutocomplete" (optionSelected)="onSuggestionSelected($event)">
+  <mat-option *ngFor="let suggestion of suggestions$ | async" [value]="suggestion">
+    {{ suggestion }}
+  </mat-option>
+</mat-autocomplete>
+
+<mat-autocomplete #autoCentered="matAutocomplete" (optionSelected)="onSuggestionSelected($event)">
+  <mat-option *ngFor="let suggestion of suggestions$ | async" [value]="suggestion">
+    {{ suggestion }}
+  </mat-option>
+</mat-autocomplete>

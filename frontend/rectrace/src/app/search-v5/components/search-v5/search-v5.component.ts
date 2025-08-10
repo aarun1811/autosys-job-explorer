@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, Subscription } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, Subscription, Observable, of } from 'rxjs';
+import { takeUntil, debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { SearchServiceV5, CategoryResultV4 } from '../../../services/search-v5.service';
 
 @Component({
@@ -29,18 +30,33 @@ export class SearchV5Component implements OnInit, OnDestroy {
   userInitials: string = '';
   isUserIdentified: boolean = false;
   
+  // Suggestions
+  suggestions$: Observable<string[]> = of([]);
+  private searchInput$ = new Subject<string>();
+  
   // Placeholder animation
   private placeholders = ['files', 'jobs', 'boxes', 'recons'];
   private placeholderIndex = 0;
   private placeholderInterval: any;
   
-  // Sample searches for Try button
-  private sampleSearches = [
-    'SBN_JOB_NAME',
-    'TLM_INSTANCE',
-    'RECON_NAME',
-    'BOX_NAME',
-    'FILE_PATTERN'
+  // Sample searches for Try button - matches old implementation
+  private tryButtonTexts: {name: string, options: string[]}[] = [
+    {
+      name: 'file name',
+      options: ['reconour', 'gpdw', 'flexcube', 'fullsuite']
+    },
+    {
+      name: 'job name', 
+      options: ['FLBCM1', 'reco_break', 'wf_exec', 'EODPRO']
+    },
+    {
+      name: 'box name',
+      options: ['B_FLBCM', 'B_BATCH', 'B_RECON', 'B_EOD']
+    },
+    {
+      name: 'recon name',
+      options: ['nostro', 'ledger', 'position', 'cash']
+    }
   ];
   
   private destroy$ = new Subject<void>();
@@ -58,6 +74,22 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.initializeUser();
     this.updateTryButtonText();
     this.initializeQueryParamsSubscription();
+    this.initializeSuggestions();
+  }
+  
+  private initializeSuggestions(): void {
+    this.suggestions$ = this.searchInput$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => {
+        if (!query || query.trim().length < 2) {
+          return of([]);
+        }
+        return this.searchService.getSuggestions(query.trim()).pipe(
+          catchError(() => of([]))
+        );
+      })
+    );
   }
   
   private initializeQueryParamsSubscription(): void {
@@ -107,13 +139,19 @@ export class SearchV5Component implements OnInit, OnDestroy {
   }
   
   updateTryButtonText(): void {
-    const randomIndex = Math.floor(Math.random() * this.sampleSearches.length);
-    this.tryButtonText = this.sampleSearches[randomIndex];
+    // Select a random category to display
+    const randomItem = this.tryButtonTexts[Math.floor(Math.random() * this.tryButtonTexts.length)];
+    this.tryButtonText = randomItem.name;
   }
   
   onTryButtonClick(): void {
-    this.searchTerm = this.tryButtonText;
-    this.performSearch();
+    // Find the category and select a random option from it
+    const foundItem = this.tryButtonTexts.find(item => item.name === this.tryButtonText);
+    if (foundItem?.options) {
+      const randomOption = foundItem.options[Math.floor(Math.random() * foundItem.options.length)];
+      this.searchTerm = randomOption;
+      this.performSearch();
+    }
   }
   
   onSearchFocus(): void {
@@ -217,13 +255,26 @@ export class SearchV5Component implements OnInit, OnDestroy {
     }
   }
   
+  onSearchInput(): void {
+    this.searchInput$.next(this.searchTerm);
+  }
+  
+  onSuggestionSelected(event: MatAutocompleteSelectedEvent): void {
+    this.searchTerm = event.option.value;
+    this.performSearch();
+  }
+  
   clearSearch(): void {
     this.searchTerm = '';
-    this.searchResults = [];
-    this.errorMessage = '';
-    this.hasSearched = false;
-    this.showNoResultsMessage = false;
-    this.selectedTab = 0;
+    // Don't reset hasSearched to keep navbar visible
+    // Just clear the search term and keep user on the results page
+    // Focus the input after clearing
+    setTimeout(() => {
+      const input = document.querySelector('.navbar-search .search-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+      }
+    }, 0);
   }
   
   getTabLabel(category: CategoryResultV4): string {
