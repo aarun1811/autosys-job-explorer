@@ -111,8 +111,15 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       onGridReady: this.onGridReady.bind(this),
       onFilterChanged: this.onFilterChanged.bind(this),
       getRowId: (params) => {
-        // Generate unique row ID
-        return params.data ? JSON.stringify(params.data) : Math.random().toString();
+        // Use the first column value as row ID for groups
+        // This allows AG-Grid to track groups across refreshes
+        if (params.data) {
+          const firstColField = this.columns[0]?.field;
+          if (firstColField && params.data[firstColField]) {
+            return params.data[firstColField];
+          }
+        }
+        return Math.random().toString();
       }
     };
   }
@@ -127,8 +134,11 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
   }
   
   onFilterChanged(): void {
-    // Trigger debounced filter change
-    this.filterChanged$.next();
+    // Don't trigger if we're already refreshing (prevents double calls)
+    if (!this.isRefreshing) {
+      // Trigger debounced filter change
+      this.filterChanged$.next();
+    }
   }
   
   private applyFilterChanges(): void {
@@ -143,20 +153,19 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
     // Save expanded state before refresh
     this.saveExpandedState();
     
-    // We need to purge to avoid infinite loops when groups are removed by filters
-    // But we'll restore the expanded state manually
     if (this.gridApi) {
+      // Try a targeted refresh first - only refresh root level
+      // The expanded groups will be restored in the datasource getRows callback
       this.gridApi.refreshServerSide({
-        purge: true,  // Must purge to avoid stale node issues
+        purge: true,  // We still need to purge to handle removed groups
         route: [],    // Refresh from root
       });
       
-      // Restore expanded state after refresh completes
-      // Need a longer delay when purging
+      // Mark as not refreshing after a short delay
+      // The expansion will happen in the datasource callback
       setTimeout(() => {
-        this.restoreExpandedState();
         this.isRefreshing = false;
-      }, 500);
+      }, 300);
     } else {
       this.isRefreshing = false;
     }
@@ -215,6 +224,26 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
               rowData: response.rows,
               rowCount: response.lastRow
             });
+            
+            // Re-expand previously expanded groups after data loads
+            // This is for root level groups
+            if (!params.request.groupKeys || params.request.groupKeys.length === 0) {
+              setTimeout(() => {
+                response.rows.forEach((row: any) => {
+                  const firstColField = this.columns[0]?.field;
+                  if (firstColField && row[firstColField]) {
+                    const rowId = row[firstColField];
+                    if (this.expandedGroupIds.has(rowId)) {
+                      const node = this.gridApi.getRowNode(rowId);
+                      if (node && node.group) {
+                        console.log('Re-expanding group after load:', rowId);
+                        node.setExpanded(true);
+                      }
+                    }
+                  }
+                });
+              }, 50);
+            }
           } else {
             params.fail();
           }
@@ -322,8 +351,8 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       
       this.gridApi.setFilterModel(null);
       
-      // Restore expanded state after a short delay
-      setTimeout(() => this.restoreExpandedState(), 100);
+      // The expansion will be restored in the datasource callback
+      // No need to manually restore here
     }
   }
   
