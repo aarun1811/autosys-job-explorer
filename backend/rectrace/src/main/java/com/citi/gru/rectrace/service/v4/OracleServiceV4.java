@@ -31,18 +31,25 @@ public class OracleServiceV4 {
         
         // Determine query type based on grouping state
         boolean isGrouped = request.getRowGroupCols() != null && !request.getRowGroupCols().isEmpty();
-        boolean isRootLevel = request.getGroupKeys() == null || request.getGroupKeys().isEmpty();
+        int groupingDepth = request.getGroupKeys() != null ? request.getGroupKeys().size() : 0;
+        int totalGroupLevels = request.getRowGroupCols() != null ? request.getRowGroupCols().size() : 0;
+        
+        log.debug("SSRM Request - isGrouped: {}, groupingDepth: {}, totalGroupLevels: {}, rowGroupCols: {}, groupKeys: {}", 
+                isGrouped, groupingDepth, totalGroupLevels, request.getRowGroupCols(), request.getGroupKeys());
         
         try {
-            if (isGrouped && isRootLevel) {
-                // Fetch grouped data (one row per group)
-                return fetchGroupedData(config, request);
-            } else if (isGrouped && !isRootLevel) {
-                // Fetch expanded group details
-                return fetchExpandedGroupData(config, request);
-            } else {
-                // Fetch flat data (no grouping)
+            if (!isGrouped) {
+                // No grouping - fetch flat data
                 return fetchFlatData(config, request);
+            } else if (groupingDepth == 0) {
+                // Root level - fetch first level groups
+                return fetchGroupedData(config, request);
+            } else if (groupingDepth < totalGroupLevels) {
+                // Intermediate level - fetch next level groups
+                return fetchNextLevelGroups(config, request);
+            } else {
+                // All groups expanded - fetch detail rows
+                return fetchDetailRows(config, request);
             }
         } catch (Exception e) {
             log.error("Failed to fetch SSRM data", e);
@@ -112,21 +119,99 @@ public class OracleServiceV4 {
             .build();
     }
     
-    private SSRMResponseV4 fetchExpandedGroupData(CategoryConfigV4 config, SSRMRequestV4 request) {
+    private SSRMResponseV4 fetchNextLevelGroups(CategoryConfigV4 config, SSRMRequestV4 request) {
+        // Fetch groups for the next level of hierarchy
         List<String> filterValues = request.getInitialFilter().getValues();
-        String groupColumn = request.getRowGroupCols().get(0);
-        String groupValue = request.getGroupKeys().get(0);
+        List<String> groupColumns = request.getRowGroupCols();
+        List<String> groupValues = request.getGroupKeys();
         
-        // First get count for the expanded group
-        List<Object> countParams = new ArrayList<>(filterValues);
-        countParams.add(groupValue);
+        // The next column to group by
+        String nextGroupColumn = groupColumns.get(groupValues.size());
         
-        String countSql = String.format(
-            "SELECT COUNT(*) FROM %s WHERE %s IN (%s) AND %s = ?",
+        // Build WHERE clause for all previous group levels
+        StringBuilder whereClause = new StringBuilder();
+        List<Object> queryParams = new ArrayList<>(filterValues);
+        
+        for (int i = 0; i < groupValues.size(); i++) {
+            whereClause.append(" AND ").append(groupColumns.get(i)).append(" = ?");
+            queryParams.add(groupValues.get(i));
+        }
+        
+        // Build SQL for next level groups with count check to exclude empty groups
+        StringBuilder sqlBuilder = new StringBuilder(String.format(
+            "SELECT %s as group_value FROM (SELECT %s, COUNT(*) as cnt FROM %s WHERE %s IN (%s)%s",
+            nextGroupColumn,
+            nextGroupColumn,
             config.getOracle().getTable(),
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?")),
-            groupColumn
+            whereClause.toString()
+        ));
+        
+        // Add filter clauses
+        String filterClause = buildFilterClause(request.getFilterModel(), queryParams);
+        sqlBuilder.append(filterClause);
+        
+        // Complete subquery with GROUP BY and HAVING to exclude empty groups
+        sqlBuilder.append(String.format(" GROUP BY %s HAVING COUNT(*) > 0) subq ORDER BY %s", 
+            nextGroupColumn, nextGroupColumn));
+        
+        // Add pagination
+        sqlBuilder.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        
+        // Add pagination parameters
+        queryParams.add(request.getStartRow());
+        queryParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
+        
+        log.debug("Executing next level group query for column: {} with {} previous groups", 
+                nextGroupColumn, groupValues.size());
+        
+        // Execute query
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlBuilder.toString(), queryParams.toArray());
+        
+        // Transform to AG-Grid format
+        List<Map<String, Object>> gridRows = rows.stream()
+            .map(row -> {
+                Map<String, Object> gridRow = new HashMap<>();
+                Object value = row.get("GROUP_VALUE");
+                if (value == null) {
+                    value = row.get("group_value");
+                }
+                if (value != null) {
+                    gridRow.put(nextGroupColumn, value.toString());
+                }
+                return gridRow;
+            })
+            .collect(Collectors.toList());
+        
+        return SSRMResponseV4.builder()
+            .rows(gridRows)
+            .lastRow(rows.size() < BATCH_SIZE ? request.getStartRow() + rows.size() : -1)
+            .build();
+    }
+    
+    private SSRMResponseV4 fetchDetailRows(CategoryConfigV4 config, SSRMRequestV4 request) {
+        // This method fetches actual detail rows when all groups are expanded
+        List<String> filterValues = request.getInitialFilter().getValues();
+        List<String> groupColumns = request.getRowGroupCols();
+        List<String> groupValues = request.getGroupKeys();
+        
+        // Build WHERE clause for all group levels
+        StringBuilder whereClause = new StringBuilder();
+        List<Object> countParams = new ArrayList<>(filterValues);
+        
+        // Add conditions for each group level
+        for (int i = 0; i < groupColumns.size() && i < groupValues.size(); i++) {
+            whereClause.append(" AND ").append(groupColumns.get(i)).append(" = ?");
+            countParams.add(groupValues.get(i));
+        }
+        
+        String countSql = String.format(
+            "SELECT COUNT(*) FROM %s WHERE %s IN (%s)%s",
+            config.getOracle().getTable(),
+            config.getSearchColumn(),
+            String.join(",", Collections.nCopies(filterValues.size(), "?")),
+            whereClause.toString()
         );
         
         // Add filter clauses to count query
@@ -137,14 +222,18 @@ public class OracleServiceV4 {
         
         // Build data query with sorting and pagination
         List<Object> dataParams = new ArrayList<>(filterValues);
-        dataParams.add(groupValue);
+        
+        // Add group values as parameters
+        for (String groupValue : groupValues) {
+            dataParams.add(groupValue);
+        }
         
         StringBuilder dataSql = new StringBuilder(String.format(
-            "SELECT * FROM %s WHERE %s IN (%s) AND %s = ?",
+            "SELECT * FROM %s WHERE %s IN (%s)%s",
             config.getOracle().getTable(),
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?")),
-            groupColumn
+            whereClause.toString()
         ));
         
         // Add filter clauses to data query
@@ -162,7 +251,7 @@ public class OracleServiceV4 {
         dataParams.add(request.getStartRow());
         dataParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
         
-        log.debug("Executing expanded group query for group: {}", groupValue);
+        log.debug("Executing detail query for groups: {}", groupValues);
         
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(dataSql.toString(), dataParams.toArray());
         

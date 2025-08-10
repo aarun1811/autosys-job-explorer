@@ -111,15 +111,31 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
       onGridReady: this.onGridReady.bind(this),
       onFilterChanged: this.onFilterChanged.bind(this),
       getRowId: (params) => {
-        // Use the first column value as row ID for groups
-        // This allows AG-Grid to track groups across refreshes
+        // Simple approach: use JSON stringification of the entire row data
+        // This ensures uniqueness since each row should have some different combination of values
         if (params.data) {
-          const firstColField = this.columns[0]?.field;
-          if (firstColField && params.data[firstColField]) {
-            return params.data[firstColField];
+          // For SSRM, AG-Grid provides a unique nodeId we can use
+          if (params.context && params.context.nodeId) {
+            return params.context.nodeId.toString();
           }
+          
+          // Create a unique ID by stringifying the whole data object
+          // This guarantees uniqueness as long as rows have some differences
+          const dataString = JSON.stringify(params.data);
+          
+          // Create a simple hash to keep the ID shorter
+          let hash = 0;
+          for (let i = 0; i < dataString.length; i++) {
+            const char = dataString.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+          }
+          
+          // Add a timestamp component to ensure uniqueness even for identical rows
+          return `row_${Math.abs(hash)}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         }
-        return Math.random().toString();
+        
+        return `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
     };
   }
@@ -226,23 +242,32 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
             });
             
             // Re-expand previously expanded groups after data loads
-            // This is for root level groups
-            if (!params.request.groupKeys || params.request.groupKeys.length === 0) {
-              setTimeout(() => {
-                response.rows.forEach((row: any) => {
-                  const firstColField = this.columns[0]?.field;
-                  if (firstColField && row[firstColField]) {
-                    const rowId = row[firstColField];
-                    if (this.expandedGroupIds.has(rowId)) {
-                      const node = this.gridApi.getRowNode(rowId);
-                      if (node && node.group) {
-                        console.log('Re-expanding group after load:', rowId);
-                        node.setExpanded(true);
+            // Handle multi-level grouping
+            if (params.request.rowGroupCols && params.request.rowGroupCols.length > 0) {
+              const currentDepth = params.request.groupKeys ? params.request.groupKeys.length : 0;
+              const groupCol = params.request.rowGroupCols[currentDepth];
+              const groupColField = typeof groupCol === 'string' ? groupCol : groupCol?.field;
+              
+              if (groupColField && typeof groupColField === 'string') {
+                setTimeout(() => {
+                  response.rows.forEach((row: any) => {
+                    const groupValue = row[groupColField];
+                    if (groupValue) {
+                      // Build the group path for multi-level
+                      const groupPath = [...(params.request.groupKeys || []), groupValue];
+                      const groupId = groupPath.join('|'); // Use | as separator for multi-level
+                      
+                      if (this.expandedGroupIds.has(groupId)) {
+                        const node = this.gridApi.getRowNode(groupValue);
+                        if (node && node.group) {
+                          console.log('Re-expanding group after load:', groupId);
+                          node.setExpanded(true);
+                        }
                       }
                     }
-                  }
-                });
-              }, 50);
+                  });
+                }, 50);
+              }
             }
           } else {
             params.fail();
@@ -361,12 +386,22 @@ export class SearchV4GridComponent implements OnInit, OnDestroy {
     if (this.gridApi) {
       this.gridApi.forEachNode((node: any) => {
         if (node.group && node.expanded) {
-          // Store the group key - this is the actual value being grouped
-          // For root level groups, the key is in node.key
-          const groupKey = node.key;
-          if (groupKey) {
-            console.log('Saving expanded group:', groupKey);
-            this.expandedGroupIds.add(groupKey);
+          // For multi-level grouping, build the full path
+          let groupPath: string[] = [];
+          let currentNode = node;
+          
+          // Walk up the tree to build the full path
+          while (currentNode) {
+            if (currentNode.key) {
+              groupPath.unshift(currentNode.key); // Add to beginning
+            }
+            currentNode = currentNode.parent;
+          }
+          
+          if (groupPath.length > 0) {
+            const groupId = groupPath.join('|'); // Use | as separator
+            console.log('Saving expanded group:', groupId);
+            this.expandedGroupIds.add(groupId);
           }
         }
       });
