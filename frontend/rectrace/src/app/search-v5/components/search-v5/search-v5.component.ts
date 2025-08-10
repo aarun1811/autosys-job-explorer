@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SearchServiceV5, CategoryResultV4 } from '../../../services/search-v5.service';
 
 @Component({
@@ -43,14 +44,41 @@ export class SearchV5Component implements OnInit, OnDestroy {
   ];
   
   private destroy$ = new Subject<void>();
+  private queryParamsSubscription: Subscription | null = null;
   
-  constructor(private searchService: SearchServiceV5) {}
+  constructor(
+    private searchService: SearchServiceV5,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
   
   ngOnInit(): void {
     // Initialize component
     this.startPlaceholderAnimation();
     this.initializeUser();
     this.updateTryButtonText();
+    this.initializeQueryParamsSubscription();
+  }
+  
+  private initializeQueryParamsSubscription(): void {
+    this.queryParamsSubscription = this.route.queryParams.subscribe(params => {
+      const queryFromUrl = params['q'];
+      const tabFromUrl = params['tab'];
+      
+      // If there's a query in the URL and we haven't searched yet, perform the search
+      if (queryFromUrl && !this.hasSearched) {
+        this.searchTerm = queryFromUrl;
+        this.performSearch();
+      }
+      
+      // If there's a tab parameter, select that tab
+      if (tabFromUrl && this.searchResults.length > 0) {
+        const tabIndex = this.searchResults.findIndex(cat => cat.key === tabFromUrl);
+        if (tabIndex !== -1) {
+          this.selectedTab = tabIndex;
+        }
+      }
+    });
   }
   
   private startPlaceholderAnimation(): void {
@@ -109,10 +137,34 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.showNoResultsMessage = false;
     this.errorMessage = '';
     this.selectedTab = 0;
+    // Clear URL parameters
+    this.updateUrlWithState();
   }
   
   selectTab(index: number): void {
     this.selectedTab = index;
+    // Update URL with selected tab
+    if (this.searchResults[index]) {
+      this.updateUrlWithState(this.searchTerm, this.searchResults[index].key);
+    }
+  }
+  
+  private updateUrlWithState(query?: string, tabKey?: string): void {
+    const params: any = {};
+    
+    if (query) {
+      params.q = query;
+    }
+    
+    if (tabKey) {
+      params.tab = tabKey;
+    }
+    
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: params,
+      replaceUrl: true
+    });
   }
   
   performSearch(): void {
@@ -126,6 +178,10 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.searchResults = [];
     this.hasSearched = true;
     this.showNoResultsMessage = false;
+    
+    // Update URL with search query
+    const firstTabKey = this.searchResults.length > 0 ? this.searchResults[0].key : undefined;
+    this.updateUrlWithState(this.searchTerm.trim(), firstTabKey);
     
     this.searchService.performInitialSearch(this.searchTerm.trim())
       .pipe(takeUntil(this.destroy$))
@@ -141,6 +197,9 @@ export class SearchV5Component implements OnInit, OnDestroy {
           
           if (this.searchResults.length === 0) {
             this.showNoResultsMessage = true;
+          } else {
+            // Update URL with first tab after results are loaded
+            this.updateUrlWithState(this.searchTerm.trim(), this.searchResults[0].key);
           }
         },
         error: (error) => {
@@ -178,6 +237,10 @@ export class SearchV5Component implements OnInit, OnDestroy {
     
     if (this.placeholderInterval) {
       clearInterval(this.placeholderInterval);
+    }
+    
+    if (this.queryParamsSubscription) {
+      this.queryParamsSubscription.unsubscribe();
     }
   }
 }
