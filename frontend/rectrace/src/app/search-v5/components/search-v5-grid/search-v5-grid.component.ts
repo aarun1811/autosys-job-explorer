@@ -117,7 +117,7 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
       groupDefaultExpanded: 0,
       // Row grouping panel settings
       rowGroupPanelShow: 'always',  // Show the row group panel
-      suppressMakeColumnVisibleAfterUnGroup: true,  // Keep columns hidden after ungrouping
+      suppressMakeColumnVisibleAfterUnGroup: false,  // Show columns back in grid after ungrouping
       groupSelectsChildren: false,  // Don't select children when selecting group
       sideBar: {
         toolPanels: [
