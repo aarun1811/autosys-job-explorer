@@ -18,7 +18,6 @@ public class OracleServiceV4 {
     // Define frontend-only columns that don't exist in database
     private static final Set<String> FRONTEND_ONLY_COLUMNS = new HashSet<>(Arrays.asList(
         "execution_order",
-        "actions",
         "ag-Grid-AutoColumn"
     ));
     
@@ -98,7 +97,9 @@ public class OracleServiceV4 {
         // Build final parameters for main query
         List<Object> params = new ArrayList<>(subqueryParams);
         params.add(request.getStartRow());
-        params.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
+        // For export requests (large row ranges), don't apply BATCH_SIZE limit
+        int rowsToFetch = request.getEndRow() - request.getStartRow();
+        params.add(rowsToFetch > 1000 ? rowsToFetch : Math.min(BATCH_SIZE, rowsToFetch));
         
         log.debug("Executing grouped query with {} filter values and {} filters", 
                 filterValues.size(), request.getFilterModel() != null ? request.getFilterModel().size() : 0);
@@ -168,7 +169,9 @@ public class OracleServiceV4 {
         
         // Add pagination parameters
         queryParams.add(request.getStartRow());
-        queryParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
+        // For export requests (large row ranges), don't apply BATCH_SIZE limit
+        int rowsToFetch = request.getEndRow() - request.getStartRow();
+        queryParams.add(rowsToFetch > 1000 ? rowsToFetch : Math.min(BATCH_SIZE, rowsToFetch));
         
         log.debug("Executing next level group query for column: {} with {} previous groups", 
                 nextGroupColumn, groupValues.size());
@@ -280,7 +283,9 @@ public class OracleServiceV4 {
         dataSql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         
         dataParams.add(request.getStartRow());
-        dataParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
+        // For export requests (large row ranges), don't apply BATCH_SIZE limit
+        int rowsToFetch = request.getEndRow() - request.getStartRow();
+        dataParams.add(rowsToFetch > 1000 ? rowsToFetch : Math.min(BATCH_SIZE, rowsToFetch));
         
         log.debug("Executing detail query for groups: {}", groupValues);
         
@@ -356,7 +361,9 @@ public class OracleServiceV4 {
         dataSql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         
         dataParams.add(request.getStartRow());
-        dataParams.add(Math.min(BATCH_SIZE, request.getEndRow() - request.getStartRow()));
+        // For export requests (large row ranges), don't apply BATCH_SIZE limit
+        int rowsToFetch = request.getEndRow() - request.getStartRow();
+        dataParams.add(rowsToFetch > 1000 ? rowsToFetch : Math.min(BATCH_SIZE, rowsToFetch));
         
         log.debug("Executing flat data query with {} filter values and {} filters", 
                 filterValues.size(), request.getFilterModel() != null ? request.getFilterModel().size() : 0);
