@@ -1,7 +1,10 @@
-import { Component, AfterViewInit, ElementRef, ViewChild, Input, Output, EventEmitter } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
 import type { Core, NodeSingular, CytoscapeOptions } from 'cytoscape';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
+import { ThemeService } from '../../../../services/theme.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 // Register the dagre layout
 cytoscape.use(dagre);
@@ -27,7 +30,7 @@ interface JobDetails {
   templateUrl: './execution-order-graph.component.html',
   styleUrls: ['./execution-order-graph.component.css']
 })
-export class ExecutionOrderGraphComponent implements AfterViewInit {
+export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
   @ViewChild('cy') private readonly cyElement!: ElementRef;
   @Input() executionSequence: JobNode[] = [];
   @Input() jobDetails: { [key: string]: JobDetails } = {};
@@ -38,10 +41,22 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
   private selectedNode: NodeSingular | null = null;
   public currentZoom: number = 1;
   public zoomStep: number = 0.1;
+  private destroy$ = new Subject<void>();
+  private isDarkMode = false;
 
-  constructor() { }
+  constructor(private themeService: ThemeService) { }
 
   ngAfterViewInit() {
+    // Subscribe to theme changes
+    this.themeService.getTheme()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(theme => {
+        this.isDarkMode = theme === 'dark';
+        if (this.cy) {
+          this.updateGraphTheme();
+        }
+      });
+    
     this.renderGraph();
     // Set initial zoom using calculation
     if (this.cy) {
@@ -51,6 +66,46 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
       this.currentZoom = initialZoom;
       this.updateZoomDisplay();
     }
+  }
+  
+  private updateGraphTheme() {
+    if (!this.cy) return;
+    
+    // Update styles based on theme
+    this.cy.style()
+      .selector('node')
+      .style({
+        'background-color': this.isDarkMode ? '#303134' : '#E8F0FE',
+        'color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+        'border-color': this.isDarkMode ? '#5f6368' : '#E8EAED',
+      })
+      .selector('edge')
+      .style({
+        'line-color': this.isDarkMode ? '#5f6368' : '#A8C7FA',
+        'target-arrow-color': this.isDarkMode ? '#5f6368' : '#A8C7FA',
+      })
+      .selector('node:selected')
+      .style({
+        'background-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+        'color': this.isDarkMode ? '#202124' : '#FFFFFF',
+        'border-color': this.isDarkMode ? '#aecbfa' : '#1557B0',
+      })
+      .selector('node.hover')
+      .style({
+        'background-color': this.isDarkMode ? '#394457' : '#F1F7FE',
+        'border-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+      })
+      .selector('edge.hover')
+      .style({
+        'line-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+        'target-arrow-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+      })
+      .selector('edge:selected')
+      .style({
+        'line-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+        'target-arrow-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+      })
+      .update();
   }
 
   private renderGraph() {
@@ -63,10 +118,10 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
         {
           selector: 'node',
           style: {
-            'background-color': '#E8F0FE',
+            'background-color': this.isDarkMode ? '#303134' : '#E8F0FE',
             'label': 'data(label)',
             'text-valign': 'center',
-            'color': '#1A73E8',
+            'color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
             'font-family': 'Google Sans, sans-serif',
             'font-size': '13px',
             'font-weight': 500,
@@ -77,7 +132,7 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
             'padding': '4px 12px',
             'shape': 'round-rectangle',
             'border-width': 1,
-            'border-color': '#E8EAED',
+            'border-color': this.isDarkMode ? '#5f6368' : '#E8EAED',
             'border-opacity': 0.6,
             'border-style': 'solid',
             'background-opacity': 1,
@@ -90,9 +145,9 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
           style: {
             'curve-style': 'bezier',
             'width': 2,
-            'line-color': '#A8C7FA',
+            'line-color': this.isDarkMode ? '#5f6368' : '#A8C7FA',
             'target-arrow-shape': 'triangle',
-            'target-arrow-color': '#A8C7FA',
+            'target-arrow-color': this.isDarkMode ? '#5f6368' : '#A8C7FA',
             'arrow-scale': 0.8,
             'opacity': 0.9,
           }
@@ -100,9 +155,9 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
         {
           selector: 'node:selected',
           style: {
-            'background-color': '#1A73E8',
-            'color': '#FFFFFF',
-            'border-color': '#1557B0',
+            'background-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+            'color': this.isDarkMode ? '#202124' : '#FFFFFF',
+            'border-color': this.isDarkMode ? '#aecbfa' : '#1557B0',
             'border-width': 1,
             'border-opacity': 1,
             'z-index': 10
@@ -111,8 +166,8 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
         {
           selector: 'node.hover',
           style: {
-            'background-color': '#F1F7FE',
-            'border-color': '#1A73E8',
+            'background-color': this.isDarkMode ? '#394457' : '#F1F7FE',
+            'border-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
             'border-opacity': 0.8,
             'z-index': 5
           }
@@ -121,8 +176,8 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
           selector: 'edge.hover',
           style: {
             'width': 2,
-            'line-color': '#1A73E8',
-            'target-arrow-color': '#1A73E8',
+            'line-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+            'target-arrow-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
             'opacity': 1
           }
         },
@@ -130,8 +185,8 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
           selector: 'edge:selected',
           style: {
             'width': 2,
-            'line-color': '#1A73E8',
-            'target-arrow-color': '#1A73E8',
+            'line-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+            'target-arrow-color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
             'opacity': 1,
             'z-index': 9
           }
@@ -328,5 +383,13 @@ export class ExecutionOrderGraphComponent implements AfterViewInit {
     if (nodeCount <= 20) return 0.7;
     if (nodeCount <= 30) return 0.6;
     return Math.max(0.5, 25 / nodeCount);
+  }
+  
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.cy) {
+      this.cy.destroy();
+    }
   }
 }
