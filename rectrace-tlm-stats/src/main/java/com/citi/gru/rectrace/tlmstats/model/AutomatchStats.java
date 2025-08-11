@@ -31,16 +31,13 @@ public class AutomatchStats {
     @JsonProperty("automatch_items")
     private Long automatchItems;
     
-    @JsonProperty("outstanding_items")
-    private Long outstandingItems;
-    
     // Default constructor
     public AutomatchStats() {}
     
     // Constructor with all fields
     public AutomatchStats(String tlmInstance, String agentCode, String setid, String stmtDate, 
                          String branCode, String corrAccNo, Long totalItems, 
-                         Long automatchItems, Long outstandingItems) {
+                         Long automatchItems) {
         this.tlmInstance = tlmInstance;
         this.agentCode = agentCode;
         this.setid = setid;
@@ -49,7 +46,6 @@ public class AutomatchStats {
         this.corrAccNo = corrAccNo;
         this.totalItems = totalItems;
         this.automatchItems = automatchItems;
-        this.outstandingItems = outstandingItems;
     }
     
     // Getters and Setters
@@ -117,14 +113,6 @@ public class AutomatchStats {
         this.automatchItems = automatchItems;
     }
     
-    public Long getOutstandingItems() {
-        return outstandingItems;
-    }
-    
-    public void setOutstandingItems(Long outstandingItems) {
-        this.outstandingItems = outstandingItems;
-    }
-    
     @Override
     public String toString() {
         return "AutomatchStats{" +
@@ -136,7 +124,6 @@ public class AutomatchStats {
                 ", corrAccNo='" + corrAccNo + '\'' +
                 ", totalItems=" + totalItems +
                 ", automatchItems=" + automatchItems +
-                ", outstandingItems=" + outstandingItems +
                 '}';
     }
 } 

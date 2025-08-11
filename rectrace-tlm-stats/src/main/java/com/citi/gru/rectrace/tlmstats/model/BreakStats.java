@@ -7,8 +7,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class BreakStats {
     
-    @JsonProperty("count")
-    private Long count;
+    @JsonProperty("breaks_count")
+    private Long breaksCount;
     
     @JsonProperty("agent_code")
     private String agentCode;
@@ -23,20 +23,20 @@ public class BreakStats {
     public BreakStats() {}
     
     // Constructor with all fields
-    public BreakStats(Long count, String agentCode, String localAccNo, String branCode) {
-        this.count = count;
+    public BreakStats(Long breaksCount, String agentCode, String localAccNo, String branCode) {
+        this.breaksCount = breaksCount;
         this.agentCode = agentCode;
         this.localAccNo = localAccNo;
         this.branCode = branCode;
     }
     
     // Getters and Setters
-    public Long getCount() {
-        return count;
+    public Long getBreaksCount() {
+        return breaksCount;
     }
     
-    public void setCount(Long count) {
-        this.count = count;
+    public void setBreaksCount(Long breaksCount) {
+        this.breaksCount = breaksCount;
     }
     
     public String getAgentCode() {
@@ -66,7 +66,7 @@ public class BreakStats {
     @Override
     public String toString() {
         return "BreakStats{" +
-                "count=" + count +
+                "breaksCount=" + breaksCount +
                 ", agentCode='" + agentCode + '\'' +
                 ", localAccNo='" + localAccNo + '\'' +
                 ", branCode='" + branCode + '\'' +
