@@ -296,7 +296,7 @@ ag-grid-angular {
   background: var(--loading-overlay);
   backdrop-filter: blur(2px);
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: none !important;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -306,24 +306,32 @@ ag-grid-angular {
   min-height: auto;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center {
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper .ag-overlay-loading-center {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center .ag-overlay-loading-text {
-  display: none; /* Hide the "Loading" text */
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center .ag-overlay-loading-text,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper .ag-overlay-loading-center .ag-overlay-loading-text {
+  display: none !important; /* Hide the "Loading" text */
 }
 
-/* Modern Spinner */
+/* Modern Spinner - Just the spinner, no background */
 :host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center::before,
 :host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper .ag-overlay-loading-center::before {
   content: '';
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid var(--border-primary);
   border-top: 3px solid var(--google-blue);
   border-radius: 50%;
   animation: modern-spin 1s linear infinite;
