@@ -12,7 +12,7 @@ export interface BreakStatsResponse {
 }
 
 export interface BreakStatsData {
-  count: number;
+  breaks_count: number;
   agent_code: string;
   local_acc_no: string;
   bran_code: string;
@@ -34,7 +34,6 @@ export interface AutomatchStatsData {
   corr_acc_no: string;
   total_items: number;
   automatch_items: number;
-  outstanding_items: number;
 }
 
 export interface ManualMatchStatsResponse {
@@ -51,6 +50,19 @@ export interface ManualMatchStatsData {
   bran_code: string;
   corr_acc_no: string;
   total_manual_match_count: number;
+}
+
+// Merged interface for displaying both automatch and manual match data together
+export interface MergedStatsData {
+  tlm_instance: string;
+  agent_code: string;
+  setid: string;
+  stmt_date: string;
+  bran_code: string;
+  corr_acc_no: string;
+  total_items?: number;
+  automatch_items?: number;
+  total_manual_match_count?: number;
 }
 
 @Injectable({
