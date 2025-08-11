@@ -1,8 +1,8 @@
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Observable } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridOptions, GridApi } from 'ag-grid-community';
@@ -13,6 +13,7 @@ import {
   ManualMatchStatsData,
   MergedStatsData
 } from '../../../../services/tlm-stats.service';
+import { ThemeService } from '../../../../services/theme.service';
 
 export interface TlmStatsModalData {
   type: 'set_id' | 'recon';
@@ -26,7 +27,7 @@ export interface TlmStatsModalData {
   templateUrl: './tlm-stats-modal.component.html',
   styleUrls: ['./tlm-stats-modal.component.css']
 })
-export class TlmStatsModalComponent implements OnInit {
+export class TlmStatsModalComponent implements OnInit, OnDestroy {
   @ViewChild('mergedGrid') mergedGrid!: AgGridAngular;
   @ViewChild('breaksGrid') breaksGrid!: AgGridAngular;
 
@@ -54,6 +55,10 @@ export class TlmStatsModalComponent implements OnInit {
   
   mergedGridApi!: GridApi;
   breaksGridApi!: GridApi;
+  
+  // Theme management
+  gridTheme: string = 'ag-theme-material';
+  private destroy$ = new Subject<void>();
 
   // Column definitions for merged table
   mergedColumnDefs: ColDef[] = [
@@ -180,7 +185,8 @@ export class TlmStatsModalComponent implements OnInit {
     public dialogRef: MatDialogRef<TlmStatsModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: TlmStatsModalData,
     private tlmStatsService: TlmStatsService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private themeService: ThemeService
   ) {
     this.dialogRef.disableClose = false;
     this.dialogRef.backdropClick().subscribe(() => {
@@ -222,6 +228,13 @@ export class TlmStatsModalComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Subscribe to theme changes
+    this.themeService.getTheme()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(theme => {
+        this.gridTheme = theme === 'dark' ? 'ag-theme-material-dark' : 'ag-theme-material';
+      });
+    
     this.loadStats();
   }
 
@@ -472,5 +485,10 @@ export class TlmStatsModalComponent implements OnInit {
     if (this.breakStatsData.length > 0) {
       this.breaksGridApi.setGridOption('rowData', this.breakStatsData);
     }
+  }
+  
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

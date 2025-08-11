@@ -62,7 +62,7 @@
           <ag-grid-angular
             *ngIf="!hasBreakStatsError"
             #breaksGrid
-            class="ag-theme-material"
+            [ngClass]="gridTheme"
             [gridOptions]="breaksGridOptions"
             [rowData]="breakStatsData"
             [columnDefs]="breaksColumnDefs"
@@ -96,7 +96,7 @@
           <ag-grid-angular
             *ngIf="!hasAutomatchStatsError && !hasManualMatchStatsError"
             #mergedGrid
-            class="ag-theme-material"
+            [ngClass]="gridTheme"
             [gridOptions]="mergedGridOptions"
             [rowData]="mergedStatsData"
             [columnDefs]="mergedColumnDefs"
