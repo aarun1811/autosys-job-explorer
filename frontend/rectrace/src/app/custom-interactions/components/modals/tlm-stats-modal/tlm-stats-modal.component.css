@@ -4,9 +4,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--gradient-purple);
+  color: var(--text-inverse);
 }
 
 .header-content {
@@ -20,7 +20,7 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  color: white;
+  color: var(--text-inverse);
 }
 
 .header-icon {
@@ -38,12 +38,12 @@
 .main-title {
   font-size: 20px;
   font-weight: 500;
-  color: white;
+  color: var(--text-inverse);
   margin: 0;
 }
 
 .modal-header button {
-  color: white;
+  color: var(--text-inverse);
 }
 
 /* Modal Content */
@@ -63,7 +63,7 @@ mat-dialog-content {
   display: flex;
   height: 80vh;
   min-height: 600px;
-  background-color: #f5f7fa;
+  background-color: var(--bg-secondary);
 }
 
 .modal-content.with-sidebar {
@@ -73,25 +73,25 @@ mat-dialog-content {
 /* Sidebar */
 .sidebar {
   width: 280px;
-  border-right: 1px solid #e0e0e0;
-  background-color: white;
+  border-right: 1px solid var(--border-primary);
+  background-color: var(--bg-primary);
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
   display: flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-purple);
+  color: var(--text-inverse);
 }
 
 .sidebar-icon {
-  color: white;
+  color: var(--text-inverse);
   font-size: 24px;
   width: 24px;
   height: 24px;
@@ -101,7 +101,7 @@ mat-dialog-content {
   margin: 0;
   font-size: 16px;
   font-weight: 500;
-  color: white;
+  color: var(--text-inverse);
 }
 
 .set-id-list {
@@ -120,30 +120,31 @@ mat-dialog-content {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
-  background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .set-id-item:hover {
-  background-color: #f0f4ff;
-  border-color: #667eea;
+  background-color: var(--google-blue-bg);
+  border-color: var(--google-blue);
   transform: translateX(4px);
 }
 
 .set-id-item.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: var(--gradient-purple);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-lg);
 }
 
 .set-id-icon {
   font-size: 18px;
   width: 18px;
   height: 18px;
-  color: #667eea;
+  color: var(--google-blue);
 }
 
 .set-id-item.selected .set-id-icon {
-  color: white;
+  color: var(--text-inverse);
 }
 
 .set-id-text {
@@ -158,7 +159,7 @@ mat-dialog-content {
   align-items: center;
   gap: 8px;
   padding: 20px;
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 14px;
   justify-content: center;
 }
@@ -168,16 +169,16 @@ mat-dialog-content {
   flex: 1;
   padding: 24px;
   overflow-y: auto;
-  background-color: #f5f7fa;
+  background-color: var(--bg-secondary);
 }
 
 /* Stats Section */
 .stats-section {
   margin-bottom: 24px;
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .section-header {
@@ -185,8 +186,8 @@ mat-dialog-content {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-bottom: 2px solid #e0e0e0;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-bottom: 2px solid var(--border-primary);
   position: relative;
 }
 
@@ -197,18 +198,18 @@ mat-dialog-content {
 }
 
 .section-icon.warning {
-  color: #f59e0b;
+  color: var(--google-yellow);
 }
 
 .section-icon.primary {
-  color: #667eea;
+  color: var(--google-blue);
 }
 
 .section-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   flex: 1;
 }
 
@@ -220,25 +221,40 @@ mat-dialog-content {
 .grid-container {
   position: relative;
   padding: 0;
-  background-color: white;
+  background-color: var(--bg-primary);
   min-height: 200px;
 }
 
 .grid-container.error {
-  background-color: #fef2f2;
+  background-color: var(--bg-tertiary);
 }
 
 /* AG-Grid Styling */
 ::ng-deep .ag-theme-material {
-  --ag-header-background-color: #f9fafb;
-  --ag-header-foreground-color: #374151;
-  --ag-odd-row-background-color: #ffffff;
-  --ag-even-row-background-color: #f9fafb;
-  --ag-row-hover-color: #ede9fe;
-  --ag-selected-row-background-color: #ddd6fe;
-  --ag-range-selection-border-color: #667eea;
-  --ag-header-column-separator-color: #e5e7eb;
-  --ag-border-color: #e5e7eb;
+  --ag-header-background-color: var(--bg-secondary);
+  --ag-header-foreground-color: var(--text-primary);
+  --ag-odd-row-background-color: var(--bg-primary);
+  --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-hover-color: var(--google-blue-bg);
+  --ag-selected-row-background-color: var(--google-blue-bg);
+  --ag-range-selection-border-color: var(--google-blue);
+  --ag-header-column-separator-color: var(--border-primary);
+  --ag-border-color: var(--border-primary);
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+::ng-deep .ag-theme-material-dark {
+  --ag-header-background-color: var(--bg-tertiary);
+  --ag-header-foreground-color: var(--text-primary);
+  --ag-odd-row-background-color: var(--bg-primary);
+  --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-hover-color: var(--google-blue-bg);
+  --ag-selected-row-background-color: var(--google-blue-bg);
+  --ag-range-selection-border-color: var(--google-blue);
+  --ag-header-column-separator-color: var(--border-primary);
+  --ag-border-color: var(--border-primary);
+  --ag-background-color: var(--bg-primary);
+  --ag-foreground-color: var(--text-primary);
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -260,8 +276,9 @@ mat-dialog-content {
   justify-content: flex-end;
 }
 
-::ng-deep .ag-theme-material .ag-row:hover {
-  background-color: #f0f4ff !important;
+::ng-deep .ag-theme-material .ag-row:hover,
+::ng-deep .ag-theme-material-dark .ag-row:hover {
+  background-color: var(--bg-hover) !important;
 }
 
 /* Error Message */
@@ -271,7 +288,7 @@ mat-dialog-content {
   justify-content: center;
   gap: 12px;
   padding: 32px;
-  color: #dc2626;
+  color: var(--google-red);
   font-size: 14px;
   font-weight: 500;
 }
@@ -290,7 +307,7 @@ mat-dialog-content {
   justify-content: center;
   gap: 12px;
   padding: 48px;
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -298,12 +315,12 @@ mat-dialog-content {
   font-size: 48px;
   width: 48px;
   height: 48px;
-  color: #d1d5db;
+  color: var(--text-tertiary);
 }
 
 /* Loading States */
 ::ng-deep .mat-progress-spinner circle {
-  stroke: #667eea;
+  stroke: var(--google-blue);
 }
 
 /* Scrollbar Styling */
@@ -314,19 +331,19 @@ mat-dialog-content {
 
 .set-id-list::-webkit-scrollbar-track,
 .main-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bg-tertiary);
   border-radius: 4px;
 }
 
 .set-id-list::-webkit-scrollbar-thumb,
 .main-content::-webkit-scrollbar-thumb {
-  background: #667eea;
+  background: var(--google-blue);
   border-radius: 4px;
 }
 
 .set-id-list::-webkit-scrollbar-thumb:hover,
 .main-content::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
+  background: var(--google-blue-hover);
 }
 
 /* Responsive Design */
@@ -339,7 +356,7 @@ mat-dialog-content {
   .sidebar {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border-primary);
     max-height: 250px;
   }
 
@@ -393,9 +410,10 @@ mat-dialog-content {
 /* Material Dialog Overrides */
 ::ng-deep .mat-dialog-container {
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-lg);
+  background-color: var(--bg-primary);
 }
 
 ::ng-deep .cdk-overlay-dark-backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--modal-overlay);
 }

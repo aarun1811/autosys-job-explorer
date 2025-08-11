@@ -28,6 +28,13 @@
         </div>
       </div>
       <div class="navbar-right">
+        <button mat-icon-button 
+                class="theme-toggle-button" 
+                (click)="toggleTheme()"
+                [matTooltip]="isDarkMode ? 'Light mode' : 'Dark mode'" 
+                matTooltipPosition="below">
+          <mat-icon>{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
         <ng-container *ngIf="isUserIdentified; else signInButton">
           <div class="user-profile-indicator"
                [matTooltip]="userLoginId" matTooltipPosition="below">

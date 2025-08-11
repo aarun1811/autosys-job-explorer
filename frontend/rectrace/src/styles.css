@@ -1,4 +1,113 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: "Helvetica Neue", sans-serif; background-color: #f9f9f9; }
+/* CSS Custom Properties for Theming */
+:root {
+  /* Google-inspired Light Theme Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f4;
+  --bg-hover: #f8f9fa;
+  --bg-active: #e8f0fe;
+  
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --text-tertiary: #70757a;
+  --text-inverse: #ffffff;
+  
+  --border-primary: #dadce0;
+  --border-secondary: #dfe1e5;
+  --border-hover: transparent;
+  
+  --google-blue: #1a73e8;
+  --google-blue-hover: #1557b0;
+  --google-blue-active: #174ea6;
+  --google-blue-light: #4285f4;
+  --google-blue-bg: #e8f0fe;
+  
+  --google-green: #34a853;
+  --google-yellow: #fbbc05;
+  --google-red: #ea4335;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 1px 6px rgba(32,33,36,.28);
+  --shadow-hover: 0 1px 6px rgba(32,33,36,.28);
+  
+  --modal-overlay: rgba(32, 33, 36, 0.7);
+  --loading-overlay: rgba(0, 0, 0, 0.3);
+  
+  --gradient-primary: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+  --gradient-blue: linear-gradient(135deg, #4285f4, #1a73e8);
+  --gradient-purple: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* Dark Theme */
+.dark-theme {
+  --bg-primary: #202124;
+  --bg-secondary: #292a2d;
+  --bg-tertiary: #303134;
+  --bg-hover: #303134;
+  --bg-active: #394457;
+  
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0a6;
+  --text-tertiary: #80868b;
+  --text-inverse: #202124;
+  
+  --border-primary: #5f6368;
+  --border-secondary: #3c4043;
+  --border-hover: #5f6368;
+  
+  --google-blue: #8ab4f8;
+  --google-blue-hover: #aecbfa;
+  --google-blue-active: #669df6;
+  --google-blue-light: #8ab4f8;
+  --google-blue-bg: #394457;
+  
+  --google-green: #81c995;
+  --google-yellow: #fdd663;
+  --google-red: #f28b82;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 1px 6px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.4);
+  
+  --modal-overlay: rgba(0, 0, 0, 0.8);
+  --loading-overlay: rgba(0, 0, 0, 0.6);
+  
+  --gradient-primary: linear-gradient(90deg, #8ab4f8, #81c995, #fdd663, #f28b82);
+  --gradient-blue: linear-gradient(135deg, #8ab4f8, #669df6);
+  --gradient-purple: linear-gradient(135deg, #9aa8fc, #c58af9);
+}
+
+/* Light Theme explicitly */
+.light-theme {
+  /* Uses default :root values */
+}
+
+/* Base styles */
+html, body { 
+  height: 100%; 
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body { 
+  margin: 0; 
+  font-family: "Helvetica Neue", sans-serif; 
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* Prevent transition on page load */
+.preload * {
+  transition: none !important;
+}

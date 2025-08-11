@@ -4,6 +4,7 @@ import { takeUntil, debounceTime, distinctUntilChanged, switchMap, catchError } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { SearchServiceV5, CategoryResultV4 } from '../../../services/search-v5.service';
+import { ThemeService, Theme } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-search-v5',
@@ -29,6 +30,10 @@ export class SearchV5Component implements OnInit, OnDestroy {
   userLoginId: string = '';
   userInitials: string = '';
   isUserIdentified: boolean = false;
+  
+  // Theme state
+  currentTheme$: Observable<Theme>;
+  isDarkMode: boolean = false;
   
   // Suggestions
   suggestions$: Observable<string[]> = of([]);
@@ -65,8 +70,11 @@ export class SearchV5Component implements OnInit, OnDestroy {
   constructor(
     private searchService: SearchServiceV5,
     private route: ActivatedRoute,
-    private router: Router
-  ) {}
+    private router: Router,
+    private themeService: ThemeService
+  ) {
+    this.currentTheme$ = this.themeService.getTheme();
+  }
   
   ngOnInit(): void {
     // Initialize component
@@ -75,6 +83,17 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.updateTryButtonText();
     this.initializeQueryParamsSubscription();
     this.initializeSuggestions();
+    this.initializeTheme();
+  }
+  
+  private initializeTheme(): void {
+    this.currentTheme$.pipe(takeUntil(this.destroy$)).subscribe(theme => {
+      this.isDarkMode = theme === 'dark';
+    });
+  }
+  
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
   
   private initializeSuggestions(): void {

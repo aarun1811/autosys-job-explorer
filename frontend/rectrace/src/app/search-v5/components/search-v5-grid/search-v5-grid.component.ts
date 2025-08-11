@@ -12,6 +12,9 @@ import {
   ColumnDefinition, 
   SSRMRequestV4 
 } from '../../../services/search-v5.service';
+import { ThemeService } from '../../../services/theme.service';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 // Import custom cell renderers
 import { AppIDCellRendererComponent } from '../../../custom-interactions/components/renderers/app-id-cell-renderer.component';
@@ -45,6 +48,10 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
   private lastFilterModel: string = '';  // Track last filter to avoid duplicate refreshes
   private shouldRestoreState = false;  // Flag to indicate state should be restored after next load
   
+  // Theme management
+  gridTheme: string = 'ag-theme-alpine';
+  private destroy$ = new Subject<void>();
+  
   // Define frontend-only columns that don't exist in database
   private readonly FRONTEND_ONLY_COLUMNS = new Set([
     'execution_order',
@@ -53,10 +60,22 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
     // Add other non-DB columns here as needed
   ]);
   
-  constructor(private searchServiceV5: SearchServiceV5) {}
+  constructor(
+    private searchServiceV5: SearchServiceV5,
+    private themeService: ThemeService
+  ) {}
   
   ngOnInit(): void {
     this.setupGridOptions();
+    this.initializeTheme();
+  }
+  
+  private initializeTheme(): void {
+    this.themeService.getTheme()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(theme => {
+        this.gridTheme = theme === 'dark' ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
+      });
   }
   
   setupGridOptions(): void {
@@ -603,6 +622,10 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
     if (this.columnVisibilityTimer) {
       clearTimeout(this.columnVisibilityTimer);
     }
+    
+    // Clean up theme subscription
+    this.destroy$.next();
+    this.destroy$.complete();
     
     // Cleanup grid
     if (this.gridApi) {

@@ -5,7 +5,7 @@
   height: calc(100vh - 148px); /* Account for navbar (60px), tabs (60px), search header (28px) */
   min-height: 400px;
   width: 100%;
-  background-color: #fff;
+  background-color: var(--bg-primary);
   isolation: isolate;
   z-index: 0;
 }
@@ -20,8 +20,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: #fff;
-  border-bottom: 1px solid #dadce0;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
   flex: 0 0 auto;
   position: relative;
   z-index: 1;
@@ -35,8 +35,8 @@
 .grid-actions-group {
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid #dadce0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -52,7 +52,7 @@
   font-family: 'Google Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #1a73e8;
+  color: var(--google-blue);
   background-color: transparent;
   border: none;
   padding: 6px 12px;
@@ -62,20 +62,20 @@
 }
 
 .grid-actions-group button:not(:last-child) {
-  border-right: 1px solid #dadce0;
+  border-right: 1px solid var(--border-primary);
 }
 
 .grid-actions button:hover {
-  background-color: #f8f9fa;
+  background-color: var(--bg-hover);
 }
 
 .grid-actions button:active {
-  background-color: #f1f3f4;
+  background-color: var(--bg-tertiary);
 }
 
 .grid-actions button.active {
-  background-color: #e8f0fe;
-  color: #1967d2;
+  background-color: var(--google-blue-bg);
+  color: var(--google-blue-hover);
 }
 
 .grid-actions button mat-icon {
@@ -86,7 +86,7 @@
 }
 
 .grid-actions button:disabled {
-  color: #5f6368;
+  color: var(--text-secondary);
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -100,29 +100,59 @@ ag-grid-angular {
   z-index: 0;
 }
 
-/* AG Grid custom styling */
+/* AG Grid custom styling - Light Theme */
 :host ::ng-deep .ag-theme-alpine {
   --ag-header-height: 36px;
   --ag-row-height: 32px;
-  --ag-header-foreground-color: #202124;
-  --ag-header-background-color: #fff;
-  --ag-odd-row-background-color: #fff;
+  --ag-header-foreground-color: var(--text-primary);
+  --ag-header-background-color: var(--bg-primary);
+  --ag-odd-row-background-color: var(--bg-primary);
   --ag-row-border-color: transparent;
-  --ag-row-hover-color: #f8f9fa;
-  --ag-selected-row-background-color: #e8f0fe;
+  --ag-row-hover-color: var(--bg-hover);
+  --ag-selected-row-background-color: var(--google-blue-bg);
   --ag-font-family: 'Google Sans', sans-serif;
   --ag-font-size: 12.5px;
   --ag-header-font-size: 12.5px;
   --ag-header-font-weight: 500;
   --ag-font-weight: 400;
-  --ag-border-color: #dadce0;
+  --ag-border-color: var(--border-primary);
   --ag-cell-horizontal-padding: 12px;
   --ag-header-column-separator-height: 50%;
   --ag-header-column-separator-width: 1px;
-  --ag-header-column-separator-color: #dadce0;
+  --ag-header-column-separator-color: var(--border-primary);
   height: 100%; /* This ensures the grid takes full height of its container */
-  --ag-popup-shadow: 0 2px 6px rgba(60,64,67,.15);
-  --ag-modal-overlay-background-color: rgba(32, 33, 36, 0.7);
+  --ag-popup-shadow: var(--shadow-lg);
+  --ag-modal-overlay-background-color: var(--modal-overlay);
+  position: relative;
+}
+
+/* AG Grid custom styling - Dark Theme */
+:host ::ng-deep .ag-theme-alpine-dark {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+  --ag-header-foreground-color: var(--text-primary);
+  --ag-header-background-color: var(--bg-secondary);
+  --ag-odd-row-background-color: var(--bg-primary);
+  --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-border-color: transparent;
+  --ag-row-hover-color: var(--bg-hover);
+  --ag-selected-row-background-color: var(--google-blue-bg);
+  --ag-font-family: 'Google Sans', sans-serif;
+  --ag-font-size: 12.5px;
+  --ag-header-font-size: 12.5px;
+  --ag-header-font-weight: 500;
+  --ag-font-weight: 400;
+  --ag-border-color: var(--border-primary);
+  --ag-cell-horizontal-padding: 12px;
+  --ag-header-column-separator-height: 50%;
+  --ag-header-column-separator-width: 1px;
+  --ag-header-column-separator-color: var(--border-primary);
+  height: 100%;
+  --ag-popup-shadow: var(--shadow-lg);
+  --ag-modal-overlay-background-color: var(--modal-overlay);
+  --ag-background-color: var(--bg-primary);
+  --ag-foreground-color: var(--text-primary);
+  --ag-control-panel-background-color: var(--bg-secondary);
   position: relative;
 }
 
@@ -159,67 +189,80 @@ ag-grid-angular {
 }
 
 /* Style header icons */
-:host ::ng-deep .ag-theme-alpine .ag-header-icon {
-  color: #5f6368;
+:host ::ng-deep .ag-theme-alpine .ag-header-icon,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-icon {
+  color: var(--text-secondary);
 }
 
 /* Fix cell styling */
-:host ::ng-deep .ag-theme-alpine .ag-cell {
+:host ::ng-deep .ag-theme-alpine .ag-cell,
+:host ::ng-deep .ag-theme-alpine-dark .ag-cell {
   padding: 0 12px;
   border-right: none;
   line-height: 32px;
   font-weight: 400;
+  color: var(--text-primary);
 }
 
 /* Group row styling */
-:host ::ng-deep .ag-theme-alpine .ag-row-group {
-  background-color: #f8f9fa;
+:host ::ng-deep .ag-theme-alpine .ag-row-group,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group {
+  background-color: var(--bg-secondary);
   font-weight: 400;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-group:hover {
-  background-color: #f1f3f4;
+:host ::ng-deep .ag-theme-alpine .ag-row-group:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group:hover {
+  background-color: var(--bg-tertiary);
 }
 
 /* Row styling */
-:host ::ng-deep .ag-theme-alpine .ag-row {
-  border-bottom: 1px solid #f1f3f4;
+:host ::ng-deep .ag-theme-alpine .ag-row,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row {
+  border-bottom: 1px solid var(--bg-tertiary);
   font-weight: 400;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row:hover {
-  background-color: #f8f9fa;
+:host ::ng-deep .ag-theme-alpine .ag-row:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row:hover {
+  background-color: var(--bg-hover);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-selected {
-  background-color: #e8f0fe;
+:host ::ng-deep .ag-theme-alpine .ag-row-selected,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-selected {
+  background-color: var(--google-blue-bg);
 }
 
 /* Column headers with menu */
-:host ::ng-deep .ag-theme-alpine .ag-header-cell.ag-header-cell-menu-button {
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.ag-header-cell-menu-button,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-cell.ag-header-cell-menu-button {
   border-right: none;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-header-menu-button:hover {
-  background-color: #f1f3f4;
+:host ::ng-deep .ag-theme-alpine .ag-header-menu-button:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-menu-button:hover {
+  background-color: var(--bg-tertiary);
 }
 
 /* Pagination styling */
-:host ::ng-deep .ag-theme-alpine .ag-paging-panel {
-  border-top: 1px solid #dadce0;
+:host ::ng-deep .ag-theme-alpine .ag-paging-panel,
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-panel {
+  border-top: 1px solid var(--border-primary);
   padding: 6px 12px;
-  background-color: #fff;
+  background-color: var(--bg-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
   height: 36px;
   font-weight: 400;
+  color: var(--text-primary);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-paging-button {
+:host ::ng-deep .ag-theme-alpine .ag-paging-button,
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-button {
   font-family: 'Google Sans', sans-serif;
   font-size: 12.5px;
-  color: #1a73e8;
+  color: var(--google-blue);
   background-color: transparent;
   border: none;
   padding: 4px 8px;
@@ -228,12 +271,14 @@ ag-grid-angular {
   font-weight: 500;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-paging-button:hover:not(.ag-disabled) {
-  background-color: #f1f3f4;
+:host ::ng-deep .ag-theme-alpine .ag-paging-button:hover:not(.ag-disabled),
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-button:hover:not(.ag-disabled) {
+  background-color: var(--bg-tertiary);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-paging-button.ag-disabled {
-  color: #70757a;
+:host ::ng-deep .ag-theme-alpine .ag-paging-button.ag-disabled,
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-button.ag-disabled {
+  color: var(--text-tertiary);
   opacity: 0.7;
   cursor: not-allowed;
 }
@@ -246,8 +291,9 @@ ag-grid-angular {
 }
 
 /* Modern Loading Overlay Styles */
-:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper {
-  background: rgba(0, 0, 0, 0.3);
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper {
+  background: var(--loading-overlay);
   backdrop-filter: blur(2px);
   border-radius: 0;
   box-shadow: none;
@@ -272,12 +318,13 @@ ag-grid-angular {
 }
 
 /* Modern Spinner */
-:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center::before {
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper .ag-overlay-loading-center::before,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper .ag-overlay-loading-center::before {
   content: '';
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid #1a73e8;
+  border-top: 3px solid var(--google-blue);
   border-radius: 50%;
   animation: modern-spin 1s linear infinite;
   display: block;
@@ -313,47 +360,53 @@ ag-grid-angular {
 }
 
 /* Row Group Panel Styling */
-:host ::ng-deep .ag-theme-alpine .ag-row-group-panel {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dadce0;
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group-panel {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
   padding: 8px 12px;
   min-height: 42px;
   font-family: 'Google Sans', sans-serif;
   font-size: 13px;
-  color: #5f6368;
+  color: var(--text-secondary);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-group-panel-label {
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel-label,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group-panel-label {
   margin-right: 12px;
   font-weight: 500;
-  color: #5f6368;
+  color: var(--text-secondary);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-group-leaf-group {
-  background-color: #fff;
-  border: 1px solid #dadce0;
+:host ::ng-deep .ag-theme-alpine .ag-row-group-leaf-group,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group-leaf-group {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
   border-radius: 16px;
   padding: 4px 12px;
   margin: 0 4px;
   font-size: 12px;
-  color: #202124;
+  color: var(--text-primary);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-group-leaf-group:hover {
-  background-color: #e8f0fe;
-  border-color: #1a73e8;
+:host ::ng-deep .ag-theme-alpine .ag-row-group-leaf-group:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group-leaf-group:hover {
+  background-color: var(--google-blue-bg);
+  border-color: var(--google-blue);
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-group-panel .ag-icon {
-  color: #5f6368;
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel .ag-icon,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group-panel .ag-icon {
+  color: var(--text-secondary);
 }
 
 :host ::ng-deep .ag-theme-alpine .ag-row-group-panel .ag-icon-grip {
   margin-right: 4px;
 }
 
-:host ::ng-deep .ag-theme-alpine .ag-row-group-panel-empty-message {
-  color: #5f6368;
+:host ::ng-deep .ag-theme-alpine .ag-row-group-panel-empty-message,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-group-panel-empty-message {
+  color: var(--text-secondary);
   font-style: italic;
   font-size: 12px;
   padding: 4px 8px;

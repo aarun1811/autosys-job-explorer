@@ -2,15 +2,15 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
+  background-color: var(--bg-primary);
 }
 
 .navbar {
   height: auto;
   min-height: 60px;
   padding: 8px 16px 0;
-  border-bottom: 1px solid #dadce0;
-  background: #fff;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-primary);
   position: fixed;
   top: 0;
   left: 0;
@@ -31,16 +31,32 @@
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   margin-left: 30px;
+}
+
+.theme-toggle-button {
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.theme-toggle-button:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle-button mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
 .sign-in-button {
   font-family: 'Google Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
-  background-color: #1a73e8;
+  color: var(--text-inverse);
+  background-color: var(--google-blue);
   border: 1px solid transparent;
   padding: 9px 23px;
   height: 36px;
@@ -49,19 +65,19 @@
   transition: all 0.2s ease;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .sign-in-button:hover {
-  background-color: #1557b0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  color: #fff;
+  background-color: var(--google-blue-hover);
+  box-shadow: var(--shadow-md);
+  color: var(--text-inverse);
 }
 
 .sign-in-button:active {
-  background-color: #174ea6;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-  color: rgba(255, 255, 255, 0.9);
+  background-color: var(--google-blue-active);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-inverse);
 }
 
 .navbar-search {
@@ -120,11 +136,11 @@
   order: 1;
   margin: 0 12px;
   cursor: pointer;
-  color: #4285f4;
+  color: var(--google-blue-light);
 }
 
 .navbar-search .search-icon:hover {
-  color: #1967d2;
+  color: var(--google-blue);
 }
 
 .navbar-search .search-input {
@@ -144,6 +160,7 @@
   padding: 12vh 20px 0;
   transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: 60px;
+  background-color: var(--bg-primary);
 }
 
 .search-container.has-searched {
@@ -184,9 +201,9 @@
   width: 100%;
   max-width: none;
   padding: 8px 40px;
-  background: #fff;
+  background: var(--bg-primary);
   z-index: 998;
-  border-bottom: 1px solid #dfe1e5;
+  border-bottom: 1px solid var(--border-secondary);
   flex-direction: row;
   align-items: center;
   gap: 16px;
@@ -219,14 +236,14 @@
   height: 46px;
   max-width: none;
   margin: 0;
-  border: 1px solid #dfe1e5;
+  border: 1px solid var(--border-secondary);
 }
 
 .search-content--results .search-input-container:hover,
 .search-content--results .search-input-container:focus-within {
-  background-color: #fff;
-  box-shadow: 0 1px 6px rgba(32,33,36,.28);
-  border-color: rgba(223,225,229,0);
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-hover);
 }
 
 .search-content--results .search-buttons {
@@ -249,7 +266,7 @@
   font-family: 'Google Sans', sans-serif;
   font-size: 92px;
   font-weight: 400;
-  background: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -270,7 +287,7 @@
   transform: translateX(-50%);
   width: 60px;
   height: 4px;
-  background: linear-gradient(90deg, #4285f4, #34a853, #fbbc05, #ea4335);
+  background: var(--gradient-primary);
   border-radius: 2px;
 }
 
@@ -283,8 +300,8 @@
   display: flex;
   align-items: center;
   height: 46px;
-  background: #fff;
-  border: 1px solid #dfe1e5;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
   /* border-bottom: 1px solid #dfe1e5; */
   border-radius: 24px;
   margin: 0 auto;
@@ -295,28 +312,28 @@
 }
 
 .search-input-container:hover {
-  background-color: #fff;
-  box-shadow: 0 1px 6px rgba(32,33,36,.28);
-  border-color: transparent;
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-hover);
 }
 
 .search-input-container:focus-within {
-  background-color: #fff;
-  box-shadow: 0 1px 6px rgba(32,33,36,.28), 0 0 0 1px rgba(32,33,36,.08);
-  border-color: transparent;
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
 }
 
 .search-input-container.focused {
-  background-color: #fff;
-  box-shadow: 0 1px 6px rgba(32,33,36,.28), 0 0 0 1px rgba(32,33,36,.08);
-  border-color: transparent;
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
   transform: translateY(-1px);
 }
 
 .search-icon {
   height: 20px;
   width: 20px;
-  color: #9aa0a6;
+  color: var(--text-secondary);
   margin: 0 13px;
   cursor: default;
   transition: color 0.2s ease;
@@ -327,7 +344,7 @@
   height: 100%;
   background-color: transparent;
   border: none;
-  color: rgba(0,0,0,.87);
+  color: var(--text-primary);
   word-wrap: break-word;
   outline: none;
   font-family: 'Google Sans', sans-serif;
@@ -338,11 +355,11 @@
 }
 
 .search-input:focus {
-  color: rgba(0,0,0,.87);
+  color: var(--text-primary);
 }
 
 .search-input::placeholder {
-  color: #9aa0a6;
+  color: var(--text-secondary);
   position: relative;
   display: inline-block;
   transform-origin: bottom;
@@ -370,7 +387,7 @@
 }
 
 .clear-icon {
-  color: #9aa0a6;
+  color: var(--text-secondary);
   height: 20px;
   width: 20px;
   padding: 0 8px;
@@ -383,12 +400,12 @@
 }
 
 .clear-icon:hover {
-  color: #70757a;
-  background-color: rgba(0,0,0,.05);
+  color: var(--text-tertiary);
+  background-color: var(--bg-hover);
 }
 
 .mic-icon {
-  color: #9aa0a6;
+  color: var(--text-secondary);
   height: 20px;
   width: 20px;
   margin: 0 12px;
@@ -417,10 +434,10 @@
 }
 
 .search-buttons button {
-  background-color: #f8f9fa;
-  border: 1px solid #f8f9fa;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--bg-secondary);
   border-radius: 4px;
-  color: #3c4043;
+  color: var(--text-primary);
   font-family: 'Google Sans', sans-serif;
   font-size: 14px;
   margin: 11px 4px;
@@ -438,16 +455,16 @@
 }
 
 .search-buttons button:hover {
-  box-shadow: 0 1px 1px rgba(0,0,0,.1);
-  background-color: #f8f9fa;
-  border: 1px solid #dadce0;
-  color: #202124;
+  box-shadow: var(--shadow-sm);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
 }
 
 .search-buttons button:focus {
-  border: 1px solid #4285f4;
+  border: 1px solid var(--google-blue-light);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(66,133,244,.2);
+  box-shadow: 0 0 0 2px var(--google-blue-bg);
 }
 
 .try-button {
@@ -482,7 +499,7 @@
 }
 
 ::ng-deep .mat-progress-spinner circle {
-  stroke: #4285f4;
+  stroke: var(--google-blue-light);
 }
 
 .search-card {
@@ -587,7 +604,7 @@ mat-label {
 .dot {
   width: 6px;
   height: 6px;
-  background-color: #4285f4;
+  background-color: var(--google-blue-light);
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out;
 }
@@ -616,7 +633,7 @@ mat-label {
 }
 
 .search-icon.clickable:hover {
-  color: #1a73e8;
+  color: var(--google-blue);
 }
 
 .search-content .search-input-container {
@@ -624,7 +641,7 @@ mat-label {
 }
 
 .search-content .search-icon {
-  color: #9aa0a6;
+  color: var(--text-secondary);
   cursor: default;
   margin: 0 8px;
 }
@@ -636,7 +653,8 @@ mat-label {
 .tabs-navigation {
   /* margin-top: 10px; */
   padding: 0 20px 0 170px;
-  border-bottom: 1px solid #ebebeb;
+  border-bottom: 1px solid var(--border-primary);
+  background-color: var(--bg-primary);
 }
 
 .tabs-container {
@@ -648,7 +666,7 @@ mat-label {
 }
 
 .tab-link {
-  color: #5f6368;
+  color: var(--text-secondary);
   font-family: 'Google Sans', sans-serif;
   font-size: 14px;
   line-height: 48px;
@@ -666,17 +684,17 @@ mat-label {
   left: 0;
   right: 0;
   height: 3px;
-  background-color: #1a73e8;
+  background-color: var(--google-blue);
   transform: scaleX(0);
   transition: transform 0.2s ease;
 }
 
 .tab-link:hover {
-  color: #202124;
+  color: var(--text-primary);
 }
 
 .tab-link.active {
-  color: #1a73e8;
+  color: var(--google-blue);
 }
 
 .tab-link.active::after {
@@ -686,7 +704,7 @@ mat-label {
 .no-results-container {
   margin-top: 40px; /* Space below search bar/tabs */
   text-align: center;
-  color: #5f6368; /* Secondary text color */
+  color: var(--text-secondary); /* Secondary text color */
   font-family: 'Google Sans', sans-serif;
   padding: 20px;
   width: 100%;
@@ -700,7 +718,7 @@ mat-label {
   font-size: 64px;
   width: 64px;
   height: 64px;
-  color: #bdc1c6; /* Lighter grey for icon */
+  color: var(--text-tertiary); /* Lighter grey for icon */
   margin-bottom: 16px;
 }
 
@@ -712,12 +730,12 @@ mat-label {
 
 .no-results-container strong {
   font-weight: 500;
-  color: #202124; /* Primary text color for emphasis */
+  color: var(--text-primary); /* Primary text color for emphasis */
 }
 
 .suggestion-text {
   font-size: 14px;
-  color: #70757a;
+  color: var(--text-tertiary);
 }
 
 .mat-mdc-option {
@@ -739,8 +757,8 @@ mat-label {
   width: 36px; /* Match sign-in button height for consistency */
   height: 36px; /* Match sign-in button height for consistency */
   border-radius: 50%; /* Makes it circular */
-  background-color: #1a73e8; /* Example: Google Blue, or your theme's primary color */
-  color: white;
+  background-color: var(--google-blue); /* Example: Google Blue, or your theme's primary color */
+  color: var(--text-inverse);
   font-size: 14px; /* Adjust as needed */
   font-weight: 500;
   cursor: default; 
