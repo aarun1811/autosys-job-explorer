@@ -229,56 +229,182 @@ mat-dialog-content {
   background-color: var(--bg-tertiary);
 }
 
-/* AG-Grid Styling */
-::ng-deep .ag-theme-material {
+/* AG-Grid Styling - Light Theme */
+:host ::ng-deep .ag-theme-alpine {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
   --ag-header-background-color: var(--bg-secondary);
   --ag-header-foreground-color: var(--text-primary);
   --ag-odd-row-background-color: var(--bg-primary);
   --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-border-color: transparent;
   --ag-row-hover-color: var(--google-blue-bg);
   --ag-selected-row-background-color: var(--google-blue-bg);
   --ag-range-selection-border-color: var(--google-blue);
   --ag-header-column-separator-color: var(--border-primary);
+  --ag-header-column-separator-height: 50%;
+  --ag-header-column-separator-width: 1px;
   --ag-border-color: var(--border-primary);
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --ag-font-family: 'Google Sans', 'Inter', 'Segoe UI', sans-serif;
+  --ag-font-size: 12.5px;
+  --ag-header-font-size: 12.5px;
+  --ag-header-font-weight: 500;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-popup-shadow: var(--shadow-lg);
+  --ag-modal-overlay-background-color: var(--modal-overlay);
+  height: 100%;
 }
 
-::ng-deep .ag-theme-material-dark {
+/* AG-Grid Styling - Dark Theme */
+:host ::ng-deep .ag-theme-alpine-dark {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
   --ag-header-background-color: var(--bg-tertiary);
   --ag-header-foreground-color: var(--text-primary);
   --ag-odd-row-background-color: var(--bg-primary);
   --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-border-color: transparent;
   --ag-row-hover-color: var(--google-blue-bg);
   --ag-selected-row-background-color: var(--google-blue-bg);
   --ag-range-selection-border-color: var(--google-blue);
   --ag-header-column-separator-color: var(--border-primary);
+  --ag-header-column-separator-height: 50%;
+  --ag-header-column-separator-width: 1px;
   --ag-border-color: var(--border-primary);
   --ag-background-color: var(--bg-primary);
   --ag-foreground-color: var(--text-primary);
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --ag-control-panel-background-color: var(--bg-secondary);
+  --ag-font-family: 'Google Sans', 'Inter', 'Segoe UI', sans-serif;
+  --ag-font-size: 12.5px;
+  --ag-header-font-size: 12.5px;
+  --ag-header-font-weight: 500;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-popup-shadow: var(--shadow-lg);
+  --ag-modal-overlay-background-color: var(--modal-overlay);
+  height: 100%;
 }
 
-::ng-deep .ag-theme-material .ag-header-cell {
+/* Header Icons Styling */
+:host ::ng-deep .ag-theme-alpine .ag-header-icon,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-icon {
+  color: var(--text-secondary);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-cell {
   font-weight: 600;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-::ng-deep .ag-theme-material .ag-cell {
+:host ::ng-deep .ag-theme-alpine .ag-cell,
+:host ::ng-deep .ag-theme-alpine-dark .ag-cell {
   font-size: 14px;
   padding: 8px 12px;
   display: flex;
   align-items: center;
+  border-right: none;
+  line-height: 32px;
+  color: var(--text-primary);
 }
 
-::ng-deep .ag-theme-material .text-right {
+:host ::ng-deep .ag-theme-alpine .text-right,
+:host ::ng-deep .ag-theme-alpine-dark .text-right {
   justify-content: flex-end;
 }
 
-::ng-deep .ag-theme-material .ag-row:hover,
-::ng-deep .ag-theme-material-dark .ag-row:hover {
+/* Row Styling */
+:host ::ng-deep .ag-theme-alpine .ag-row,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row {
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row:hover {
   background-color: var(--bg-hover) !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row-selected,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row-selected {
+  background-color: var(--google-blue-bg);
+}
+
+/* Filter and Menu Styling */
+:host ::ng-deep .ag-theme-alpine .ag-menu,
+:host ::ng-deep .ag-theme-alpine-dark .ag-menu {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-filter-wrapper,
+:host ::ng-deep .ag-theme-alpine-dark .ag-filter-wrapper {
+  background: var(--bg-primary);
+}
+
+/* Column Menu Button */
+:host ::ng-deep .ag-theme-alpine .ag-header-cell-menu-button,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-cell-menu-button {
+  border-right: none;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-menu-button:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-menu-button:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Pagination Styling */
+:host ::ng-deep .ag-theme-alpine .ag-paging-panel,
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-panel {
+  border-top: 1px solid var(--border-primary);
+  padding: 6px 12px;
+  background-color: var(--bg-primary);
+  height: 36px;
+  color: var(--text-primary);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-paging-button,
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-button {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 12.5px;
+  color: var(--google-blue);
+  background-color: transparent;
+  border: none;
+  padding: 4px 8px;
+  margin: 0 2px;
+  border-radius: 4px;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-paging-button:hover:not(.ag-disabled),
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-button:hover:not(.ag-disabled) {
+  background-color: var(--bg-tertiary);
+}
+
+/* Loading Overlay */
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper {
+  background: var(--loading-overlay);
+  backdrop-filter: blur(2px);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-center,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-center {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Ensure popup overlays are visible */
+:host ::ng-deep .ag-theme-alpine .ag-popup,
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup {
+  position: absolute;
+  z-index: 1000;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-popup-child,
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup-child {
+  z-index: 1000;
 }
 
 /* Error Message */

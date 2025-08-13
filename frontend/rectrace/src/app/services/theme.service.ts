@@ -52,22 +52,6 @@ export class ThemeService {
       root.classList.add('light-theme');
       root.classList.remove('dark-theme');
     }
-    
-    // Update AG-Grid theme
-    const agGridElements = document.querySelectorAll('.ag-theme-alpine, .ag-theme-material');
-    agGridElements.forEach(element => {
-      if (theme === 'dark') {
-        element.classList.add('ag-theme-alpine-dark');
-        element.classList.remove('ag-theme-alpine');
-        element.classList.add('ag-theme-material-dark');
-        element.classList.remove('ag-theme-material');
-      } else {
-        element.classList.add('ag-theme-alpine');
-        element.classList.remove('ag-theme-alpine-dark');
-        element.classList.add('ag-theme-material');
-        element.classList.remove('ag-theme-material-dark');
-      }
-    });
   }
 
   public setTheme(theme: Theme, save: boolean = true): void {

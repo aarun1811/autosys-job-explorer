@@ -57,7 +57,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
   breaksGridApi!: GridApi;
   
   // Theme management
-  gridTheme: string = 'ag-theme-material';
+  gridTheme: string = 'ag-theme-alpine';
   private destroy$ = new Subject<void>();
 
   // Column definitions for merged table
@@ -232,7 +232,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
     this.themeService.getTheme()
       .pipe(takeUntil(this.destroy$))
       .subscribe(theme => {
-        this.gridTheme = theme === 'dark' ? 'ag-theme-material-dark' : 'ag-theme-material';
+        this.gridTheme = theme === 'dark' ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
       });
     
     this.loadStats();
