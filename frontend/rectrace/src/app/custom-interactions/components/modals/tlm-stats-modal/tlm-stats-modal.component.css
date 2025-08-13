@@ -52,11 +52,16 @@
   overflow: hidden;
 }
 
+/* Override Material Dialog surface scrollbar */
+::ng-deep .mdc-dialog__surface {
+  overflow-y: visible !important; /* Remove the Material Dialog's default scrollbar */
+}
+
 mat-dialog-content {
   padding: 0 !important;
   margin: 0 !important;
   max-height: 85vh;
-  overflow: hidden;
+  overflow: hidden !important; /* Prevent scrollbar on dialog content */
 }
 
 .modal-content {
@@ -64,6 +69,7 @@ mat-dialog-content {
   height: 80vh;
   min-height: 600px;
   background-color: var(--bg-secondary);
+  overflow: hidden; /* Prevent overflow on modal content container */
 }
 
 .modal-content.with-sidebar {
