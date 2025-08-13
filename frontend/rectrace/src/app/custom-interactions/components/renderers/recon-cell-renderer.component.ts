@@ -78,9 +78,6 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
       font-size: 12px;
       line-height: 1;
       font-weight: 500;
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
@@ -91,11 +88,6 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
       transform: translateY(-50%);
     }
 
-    @media (max-width: 768px) {
-      .btn-text {
-        max-width: 100px;
-      }
-    }
   `]
 })
 export class ReconCellRendererComponent implements ICellRendererAngularComp {
