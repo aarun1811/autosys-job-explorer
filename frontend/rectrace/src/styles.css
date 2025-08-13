@@ -1,5 +1,45 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* Import Material Icons locally to bypass corporate firewall */
+@import '~material-icons/iconfont/material-icons.css';
+
+/* Define fallback fonts for Google Sans using system fonts */
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Segoe UI'), local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 500;
+  src: local('Segoe UI Semibold'), local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Roboto Medium'), local('Helvetica Neue Medium'), local('Arial');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Segoe UI Bold'), local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Roboto Bold'), local('Helvetica Neue Bold'), local('Arial Bold');
+}
+
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Segoe UI Bold'), local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Roboto Bold'), local('Helvetica Neue Bold'), local('Arial Black');
+}
+
+/* Define Inter fallback (if used anywhere) */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Inter'), local('Segoe UI'), local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+}
+
 /* CSS Custom Properties for Theming */
 :root {
   /* Google-inspired Light Theme Colors */
