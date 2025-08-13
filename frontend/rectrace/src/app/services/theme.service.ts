@@ -8,7 +8,7 @@ export type Theme = 'light' | 'dark';
 })
 export class ThemeService {
   private readonly THEME_KEY = 'rectrace-theme';
-  private readonly DEFAULT_THEME: Theme = 'light';
+  private readonly DEFAULT_THEME: Theme = 'dark'; 
   
   private currentTheme$ = new BehaviorSubject<Theme>(this.DEFAULT_THEME);
 
@@ -19,7 +19,7 @@ export class ThemeService {
   private initializeTheme(): void {
     const savedTheme = this.getSavedTheme();
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    const initialTheme = savedTheme || this.DEFAULT_THEME;  
     
     this.setTheme(initialTheme, false);
     
