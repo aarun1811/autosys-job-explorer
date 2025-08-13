@@ -63,7 +63,7 @@ interface ExecutionOrderResponse {
     font-family: 'Google Sans', sans-serif;
     font-size: 12px;
     font-weight: 500;
-    color: #1a73e8;
+    color: var(--google-blue, #1a73e8);
     background-color: transparent;
     border: none;
     line-height: 1;
@@ -71,17 +71,17 @@ interface ExecutionOrderResponse {
   }
 
   .execution-order-btn:hover:not(:disabled) {
-    background-color: rgba(26, 115, 232, 0.04);
+    background-color: var(--bg-hover, rgba(26, 115, 232, 0.04));
   }
 
   .execution-order-btn:active:not(:disabled) {
-    background-color: rgba(26, 115, 232, 0.08);
+    background-color: var(--bg-active, rgba(26, 115, 232, 0.08));
   }
 
   .execution-order-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    color: #5f6368;
+    color: var(--text-secondary, #5f6368);
   }
 
   .btn-content {

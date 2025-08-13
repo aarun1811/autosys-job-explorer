@@ -16,7 +16,7 @@ import { ICellRendererParams } from 'ag-grid-community';
   `,
   styles: [`
     .file-link {
-      color: #1a73e8;
+      color: var(--google-blue, #1a73e8);
       text-decoration: underline;
       cursor: pointer;
     }

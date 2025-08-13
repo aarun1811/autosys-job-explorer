@@ -38,7 +38,7 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
       font-family: 'Google Sans', sans-serif;
       font-size: 12px;
       font-weight: 500;
-      color: #1a73e8;
+      color: var(--google-blue, #1a73e8);
       background-color: transparent;
       border: none;
       line-height: 1;
@@ -47,18 +47,18 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
     }
 
     .recon-btn:hover:not(:disabled) {
-      background-color: rgba(26, 115, 232, 0.04);
+      background-color: var(--bg-hover, rgba(26, 115, 232, 0.04));
       text-decoration: none;
     }
 
     .recon-btn:active:not(:disabled) {
-      background-color: rgba(26, 115, 232, 0.08);
+      background-color: var(--bg-active, rgba(26, 115, 232, 0.08));
     }
 
     .recon-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      color: #5f6368;
+      color: var(--text-secondary, #5f6368);
     }
 
     .btn-content {
