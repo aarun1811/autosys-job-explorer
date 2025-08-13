@@ -118,7 +118,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
       // If there's a query in the URL and we haven't searched yet, perform the search
       if (queryFromUrl && !this.hasSearched) {
         this.searchTerm = queryFromUrl;
-        this.performSearch();
+        this.performSearch(true); // Pass true for deeplink searches
       }
     });
   }
@@ -217,7 +217,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
     });
   }
   
-  performSearch(): void {
+  performSearch(isDeepLink: boolean = false): void {
     if (!this.searchTerm || !this.searchTerm.trim()) {
       this.errorMessage = 'Please enter a search term';
       return;
@@ -232,10 +232,13 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.hasSearched = true;
     this.showNoResultsMessage = false;
     
-    // Preserve the tab parameter from URL if it exists, otherwise it will be lost
-    const existingTabParam = this.route.snapshot.queryParams['tab'];
-    // Update URL with search query, preserving the tab parameter if it exists
-    this.updateUrlWithState(this.searchTerm.trim(), existingTabParam);
+    // Only preserve the tab parameter for deeplink searches
+    let tabToPreserve: string | undefined;
+    if (isDeepLink) {
+      tabToPreserve = this.route.snapshot.queryParams['tab'];
+    }
+    // Update URL with search query, preserving tab only for deeplinks
+    this.updateUrlWithState(this.searchTerm.trim(), tabToPreserve);
     
     this.searchService.performInitialSearch(this.searchTerm.trim())
       .pipe(takeUntil(this.destroy$))
