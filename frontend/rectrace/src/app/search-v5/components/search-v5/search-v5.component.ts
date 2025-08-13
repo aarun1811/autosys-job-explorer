@@ -114,20 +114,11 @@ export class SearchV5Component implements OnInit, OnDestroy {
   private initializeQueryParamsSubscription(): void {
     this.queryParamsSubscription = this.route.queryParams.subscribe(params => {
       const queryFromUrl = params['q'];
-      const tabFromUrl = params['tab'];
       
       // If there's a query in the URL and we haven't searched yet, perform the search
       if (queryFromUrl && !this.hasSearched) {
         this.searchTerm = queryFromUrl;
         this.performSearch();
-      }
-      
-      // If there's a tab parameter, select that tab
-      if (tabFromUrl && this.searchResults.length > 0) {
-        const tabIndex = this.searchResults.findIndex(cat => cat.key === tabFromUrl);
-        if (tabIndex !== -1) {
-          this.selectedTab = tabIndex;
-        }
       }
     });
   }
@@ -241,9 +232,10 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.hasSearched = true;
     this.showNoResultsMessage = false;
     
-    // Update URL with search query
-    const firstTabKey = this.searchResults.length > 0 ? this.searchResults[0].key : undefined;
-    this.updateUrlWithState(this.searchTerm.trim(), firstTabKey);
+    // Preserve the tab parameter from URL if it exists, otherwise it will be lost
+    const existingTabParam = this.route.snapshot.queryParams['tab'];
+    // Update URL with search query, preserving the tab parameter if it exists
+    this.updateUrlWithState(this.searchTerm.trim(), existingTabParam);
     
     this.searchService.performInitialSearch(this.searchTerm.trim())
       .pipe(takeUntil(this.destroy$))
@@ -255,13 +247,26 @@ export class SearchV5Component implements OnInit, OnDestroy {
             .sort((a, b) => b.count - a.count); // Sort by count descending
           
           this.isLoading = false;
-          this.selectedTab = 0;
+          
+          // Check if there's a tab parameter in the URL and set it
+          const tabFromUrl = this.route.snapshot.queryParams['tab'];
+          if (tabFromUrl && this.searchResults.length > 0) {
+            const tabIndex = this.searchResults.findIndex(cat => cat.key === tabFromUrl);
+            if (tabIndex !== -1) {
+              this.selectedTab = tabIndex;
+            } else {
+              this.selectedTab = 0; // Default to first tab if specified tab not found
+            }
+          } else {
+            this.selectedTab = 0; // Default to first tab
+          }
           
           if (this.searchResults.length === 0) {
             this.showNoResultsMessage = true;
           } else {
-            // Update URL with first tab after results are loaded
-            this.updateUrlWithState(this.searchTerm.trim(), this.searchResults[0].key);
+            // Update URL with current tab after results are loaded
+            const currentTabKey = this.searchResults[this.selectedTab]?.key || this.searchResults[0].key;
+            this.updateUrlWithState(this.searchTerm.trim(), currentTabKey);
           }
         },
         error: (error) => {
