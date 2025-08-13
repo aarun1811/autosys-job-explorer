@@ -34,6 +34,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
   // Theme state
   currentTheme$: Observable<Theme>;
   isDarkMode: boolean = false;
+  logoPath: string = 'assets/logo.png';
   
   // Suggestions
   suggestions$: Observable<string[]> = of([]);
@@ -89,6 +90,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
   private initializeTheme(): void {
     this.currentTheme$.pipe(takeUntil(this.destroy$)).subscribe(theme => {
       this.isDarkMode = theme === 'dark';
+      this.logoPath = this.isDarkMode ? 'assets/logo-dark.png' : 'assets/logo.png';
     });
   }
   
