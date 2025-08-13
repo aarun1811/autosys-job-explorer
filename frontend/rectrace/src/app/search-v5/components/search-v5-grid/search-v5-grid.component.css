@@ -161,25 +161,54 @@ ag-grid-angular {
   z-index: 5;
 }
 
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup-child {
+  z-index: 5;
+}
+
 :host ::ng-deep .ag-theme-alpine .ag-popup {
+  position: absolute;
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup {
   position: absolute;
   z-index: 5;
 }
 
 :host ::ng-deep .ag-theme-alpine .ag-popup-backdrop {
   z-index: 4;
+  display: none !important; /* Disable backdrop for menus */
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup-backdrop {
+  z-index: 4;
+  display: none !important; /* Disable backdrop for menus */
 }
 
 /* Ensure menu items are visible */
 :host ::ng-deep .ag-theme-alpine .ag-menu {
   z-index: 5;
-  background: #fff;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-menu {
+  z-index: 5;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Ensure filters are visible */
 :host ::ng-deep .ag-theme-alpine .ag-filter-wrapper {
   z-index: 5;
-  background: #fff;
+  background: var(--bg-primary);
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-filter-wrapper {
+  z-index: 5;
+  background: var(--bg-primary);
 }
 
 /* Ensure column headers are properly positioned */
