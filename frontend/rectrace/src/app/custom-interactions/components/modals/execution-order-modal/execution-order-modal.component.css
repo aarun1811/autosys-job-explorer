@@ -1,18 +1,3 @@
-/* CSS Variables for Google Design System */
-:root {
-  --google-blue: #1a73e8;
-  --google-blue-hover: #1557b0;
-  --google-blue-active: #174ea6;
-  --google-text-primary: #202124;
-  --google-text-secondary: #5f6368;
-  --google-border: #dadce0;
-  --google-bg-light: #f8f9fa;
-  --google-bg-hover: rgba(26, 115, 232, 0.04);
-  --google-bg-active: rgba(26, 115, 232, 0.08);
-  --google-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --google-shadow-hover: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
 /* Override Material Dialog styles */
 ::ng-deep .mat-mdc-dialog-container {
   --mdc-dialog-container-color: transparent !important;
@@ -42,8 +27,8 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 20px 24px;
-  background: linear-gradient(135deg, #4285f4, #1a73e8);
-  color: #fff;
+  background: var(--gradient-blue);
+  color: var(--text-inverse);
   position: relative;
 }
 
@@ -71,7 +56,7 @@
   font-size: 22px;
   font-weight: 500;
   letter-spacing: 0.25px;
-  color: #fff;
+  color: var(--text-inverse);
 }
 
 .header-icon {
@@ -98,18 +83,20 @@
   font-family: 'Google Sans', sans-serif;
   font-size: 15px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-inverse);
   padding: 4px 12px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
+  opacity: 0.95;
 }
 
 .header-subtitle {
   font-family: 'Google Sans', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-inverse);
   margin-left: 44px;
   margin-top: 4px;
+  opacity: 0.9;
 }
 
 .subtitle {
@@ -155,9 +142,10 @@ ag-charts-angular {
   display: flex;
   flex-direction: column;
   border-radius: 8px;
-  box-shadow: var(--google-shadow);
-  background: linear-gradient(180deg, #ffffff, #f8f9fa);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-primary);
   transition: all 0.2s ease;
+  border: 1px solid var(--border-primary);
 }
 
 .help-text {
@@ -172,7 +160,7 @@ mat-dialog-content {
   height: calc(100% - 100px);
   max-height: none !important;
   padding: 0 !important;
-  background-color: #f8f9fa;
+  background-color: var(--bg-secondary);
   border-radius: 0 0 8px 8px !important;
   overflow: hidden !important;
 }
@@ -181,8 +169,8 @@ mat-dialog-content {
   padding: 20px;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #e8f0fe 0%, #ffffff 100%);
-  border-bottom: 1px solid var(--google-border);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .details-header h3 {
@@ -207,8 +195,8 @@ mat-dialog-content {
 
 .selected-job-name {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--google-border);
-  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
 }
 
 .selected-job-name h4 {
@@ -218,7 +206,7 @@ mat-dialog-content {
   font-family: 'Google Sans', sans-serif;
   font-size: 15px;
   font-weight: 500;
-  color: var(--google-text-primary);
+  color: var(--text-primary);
 }
 
 .selected-job-name mat-icon {
@@ -230,11 +218,11 @@ mat-dialog-content {
 }
 
 .cmd-type {
-  color: #4285f4;
+  color: var(--google-blue);
 }
 
 .box-type {
-  color: #34a853;
+  color: var(--google-green);
 }
 
 .command-section, .description-section {
@@ -265,7 +253,7 @@ mat-dialog-content {
 }
 
 .command-text {
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   padding: 12px;
   border-radius: 4px;
   font-family: 'Google Sans', monospace;
@@ -275,12 +263,12 @@ mat-dialog-content {
   margin: 0;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid var(--google-border);
-  color: var(--google-text-primary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
 }
 
 .description-text {
-  color: var(--google-text-primary);
+  color: var(--text-primary);
   font-family: 'Google Sans', sans-serif;
   font-size: 13px;
   line-height: 1.5;
@@ -295,18 +283,29 @@ mat-list-item {
 
 ::ng-deep .mat-mdc-list-item {
   --mdc-list-list-item-label-text-size: 13px;
-  border-bottom: 1px solid var(--google-border);
+  border-bottom: 1px solid var(--border-primary);
   transition: background-color 0.2s ease;
 }
 
 ::ng-deep .mat-mdc-list-item:hover {
-  background-color: #e8f0fe !important;
+  background-color: var(--bg-hover) !important;
 }
 
 ::ng-deep .mat-mdc-list-item-line {
   font-family: 'Google Sans', sans-serif !important;
   font-size: 13px !important;
-  color: var(--google-text-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fix for Material list item titles in dark mode */
+::ng-deep .mat-mdc-list-item-title {
+  color: var(--text-secondary) !important;
+  font-family: 'Google Sans', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  opacity: 0.9 !important;
 }
 
 ::ng-deep .mat-mdc-list-item-icon {
@@ -319,9 +318,10 @@ mat-list-item {
   flex: 2;
   min-width: 0;
   border-radius: 8px;
-  background-color: #f8f9fa;
+  background-color: var(--bg-secondary);
   padding: 16px;
   overflow: auto;
+  border: 1px solid var(--border-primary);
 }
 
 #execution-order-diagram {
@@ -358,7 +358,7 @@ mat-list-item {
 .error-container {
   text-align: center;
   padding: 24px;
-  color: #f44336;
+  color: var(--google-red);
 }
 
 @media (max-width: 768px) {
@@ -409,6 +409,6 @@ mat-dialog-actions button {
 }
 
 mat-dialog-actions button:hover {
-  background-color: var(--google-bg-hover);
+  background-color: var(--bg-hover);
   transform: translateY(-1px);
 }
