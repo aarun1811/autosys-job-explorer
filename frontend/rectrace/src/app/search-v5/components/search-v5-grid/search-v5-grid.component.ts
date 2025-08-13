@@ -559,6 +559,22 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
     }
   }
   
+  autoSizeAllColumns(): void {
+    if (this.gridApi) {
+      // Use sizeColumnsToFit if the grid width is known, otherwise autoSizeColumns
+      // First, let's get all displayed columns (including auto-group column)
+      const allDisplayedColumns = this.gridApi.getAllDisplayedColumns();
+      
+      if (allDisplayedColumns && allDisplayedColumns.length > 0) {
+        // Extract column IDs from column objects
+        const columnIds = allDisplayedColumns.map((col: any) => col.getId());
+        
+        // Auto-size all displayed columns (this includes the auto-group column)
+        this.gridApi.autoSizeColumns(columnIds, false);
+      }
+    }
+  }
+  
   private restoreExpandedState(): void {
     if (!this.gridApi || this.expandedGroupIds.size === 0) {
       return;

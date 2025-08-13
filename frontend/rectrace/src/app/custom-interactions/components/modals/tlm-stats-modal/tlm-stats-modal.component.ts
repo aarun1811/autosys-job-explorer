@@ -291,6 +291,10 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
         this.breakStatsData = response.data;
         if (this.breaksGridApi) {
           this.breaksGridApi.setGridOption('rowData', this.breakStatsData);
+          // Auto-size columns after data loads
+          setTimeout(() => {
+            this.autoSizeBreaksGrid();
+          }, 100);
         }
       }
     });
@@ -385,6 +389,10 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
     
     if (this.mergedGridApi) {
       this.mergedGridApi.setGridOption('rowData', this.mergedStatsData);
+      // Auto-size columns after data loads
+      setTimeout(() => {
+        this.autoSizeMergedGrid();
+      }, 100);
     }
   }
 
@@ -476,6 +484,10 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
     
     if (this.mergedStatsData.length > 0) {
       this.mergedGridApi.setGridOption('rowData', this.mergedStatsData);
+      // Auto-size on initial data
+      setTimeout(() => {
+        this.autoSizeMergedGrid();
+      }, 100);
     }
   }
 
@@ -484,6 +496,36 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
     
     if (this.breakStatsData.length > 0) {
       this.breaksGridApi.setGridOption('rowData', this.breakStatsData);
+      // Auto-size on initial data
+      setTimeout(() => {
+        this.autoSizeBreaksGrid();
+      }, 100);
+    }
+  }
+  
+  private autoSizeMergedGrid(): void {
+    if (this.mergedGridApi) {
+      const allColumnIds: string[] = [];
+      this.mergedGridApi.getColumns()?.forEach((column: any) => {
+        allColumnIds.push(column.getId());
+      });
+      
+      if (allColumnIds.length > 0) {
+        this.mergedGridApi.autoSizeColumns(allColumnIds);
+      }
+    }
+  }
+  
+  private autoSizeBreaksGrid(): void {
+    if (this.breaksGridApi) {
+      const allColumnIds: string[] = [];
+      this.breaksGridApi.getColumns()?.forEach((column: any) => {
+        allColumnIds.push(column.getId());
+      });
+      
+      if (allColumnIds.length > 0) {
+        this.breaksGridApi.autoSizeColumns(allColumnIds);
+      }
     }
   }
   

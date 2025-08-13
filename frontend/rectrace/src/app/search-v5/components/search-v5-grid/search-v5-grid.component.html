@@ -10,6 +10,10 @@
         <button [class.active]="isCompactView" (click)="toggleDensity()" matTooltip="Toggle Row Height">
           <mat-icon>density_medium</mat-icon>
         </button>
+        
+        <button (click)="autoSizeAllColumns()" matTooltip="Auto-size All Columns">
+          <mat-icon>swap_horiz</mat-icon>
+        </button>
       </div>
 
       <!-- Group Controls -->
