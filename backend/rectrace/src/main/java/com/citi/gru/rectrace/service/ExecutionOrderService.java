@@ -13,17 +13,26 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobDetailsDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobNodeDTO;
+import com.citi.gru.rectrace.dto.JobStatusInfo;
 
 @Service
 public class ExecutionOrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExecutionOrderService.class);
+
     @PersistenceContext
     private EntityManager em;
+
+    @Autowired(required = false)
+    private JobStatusService jobStatusService;
 
     public ExecutionOrderDTO getExecutionOrder(String loadJobName) {
         ExecutionOrderDTO result = new ExecutionOrderDTO();
@@ -99,6 +108,31 @@ public class ExecutionOrderService {
             jobDetails.put((String) row[0], details);
         }
         result.setJobDetails(jobDetails);
+
+        // Fetch live job status if JobStatusService is available (UAT/Prod profiles)
+        if (jobStatusService != null) {
+            try {
+                // Collect all job names
+                List<String> allJobNames = new ArrayList<>();
+                for (JobNodeDTO node : sequence) {
+                    allJobNames.add(node.getJobName());
+                }
+                allJobNames.add(result.getLoadJob()); // Add load job too
+                
+                logger.debug("Fetching live status for {} jobs", allJobNames.size());
+                
+                // Fetch status for all jobs in batch
+                Map<String, JobStatusInfo> statusMap = jobStatusService.getBatchJobStatus(allJobNames);
+                result.setJobStatusMap(statusMap);
+                
+                logger.debug("Successfully fetched status for {} jobs", statusMap.size());
+            } catch (Exception e) {
+                logger.error("Error fetching job status, continuing without status data", e);
+                // Continue without status data rather than failing the entire request
+            }
+        } else {
+            logger.debug("JobStatusService not available (likely not UAT/Prod profile), skipping status fetch");
+        }
 
         return result;
     }
