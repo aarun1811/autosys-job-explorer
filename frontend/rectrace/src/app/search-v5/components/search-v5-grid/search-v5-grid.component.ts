@@ -60,10 +60,7 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
     // Add other non-DB columns here as needed
   ]);
   
-  constructor(
-    private searchServiceV5: SearchServiceV5,
-    private themeService: ThemeService
-  ) {}
+  constructor(private searchServiceV5: SearchServiceV5, private themeService: ThemeService) {}
   
   ngOnInit(): void {
     this.setupGridOptions();
@@ -367,6 +364,7 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
             
             // Restore expanded groups after root level loads if flag is set
             const isRootLevel = !params.request.groupKeys || params.request.groupKeys.length === 0;
+            // Check if there are any groups in the request
             const hasGroups = params.request.rowGroupCols && params.request.rowGroupCols.length > 0;
             
             if (isRootLevel && hasGroups && this.shouldRestoreState && this.expandedGroupIds.size > 0) {

@@ -19,41 +19,5 @@
       • Use mouse wheel to pan 
     </div>
   </div>
-  
-  <!-- Status Legend -->
-  <div class="status-legend" *ngIf="jobStatusMap && hasStatuses()">
-    <div class="legend-title">Job Status</div>
-    
-    <div class="legend-section" *ngIf="getActiveJobs().length > 0">
-      <div class="section-title">Active Now</div>
-      <div class="legend-item" *ngFor="let status of getActiveJobs()">
-        <span class="status-indicator" [style.background-color]="getStatusColor(status.status, false)">
-          {{ STATUS_ICONS[status.status] }}
-        </span>
-        <span class="status-label">{{ status.statusName }}</span>
-      </div>
-    </div>
-    
-    <div class="legend-section" *ngIf="getCompletedTodayJobs().length > 0">
-      <div class="section-title">Completed Today</div>
-      <div class="legend-item" *ngFor="let status of getCompletedTodayJobs()">
-        <span class="status-indicator muted" [style.background-color]="getStatusColor(status.status, true)">
-          {{ STATUS_ICONS[status.status] }}
-        </span>
-        <span class="status-label">{{ status.statusName }}</span>
-      </div>
-    </div>
-    
-    <div class="legend-section" *ngIf="getCurrentStateJobs().length > 0">
-      <div class="section-title">Current State</div>
-      <div class="legend-item" *ngFor="let status of getCurrentStateJobs()">
-        <span class="status-indicator" [style.background-color]="getStatusColor(status.status, false)">
-          {{ STATUS_ICONS[status.status] }}
-        </span>
-        <span class="status-label">{{ status.statusName }}</span>
-      </div>
-    </div>
-  </div>
-  
   <div #cy class="cytoscape-graph"></div>
 </div>

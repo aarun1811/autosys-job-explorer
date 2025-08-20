@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { SearchServiceV5, CategoryResultV4 } from '../../../services/search-v5.service';
 import { ThemeService, Theme } from '../../../services/theme.service';
+import { UserInfo, UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-search-v5',
@@ -41,7 +42,17 @@ export class SearchV5Component implements OnInit, OnDestroy {
   private searchInput$ = new Subject<string>();
   
   // Placeholder animation
-  private placeholders = ['files', 'jobs', 'boxes', 'recons'];
+  private placeholders = [
+    'job name', 
+    'set ID', 
+    'box name', 
+    'recon name',
+    'file name',
+    'machine name',
+    'run calendar',
+    'exclude calendar',
+    'sub account'
+  ];
   private placeholderIndex = 0;
   private placeholderInterval: any;
   
@@ -52,16 +63,28 @@ export class SearchV5Component implements OnInit, OnDestroy {
       options: ['reconour', 'gpdw', 'flexcube', 'fullsuite']
     },
     {
-      name: 'job name', 
-      options: ['FLBCM1', 'reco_break', 'wf_exec', 'EODPRO']
+      name: 'agent code', 
+      options: ['nyk.cash', 'sbn.cash', 'pus.pos', 'mib.st', 'spb.st']
+    },
+    {
+      name: 'sub account',
+      options: ['House', 'EUREX', 'FFS', 'LCH', 'GBP', 'EUR',],
+    },
+    {
+      name: 'load job',
+      options: ['153106_DMW_3969_PRSNPB_LOAD2', '153106_DMW1_3636_3265_PRSNPB_LOAD',],
     },
     {
       name: 'box name',
-      options: ['B_FLBCM', 'B_BATCH', 'B_RECON', 'B_EOD']
+      options: ['153106_5869_ETL_HKO_BOX', '153106_TLM_8155_BVS_BOX', '153106_TLM_3265_BOX',],
     },
     {
-      name: 'recon name',
-      options: ['nostro', 'ledger', 'position', 'cash']
+      name: 'calendar name',
+      options: ['HMC', 'us_holiday', '153106_BR_Holiday',],
+    },
+    {
+      name: 'account',
+      options: ['citicorp', 'inr', 'eur', 'gbp',],
     }
   ];
   
@@ -72,6 +95,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
     private searchService: SearchServiceV5,
     private route: ActivatedRoute,
     private router: Router,
+    private userService: UserService,
     private themeService: ThemeService
   ) {
     this.currentTheme$ = this.themeService.getTheme();
@@ -139,6 +163,19 @@ export class SearchV5Component implements OnInit, OnDestroy {
       this.userLoginId = storedUser;
       this.userInitials = this.getUserInitials(storedUser);
       this.isUserIdentified = true;
+    } else {
+      this.userService.getUserInfo().subscribe(
+        (userInfo: UserInfo | null) => {
+          if (userInfo && userInfo.loginId && userInfo.loginId.trim() !== '') {
+            this.userLoginId = userInfo.loginId;
+            this.userInitials = this.userLoginId.substring(0, 2).toUpperCase();
+            this.isUserIdentified = true;
+            localStorage.setItem('userLoginId', this.userLoginId);
+          } else {
+            this.isUserIdentified = false;
+          }
+        }
+      );
     }
   }
   
@@ -187,7 +224,6 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.showNoResultsMessage = false;
     this.errorMessage = '';
     this.selectedTab = 0;
-    // Clear suggestions when resetting
     this.searchInput$.next('');
     // Clear URL parameters
     this.updateUrlWithState();
@@ -225,7 +261,6 @@ export class SearchV5Component implements OnInit, OnDestroy {
       return;
     }
     
-    // Clear suggestions after search
     this.searchInput$.next('');
     
     this.errorMessage = '';
@@ -239,7 +274,6 @@ export class SearchV5Component implements OnInit, OnDestroy {
     if (isDeepLink) {
       tabToPreserve = this.route.snapshot.queryParams['tab'];
     }
-    // Update URL with search query, preserving tab only for deeplinks
     this.updateUrlWithState(this.searchTerm.trim(), tabToPreserve);
     
     this.searchService.performInitialSearch(this.searchTerm.trim())
@@ -300,7 +334,6 @@ export class SearchV5Component implements OnInit, OnDestroy {
   
   clearSearch(): void {
     this.searchTerm = '';
-    // Clear suggestions when clearing search
     this.searchInput$.next('');
     // Don't reset hasSearched to keep navbar visible
     // Just clear the search term and keep user on the results page

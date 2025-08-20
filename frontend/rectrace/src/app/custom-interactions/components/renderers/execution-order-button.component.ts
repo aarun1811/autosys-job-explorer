@@ -171,7 +171,6 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
 
     this.isLoading = true;
 
-    // Use API for enhanced data with job status and next start time
     this.executionOrderService.getExecutionOrder(jobName).subscribe(
       (data: ExecutionOrderResponse) => {
         this.isLoading = false;

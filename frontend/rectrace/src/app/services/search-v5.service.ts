@@ -134,7 +134,6 @@ export class SearchServiceV5 {
       return of([]); // Return an observable of an empty array
     }
     
-    // Call the actual backend suggestions endpoint
     return this.http.get<string[]>(`${environment.apiUrl}/search/suggest`, {
       params: { prefix: query.trim() },
       headers: this.getHeaders()

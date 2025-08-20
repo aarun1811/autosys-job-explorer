@@ -15,6 +15,7 @@ export interface BreakStatsData {
   breaks_count: number;
   agent_code: string;
   local_acc_no: string;
+  stmt_date: string;
   bran_code: string;
 }
 

@@ -172,6 +172,15 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       filter: true
     },
     { 
+      field: 'stmt_date', 
+      headerName: 'Statement Date',
+      width: 130,
+      resizable: true,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => this.formatDate(params.value)
+    },
+    { 
       field: 'bran_code', 
       headerName: 'Branch Code',
       width: 120,
@@ -203,6 +212,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       },
       animateRows: true,
       suppressRowClickSelection: true,
+      suppressCellFocus: true,
       enableCellTextSelection: true,
       ensureDomOrder: true,
       onGridReady: (params) => {
@@ -219,6 +229,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       },
       animateRows: true,
       suppressRowClickSelection: true,
+      suppressCellFocus: true,
       enableCellTextSelection: true,
       ensureDomOrder: true,
       onGridReady: (params) => {
@@ -234,7 +245,6 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       .subscribe(theme => {
         this.gridTheme = theme === 'dark' ? 'ag-theme-alpine-dark' : 'ag-theme-alpine';
       });
-    
     this.loadStats();
   }
 
