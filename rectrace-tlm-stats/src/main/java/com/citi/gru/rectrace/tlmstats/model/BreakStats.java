@@ -16,6 +16,9 @@ public class BreakStats {
     @JsonProperty("local_acc_no")
     private String localAccNo;
     
+    @JsonProperty("stmt_date")
+    private String stmtDate;
+
     @JsonProperty("bran_code")
     private String branCode;
     
@@ -23,11 +26,12 @@ public class BreakStats {
     public BreakStats() {}
     
     // Constructor with all fields
-    public BreakStats(Long breaksCount, String agentCode, String localAccNo, String branCode) {
+    public BreakStats(Long breaksCount, String agentCode, String localAccNo, String stmtDate, String branCode) {
         this.breaksCount = breaksCount;
         this.agentCode = agentCode;
         this.localAccNo = localAccNo;
         this.branCode = branCode;
+        this.stmtDate = stmtDate;
     }
     
     // Getters and Setters
@@ -63,6 +67,14 @@ public class BreakStats {
         this.branCode = branCode;
     }
     
+    public String getStmtDate() {
+        return stmtDate;
+    }
+    
+    public void setStmtDate(String stmtDate) {
+        this.stmtDate = stmtDate;
+    }
+    
     @Override
     public String toString() {
         return "BreakStats{" +
@@ -70,6 +82,7 @@ public class BreakStats {
                 ", agentCode='" + agentCode + '\'' +
                 ", localAccNo='" + localAccNo + '\'' +
                 ", branCode='" + branCode + '\'' +
+                ", stmtDate='" + stmtDate + '\'' +
                 '}';
     }
 } 

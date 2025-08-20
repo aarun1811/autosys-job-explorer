@@ -139,6 +139,7 @@ public class TlmStatsService {
         sql.append("  COUNT(*) AS breaks_count,");
         sql.append("  s.agent_code,");
         sql.append("  s.local_acc_no,");
+        sql.append("  s.stmt_date,");
         sql.append("  i.bran_code");
         sql.append("FROM");
         sql.append("  item  i,");
@@ -149,6 +150,7 @@ public class TlmStatsService {
         sql.append("GROUP BY");
         sql.append("  s.agent_code,");
         sql.append("  s.local_acc_no,");
+        sql.append("  s.stmt_date,");
         sql.append("  i.bran_code");
         
         return sql.toString();
@@ -375,6 +377,7 @@ public class TlmStatsService {
             rs.getLong("breaks_count"),
             rs.getString("agent_code"),
             rs.getString("local_acc_no"),
+            rs.getString("stmt_date"),
             rs.getString("bran_code")
         );
     }
