@@ -1,5 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { JobStatusInfo } from '../../../../models/job-status.model';
 
 interface JobNode {
   jobName: string;
@@ -21,6 +22,7 @@ interface ExecutionOrderData {
   loadJob: string;
   executionSequence: JobNode[];
   jobDetails: { [key: string]: JobDetails };
+  jobStatusMap?: { [key: string]: JobStatusInfo };
 }
 
 @Component({

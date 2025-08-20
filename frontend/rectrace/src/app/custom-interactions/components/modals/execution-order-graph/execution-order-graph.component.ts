@@ -5,6 +5,7 @@ import dagre from 'cytoscape-dagre';
 import { ThemeService } from '../../../../services/theme.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { JobStatusInfo, STATUS_COLORS, STATUS_ICONS } from '../../../../models/job-status.model';
 
 // Register the dagre layout
 cytoscape.use(dagre);
@@ -35,7 +36,8 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
   @Input() executionSequence: JobNode[] = [];
   @Input() jobDetails: { [key: string]: JobDetails } = {};
   @Input() loadJob: string = '';
-  @Output() nodeSelected = new EventEmitter<{ jobName: string | undefined | null; details: JobDetails | undefined | null }>();
+  @Input() jobStatusMap?: { [key: string]: JobStatusInfo };
+  @Output() nodeSelected = new EventEmitter<{ jobName: string | undefined | null; details: JobDetails | undefined | null; status?: JobStatusInfo | null }>();
 
   private cy: Core | undefined;
   private selectedNode: NodeSingular | null = null;
@@ -43,6 +45,9 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
   public zoomStep: number = 0.1;
   private destroy$ = new Subject<void>();
   private isDarkMode = false;
+  
+  // Make these accessible in template
+  public readonly STATUS_ICONS = STATUS_ICONS;
 
   constructor(private themeService: ThemeService) { }
 
@@ -118,8 +123,12 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
         {
           selector: 'node',
           style: {
-            'background-color': this.isDarkMode ? '#303134' : '#E8F0FE',
-            'label': 'data(label)',
+            'background-color': (ele: any) => this.getNodeColor(this.getJobStatus(ele.data('id'))),
+            'label': (ele: any) => {
+              const icon = ele.data('statusIcon');
+              const label = ele.data('label');
+              return icon ? `${icon} ${label}` : label;
+            },
             'text-valign': 'center',
             'color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
             'font-family': 'Google Sans, sans-serif',
@@ -131,13 +140,38 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
             'height': '32px',
             'padding': '4px 12px',
             'shape': 'round-rectangle',
-            'border-width': 1,
-            'border-color': this.isDarkMode ? '#5f6368' : '#E8EAED',
-            'border-opacity': 0.6,
-            'border-style': 'solid',
-            'background-opacity': 1,
+            'border-width': (ele: any) => ele.data('status') === 5 ? 2 : 1,
+            'border-color': (ele: any) => this.getNodeBorderColor(this.getJobStatus(ele.data('id'))),
+            'border-opacity': (ele: any) => ele.data('hasRunToday') ? 0.5 : 1,
+            'border-style': (ele: any) => ele.data('hasRunToday') ? 'dashed' : 'solid',
+            'background-opacity': (ele: any) => ele.data('hasRunToday') ? 0.7 : 1,
             'transition-property': 'background-color, border-color, border-opacity',
             'transition-duration': 200
+          }
+        },
+        // Completed today - muted appearance
+        {
+          selector: 'node.completed-today',
+          style: {
+            'font-style': 'italic',
+            'opacity': 0.8
+          }
+        },
+        // Currently active - emphasized
+        {
+          selector: 'node.active-now',
+          style: {
+            'font-weight': 'bold',
+            'border-width': 2,
+            'z-index': 5
+          }
+        },
+        // Running animation
+        {
+          selector: 'node.running',
+          style: {
+            'background-blacken': -0.1,
+            'border-width': 2
           }
         },
         {
@@ -252,7 +286,8 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
       this.selectedNode = node;
       const jobName = node.data('id');
       const details = this.jobDetails[jobName];
-      this.nodeSelected.emit({ jobName, details });
+      const status = this.getJobStatus(jobName);
+      this.nodeSelected.emit({ jobName, details, status });
     });
 
     this.cy.on('unselect', 'node', (event) => {
@@ -295,14 +330,79 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
   }
 
   private getNodes() {
-    return this.executionSequence.map(job => ({
-      data: {
-        id: job.jobName,
-        label: job.jobName,
-        executionOrder: job.executionOrder,
-        type: job.jobName === this.loadJob ? 'loadJob' : 'regularJob'
+    return this.executionSequence.map(job => {
+      const status = this.getJobStatus(job.jobName);
+      const statusIcon = status ? STATUS_ICONS[status.status] || '' : '';
+      
+      return {
+        data: {
+          id: job.jobName,
+          label: job.jobName,
+          executionOrder: job.executionOrder,
+          type: job.jobName === this.loadJob ? 'loadJob' : 'regularJob',
+          status: status?.status,
+          statusName: status?.statusName,
+          visualState: status?.visualState,
+          statusIcon: statusIcon,
+          hasRunToday: status?.hasRunToday,
+          isCurrentlyActive: status?.isCurrentlyActive
+        },
+        classes: this.getNodeClasses(status)
+      };
+    });
+  }
+  
+  private getJobStatus(jobName: string): JobStatusInfo | undefined {
+    if (!this.jobStatusMap) return undefined;
+    // Case-insensitive lookup
+    const upperJobName = jobName.toUpperCase();
+    return this.jobStatusMap[upperJobName] || this.jobStatusMap[jobName];
+  }
+  
+  private getNodeClasses(status?: JobStatusInfo): string {
+    if (!status) return '';
+    
+    const classes = [];
+    
+    // Add visual state class
+    if (status.visualState === 'COMPLETED_TODAY') {
+      classes.push('completed-today');
+    } else if (status.visualState === 'ACTIVE_NOW') {
+      classes.push('active-now');
+      if (status.status === 1) { // RUNNING
+        classes.push('running');
       }
-    }));
+    }
+    
+    // Add status-specific class
+    classes.push(`status-${status.status}`);
+    
+    return classes.join(' ');
+  }
+  
+  private getNodeColor(status?: JobStatusInfo): string {
+    if (!status) return this.isDarkMode ? '#303134' : '#E8F0FE';
+    
+    const theme = this.isDarkMode ? 'dark' : 'light';
+    const colorConfig = STATUS_COLORS[theme][status.status];
+    
+    if (!colorConfig) return this.isDarkMode ? '#303134' : '#E8F0FE';
+    
+    // Determine which color to use based on visual state
+    if (status.visualState === 'COMPLETED_TODAY' && colorConfig.muted) {
+      return colorConfig.muted;
+    }
+    
+    return colorConfig.normal;
+  }
+  
+  private getNodeBorderColor(status?: JobStatusInfo): string {
+    if (!status) return this.isDarkMode ? '#5f6368' : '#E8EAED';
+    
+    const theme = this.isDarkMode ? 'dark' : 'light';
+    const colorConfig = STATUS_COLORS[theme][status.status];
+    
+    return colorConfig?.border || (this.isDarkMode ? '#5f6368' : '#E8EAED');
   }
 
   private getEdges() {
@@ -391,5 +491,62 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
     if (this.cy) {
       this.cy.destroy();
     }
+  }
+  
+  // Legend helper methods
+  hasStatuses(): boolean {
+    return this.jobStatusMap !== undefined && Object.keys(this.jobStatusMap).length > 0;
+  }
+  
+  getActiveJobs(): JobStatusInfo[] {
+    if (!this.jobStatusMap) return [];
+    
+    const uniqueStatuses = new Map<number, JobStatusInfo>();
+    Object.values(this.jobStatusMap).forEach(status => {
+      if (status.visualState === 'ACTIVE_NOW' && !uniqueStatuses.has(status.status)) {
+        uniqueStatuses.set(status.status, status);
+      }
+    });
+    
+    return Array.from(uniqueStatuses.values()).sort((a, b) => a.status - b.status);
+  }
+  
+  getCompletedTodayJobs(): JobStatusInfo[] {
+    if (!this.jobStatusMap) return [];
+    
+    const uniqueStatuses = new Map<number, JobStatusInfo>();
+    Object.values(this.jobStatusMap).forEach(status => {
+      if (status.visualState === 'COMPLETED_TODAY' && !uniqueStatuses.has(status.status)) {
+        uniqueStatuses.set(status.status, status);
+      }
+    });
+    
+    return Array.from(uniqueStatuses.values()).sort((a, b) => a.status - b.status);
+  }
+  
+  getCurrentStateJobs(): JobStatusInfo[] {
+    if (!this.jobStatusMap) return [];
+    
+    const uniqueStatuses = new Map<number, JobStatusInfo>();
+    Object.values(this.jobStatusMap).forEach(status => {
+      if (status.visualState === 'CURRENT_STATE' && !uniqueStatuses.has(status.status)) {
+        uniqueStatuses.set(status.status, status);
+      }
+    });
+    
+    return Array.from(uniqueStatuses.values()).sort((a, b) => a.status - b.status);
+  }
+  
+  getStatusColor(statusCode: number, isMuted: boolean): string {
+    const theme = this.isDarkMode ? 'dark' : 'light';
+    const colorConfig = STATUS_COLORS[theme][statusCode];
+    
+    if (!colorConfig) return this.isDarkMode ? '#303134' : '#E8F0FE';
+    
+    if (isMuted && colorConfig.muted) {
+      return colorConfig.muted;
+    }
+    
+    return colorConfig.normal;
   }
 }
