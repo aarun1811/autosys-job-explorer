@@ -73,30 +73,30 @@ public class ElasticsearchSearchProviderV3 {
         }
         
         try {
-        // Build search source for keyword search
-        SearchSourceBuilder sourceBuilder = buildKeywordSearchSourceBuilder(esConfig, searchTerm);
-        
-        SearchRequest searchRequest = new SearchRequest(esConfig.getTargetIndex()).source(sourceBuilder);
-        logger.debug("Executing ES V3 Keyword Search for category {}: Query DSL: {}", categoryKey, sourceBuilder);
-        
-        SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-        logger.debug("ES V3 Keyword Search for category {}: ES Response - Total hits: {}, Max score: {}",
-            categoryKey, searchResponse.getHits().getTotalHits().value, searchResponse.getHits().getMaxScore());
-        
-        List<Map<String, Object>> data = extractDataFromResponse(searchResponse);
-        logger.info("ES V3 Keyword Search for category {}: Returned {} hits.", categoryKey, data.size());
-        return buildResultDto(categoryDefinition, data);
+            // Build search source for keyword search
+            SearchSourceBuilder sourceBuilder = buildKeywordSearchSourceBuilder(esConfig, searchTerm);
+            
+            SearchRequest searchRequest = new SearchRequest(esConfig.getTargetIndex()).source(sourceBuilder);
+            logger.debug("Executing ES V3 Keyword Search for category {}: Query DSL: {}", categoryKey, sourceBuilder);
+            
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+            logger.debug("ES V3 Keyword Search for category {}: ES Response - Total hits: {}, Max score: {}",
+                categoryKey, searchResponse.getHits().getTotalHits().value, searchResponse.getHits().getMaxScore());
+            
+            List<Map<String, Object>> data = extractDataFromResponse(searchResponse);
+            logger.info("ES V3 Keyword Search for category {}: Returned {} hits.", categoryKey, data.size());
+            return buildResultDto(categoryDefinition, data);
         
         } catch (Exception e) {
-        logger.error("Error during ES V3 Keyword Search for category {}: {}", categoryKey, e.getMessage(), e);
-        return null;
+            logger.error("Error during ES V3 Keyword Search for category {}: {}", categoryKey, e.getMessage(), e);
+            return null;
         }
-        }
+    }
         
-        /**
-        * Build search source builder for keyword search only
-        */
-        private SearchSourceBuilder buildKeywordSearchSourceBuilder(ElasticsearchProviderConfig esConfig, String searchTerm) {
+    /**
+    * Build search source builder for keyword search only
+    */
+    private SearchSourceBuilder buildKeywordSearchSourceBuilder(ElasticsearchProviderConfig esConfig, String searchTerm) {
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
         
         // Build query for keyword search
@@ -120,83 +120,84 @@ public class ElasticsearchSearchProviderV3 {
                 new ScoreSortBuilder().order(sortOrder) :
                 new FieldSortBuilder(sortConfig.getField()).order(sortOrder);
         sourceBuilder.sort(sortBuilder);
-    }
-
-    // Fetch only essential fields for keyword search
-    if (!CollectionUtils.isEmpty(esConfig.getResultFields())) {
-        sourceBuilder.fetchSource(esConfig.getResultFields().toArray(new String[0]), null);
-    }
-
-    return sourceBuilder;
-}
-
-/**
- * Build keyword query for search
- */
-private QueryBuilder buildKeywordQuery(ElasticsearchProviderConfig esConfig, String searchTerm) {
-    // Escape special characters in search term
-    String escapedSearchTerm = escapeElasticsearchQueryString(searchTerm);
-
-    // Build a bool query that combines analyzed and keyword fields
-    org.elasticsearch.index.query.BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-
-    // Separate analyzed fields from keyword fields
-    List<String> analyzedFields = new ArrayList<>();
-    List<String> keywordFields = new ArrayList<>();
-
-    for (String field : esConfig.getQueryFields()) {
-        if (field.endsWith(".keyword")) {
-            keywordFields.add(field);
-        } else {
-            analyzedFields.add(field);
-        }
-    }
-
-    // Add analyzed field queries (these are case-insensitive by default)
-    if (!analyzedFields.isEmpty()) {
-        String analyzedQueryString = "*" + escapedSearchTerm + "*";
-        Map<String, Float> analyzedFieldBoosts = new HashMap<>();
-        for (String field : analyzedFields) {
-            analyzedFieldBoosts.put(field, 1.0f);
         }
 
-        boolQuery.should(QueryBuilders.queryStringQuery(analyzedQueryString)
-                .fields(analyzedFieldBoosts)
-                .analyzeWildcard(true)
-                .defaultOperator(Operator.OR));
-    }
-
-    // Add case-insensitive keyword field queries
-    if (!keywordFields.isEmpty()) {
-        for (String keywordField : keywordFields) {
-            // Use wildcard query with case-insensitive pattern
-            String wildcardPattern = "*" + escapedSearchTerm + "*";
-            boolQuery.should(QueryBuilders.wildcardQuery(keywordField, wildcardPattern));
+        // Fetch only essential fields for keyword search
+        if (!CollectionUtils.isEmpty(esConfig.getResultFields())) {
+            sourceBuilder.fetchSource(esConfig.getResultFields().toArray(new String[0]), null);
         }
+
+        return sourceBuilder;
     }
 
-    // Apply relevance boost if configured
-    if (esConfig.getRelevanceBoost() != null) {
-        // Note: Boost is applied at the field level, so we need to handle it differently
-        // For now, we'll use the default boost of 1.0f
-    }
+    /**
+     * Build keyword query for search
+     */
+    private QueryBuilder buildKeywordQuery(ElasticsearchProviderConfig esConfig, String searchTerm) {
+        // Escape special characters in search term
+        String escapedSearchTerm = escapeElasticsearchQueryString(searchTerm);
 
-    return boolQuery;    }
+        // Build a bool query that combines analyzed and keyword fields
+        org.elasticsearch.index.query.BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-/**
- * Extract data from search response
- */
-private List<Map<String, Object>> extractDataFromResponse(SearchResponse searchResponse) {
-    List<Map<String, Object>> data = new ArrayList<>();
+        // Separate analyzed fields from keyword fields
+        List<String> analyzedFields = new ArrayList<>();
+        List<String> keywordFields = new ArrayList<>();
 
-    if (searchResponse.getHits() != null && searchResponse.getHits().getHits() != null) {
-        for (SearchHit hit : searchResponse.getHits().getHits()) {
-            data.add(hit.getSourceAsMap());
+        for (String field : esConfig.getQueryFields()) {
+            if (field.endsWith(".keyword")) {
+                keywordFields.add(field);
+            } else {
+                analyzedFields.add(field);
+            }
         }
+
+        // Add analyzed field queries (these are case-insensitive by default)
+        if (!analyzedFields.isEmpty()) {
+            String analyzedQueryString = "*" + escapedSearchTerm + "*";
+            Map<String, Float> analyzedFieldBoosts = new HashMap<>();
+            for (String field : analyzedFields) {
+                analyzedFieldBoosts.put(field, 1.0f);
+            }
+
+            boolQuery.should(QueryBuilders.queryStringQuery(analyzedQueryString)
+                    .fields(analyzedFieldBoosts)
+                    .analyzeWildcard(true)
+                    .defaultOperator(Operator.OR));
+        }
+
+        // Add case-insensitive keyword field queries
+        if (!keywordFields.isEmpty()) {
+            for (String keywordField : keywordFields) {
+                // Use wildcard query with case-insensitive pattern
+                String wildcardPattern = "*" + escapedSearchTerm + "*";
+                boolQuery.should(QueryBuilders.wildcardQuery(keywordField, wildcardPattern));
+            }
+        }
+
+        // Apply relevance boost if configured
+        if (esConfig.getRelevanceBoost() != null) {
+            // Note: Boost is applied at the field level, so we need to handle it differently
+            // For now, we'll use the default boost of 1.0f
+        }
+
+        return boolQuery;    
     }
 
-    return data;
-}
+    /**
+     * Extract data from search response
+     */
+    private List<Map<String, Object>> extractDataFromResponse(SearchResponse searchResponse) {
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        if (searchResponse.getHits() != null && searchResponse.getHits().getHits() != null) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
+                data.add(hit.getSourceAsMap());
+            }
+        }
+
+        return data;
+    }
 
     /**
      * Build result DTO from extracted data

@@ -27,7 +27,6 @@ public class SearchCategoryDefinition {
     })
     private ProviderSpecificConfig providerConfig; // Holds the actual config object
 
-    // Additional Oracle config for group expansion (optional)
     private OracleProviderConfig oracleConfig;
 
     @JsonIgnore // Internal flag, not part of the JSON file itself

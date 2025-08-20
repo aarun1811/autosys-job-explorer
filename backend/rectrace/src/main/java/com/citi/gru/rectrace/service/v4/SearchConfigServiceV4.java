@@ -5,7 +5,9 @@ import com.citi.gru.rectrace.dto.v4.SearchConfigurationV4;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -17,11 +19,15 @@ import java.util.Map;
 @Service
 @Slf4j
 public class SearchConfigServiceV4 {
-    
-    private static final String CONFIG_FILE = "search-config-v4.json";
+
+    @Value("${search-config.location}")
+    private String CONFIG_FILE;
     
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ResourceLoader resourceLoader;
     
     private SearchConfigurationV4 configuration;
     private Map<String, CategoryConfigV4> categoryMap;
@@ -31,7 +37,7 @@ public class SearchConfigServiceV4 {
         try {
             log.info("Loading search configuration from: {}", CONFIG_FILE);
             
-            ClassPathResource resource = new ClassPathResource(CONFIG_FILE);
+            Resource resource = resourceLoader.getResource(CONFIG_FILE);
             try (InputStream inputStream = resource.getInputStream()) {
                 configuration = objectMapper.readValue(inputStream, SearchConfigurationV4.class);
             }
