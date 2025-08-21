@@ -121,7 +121,7 @@ public class TlmStatsV2Service {
         validateTlmInstance(tlmInstance);
         
         String sql = "SELECT DISTINCT agent_code AS recon FROM recon_bank WHERE recon_engine_env = ? AND recon_engine = 'TLM' ORDER BY agent_code";
-        logger.debug("SQL: {}", sql);
+        logger.info("SQL: {}", sql);
         return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance);
     }
 
@@ -136,7 +136,7 @@ public class TlmStatsV2Service {
         }
         
         String sql = "SELECT DISTINCT local_acc_no AS set_id FROM recon_bank WHERE recon_engine_env = ? AND recon_engine = 'TLM' AND agent_code = ? ORDER BY local_acc_no";
-        logger.debug("SQL: {}", sql);
+        logger.info("SQL: {}", sql);
         return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance, agentCode);
     }
 
