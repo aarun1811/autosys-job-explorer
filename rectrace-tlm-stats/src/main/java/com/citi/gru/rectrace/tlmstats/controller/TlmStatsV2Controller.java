@@ -28,7 +28,7 @@ import com.citi.gru.rectrace.tlmstats.service.TlmStatsV2Service;
  * REST Controller for TLM Statistics V2 APIs with SSRM support
  */
 @RestController
-@RequestMapping("/api/v2/tlm-stats")
+@RequestMapping("/api/tlm-stats/v2")
 @CrossOrigin(origins = "*")
 public class TlmStatsV2Controller {
 
