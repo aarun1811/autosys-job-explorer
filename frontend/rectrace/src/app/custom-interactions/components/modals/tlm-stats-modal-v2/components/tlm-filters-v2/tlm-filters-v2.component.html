@@ -1,0 +1,106 @@
+<div class="filters-container">
+  <div class="filters-row">
+    
+    <!-- TLM Instance Filter -->
+    <div class="filter-group">
+      <label class="filter-label">TLM Instance</label>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-select 
+          [value]="filterState.tlmInstance"
+          [disabled]="filterState.tlmInstanceLocked">
+          <mat-option [value]="filterState.tlmInstance">
+            {{ filterState.tlmInstance }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matSuffix *ngIf="filterState.tlmInstanceLocked" class="lock-icon">lock</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <!-- Recon Filter -->
+    <div class="filter-group">
+      <label class="filter-label">
+        Recon (Agent Code)
+        <mat-spinner *ngIf="isLoadingRecons" diameter="16" class="loading-spinner"></mat-spinner>
+      </label>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-select 
+          multiple
+          [(value)]="filterState.selectedRecons"
+          [disabled]="filterState.reconLocked || isLoadingRecons"
+          (selectionChange)="onReconSelectionChange()"
+          placeholder="Select recons">
+          <mat-option *ngFor="let recon of filterState.availableRecons" [value]="recon">
+            {{ recon }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matSuffix *ngIf="filterState.reconLocked" class="lock-icon">lock</mat-icon>
+        <mat-hint *ngIf="!filterState.reconLocked">
+          {{ getSelectedReconsText() }}
+        </mat-hint>
+      </mat-form-field>
+    </div>
+
+    <!-- Set ID Filter -->
+    <div class="filter-group">
+      <label class="filter-label">
+        Set ID
+        <mat-spinner *ngIf="isLoadingSetIds" diameter="16" class="loading-spinner"></mat-spinner>
+      </label>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-select 
+          multiple
+          [(value)]="filterState.selectedSetIds"
+          [disabled]="filterState.setIdLocked || isLoadingSetIds || filterState.availableSetIds.length === 0"
+          (selectionChange)="onSetIdSelectionChange()"
+          placeholder="Select set IDs">
+          <mat-option *ngFor="let setId of filterState.availableSetIds" [value]="setId">
+            {{ setId }}
+          </mat-option>
+        </mat-select>
+        <mat-icon matSuffix *ngIf="filterState.setIdLocked" class="lock-icon">lock</mat-icon>
+        <mat-hint *ngIf="!filterState.setIdLocked">
+          {{ getSelectedSetIdsText() }}
+        </mat-hint>
+      </mat-form-field>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="filter-group">
+      <label class="filter-label">Date Range</label>
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-select 
+          [(value)]="filterState.dateRange"
+          (selectionChange)="onDateRangeSelectionChange(filterState.dateRange)">
+          <mat-option *ngFor="let option of dateRangeOptions" [value]="option.value">
+            <div class="date-range-option">
+              <span class="date-range-label">{{ option.label }}</span>
+              <span class="date-range-description">{{ option.description }}</span>
+            </div>
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+  </div>
+
+  <!-- Filter Actions -->
+  <div class="filter-actions">
+    <button 
+      mat-stroked-button 
+      class="clear-btn"
+      (click)="onClearFiltersClick()"
+      [disabled]="!canClearFilters()">
+      <mat-icon>clear</mat-icon>
+      Clear Filters
+    </button>
+    
+    <button 
+      mat-flat-button 
+      color="primary"
+      class="apply-btn"
+      (click)="onApplyFiltersClick()">
+      <mat-icon>tune</mat-icon>
+      Apply Filters
+    </button>
+  </div>
+</div>

@@ -1,0 +1,252 @@
+.filters-container {
+  padding: 20px 24px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.filters-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  flex: 1;
+}
+
+.filter-label {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-spinner {
+  ::ng-deep circle {
+    stroke: var(--google-blue);
+  }
+}
+
+.filter-field {
+  width: 100%;
+  
+  ::ng-deep {
+    .mat-mdc-form-field-flex {
+      background-color: var(--bg-secondary);
+    }
+    
+    .mat-mdc-text-field-wrapper {
+      background-color: var(--bg-secondary);
+    }
+    
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: var(--border-primary);
+    }
+    
+    .mdc-notched-outline--notched {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--google-blue);
+      }
+    }
+    
+    .mat-mdc-select-value,
+    .mat-mdc-select-placeholder {
+      color: var(--text-primary);
+      font-family: 'Google Sans', sans-serif;
+      font-size: 14px;
+    }
+    
+    .mat-mdc-select-arrow {
+      color: var(--text-secondary);
+    }
+    
+    .mat-mdc-form-field-hint {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-family: 'Google Sans', sans-serif;
+    }
+    
+    .mat-mdc-form-field:not(.mat-mdc-form-field-disabled) {
+      .mdc-notched-outline:hover {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: var(--google-blue);
+        }
+      }
+    }
+    
+    .mat-mdc-form-field-disabled {
+      .mat-mdc-select-value {
+        color: var(--text-secondary);
+      }
+      
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--border-secondary);
+      }
+    }
+  }
+}
+
+.lock-icon {
+  color: var(--text-secondary);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.date-range-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-range-label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.date-range-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.clear-btn {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-color: var(--border-primary);
+  
+  &:hover:not(:disabled) {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  :is(mat-icon) {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+  }
+}
+
+.apply-btn {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  
+  :is(mat-icon) {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+  }
+}
+
+/* Select Panel Styling */
+::ng-deep .mat-mdc-select-panel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+  
+  .mat-mdc-option {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Google Sans', sans-serif;
+    font-size: 14px;
+    
+    &:hover {
+      background-color: var(--bg-hover);
+    }
+    
+    &.mdc-list-item--selected {
+      background-color: var(--google-blue-bg);
+      color: var(--google-blue);
+    }
+    
+    &.mat-mdc-option-multiple {
+      .mat-mdc-checkbox {
+        .mdc-checkbox__native-control:checked ~ .mdc-checkbox__background {
+          background-color: var(--google-blue);
+          border-color: var(--google-blue);
+        }
+      }
+    }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .filters-row {
+    gap: 16px;
+  }
+  
+  .filter-group {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 900px) {
+  .filters-container {
+    padding: 16px 20px;
+  }
+  
+  .filters-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .filter-group {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .filter-actions {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+/* Animation */
+.filters-container {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

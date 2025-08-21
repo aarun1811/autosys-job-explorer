@@ -20,8 +20,9 @@ import { Subject } from 'rxjs';
 import { AppIDCellRendererComponent } from '../../../custom-interactions/components/renderers/app-id-cell-renderer.component';
 import { AppSupportCellRendererComponent } from '../../../custom-interactions/components/renderers/app-support-cell-renderer.component';
 import { ExecutionOrderButtonComponent } from '../../../custom-interactions/components/renderers/execution-order-button.component';
-import { ReconCellRendererComponent } from '../../../custom-interactions/components/renderers/recon-cell-renderer.component';
-import { SetIdCellRendererComponent } from '../../../custom-interactions/components/renderers/set-id-cell-renderer.component';
+import { SetIdV2RendererComponent } from '../../../custom-interactions/components/renderers/v2/set-id-v2-renderer.component';
+import { ReconV2RendererComponent } from '../../../custom-interactions/components/renderers/v2/recon-v2-renderer.component';
+import { TlmInstanceV2RendererComponent } from '../../../custom-interactions/components/renderers/v2/tlm-instance-v2-renderer.component';
 
 @Component({
   selector: 'app-search-v5-grid',
@@ -179,8 +180,9 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
         appIDCellRenderer: AppIDCellRendererComponent,
         supportEmailCellRenderer: AppSupportCellRendererComponent,
         executionOrderButtonRenderer: ExecutionOrderButtonComponent,
-        reconCellRenderer: ReconCellRendererComponent,
-        setIdCellRenderer: SetIdCellRendererComponent
+        setIdV2Renderer: SetIdV2RendererComponent,
+        reconV2Renderer: ReconV2RendererComponent,
+        tlmInstanceV2Renderer: TlmInstanceV2RendererComponent
       },
       onGridReady: this.onGridReady.bind(this),
       onFilterChanged: this.onFilterChanged.bind(this),

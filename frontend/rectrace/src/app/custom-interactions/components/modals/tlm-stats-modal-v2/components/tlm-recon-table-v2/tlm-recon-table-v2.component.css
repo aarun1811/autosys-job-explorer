@@ -1,0 +1,312 @@
+.table-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+.table-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  border-radius: 8px 8px 0 0;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.status-icon.spinning {
+  color: var(--google-blue);
+  animation: spin 1s linear infinite;
+}
+
+.status-icon.error {
+  color: var(--google-red);
+}
+
+.status-icon.success {
+  color: var(--google-green);
+}
+
+.status-icon.info {
+  color: var(--text-secondary);
+}
+
+.status-text {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.refresh-btn {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--google-blue);
+  border-color: var(--border-primary);
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--google-blue-bg);
+  border-color: var(--google-blue);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refresh-btn :is(mat-icon) {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.grid-container {
+  flex: 1;
+  position: relative;
+  background: var(--bg-primary);
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+/* AG-Grid Styling - Light Theme */
+:host ::ng-deep .ag-theme-alpine {
+  --ag-header-height: 40px;
+  --ag-row-height: 36px;
+  --ag-header-background-color: var(--bg-secondary);
+  --ag-header-foreground-color: var(--text-primary);
+  --ag-odd-row-background-color: var(--bg-primary);
+  --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-border-color: transparent;
+  --ag-row-hover-color: var(--bg-hover);
+  --ag-selected-row-background-color: var(--google-blue-bg);
+  --ag-range-selection-border-color: var(--google-blue);
+  --ag-header-column-separator-color: var(--border-primary);
+  --ag-header-column-separator-height: 60%;
+  --ag-header-column-separator-width: 1px;
+  --ag-border-color: var(--border-primary);
+  --ag-font-family: 'Google Sans', 'Inter', 'Segoe UI', sans-serif;
+  --ag-font-size: 13px;
+  --ag-header-font-size: 13px;
+  --ag-header-font-weight: 600;
+  --ag-cell-horizontal-padding: 16px;
+  --ag-popup-shadow: var(--shadow-lg);
+  --ag-modal-overlay-background-color: var(--modal-overlay);
+  height: 100%;
+  border: none;
+  border-radius: 0 0 8px 8px;
+}
+
+/* AG-Grid Styling - Dark Theme */
+:host ::ng-deep .ag-theme-alpine-dark {
+  --ag-header-height: 40px;
+  --ag-row-height: 36px;
+  --ag-header-background-color: var(--bg-tertiary);
+  --ag-header-foreground-color: var(--text-primary);
+  --ag-odd-row-background-color: var(--bg-primary);
+  --ag-even-row-background-color: var(--bg-secondary);
+  --ag-row-border-color: transparent;
+  --ag-row-hover-color: var(--bg-hover);
+  --ag-selected-row-background-color: var(--google-blue-bg);
+  --ag-range-selection-border-color: var(--google-blue);
+  --ag-header-column-separator-color: var(--border-primary);
+  --ag-header-column-separator-height: 60%;
+  --ag-header-column-separator-width: 1px;
+  --ag-border-color: var(--border-primary);
+  --ag-background-color: var(--bg-primary);
+  --ag-foreground-color: var(--text-primary);
+  --ag-control-panel-background-color: var(--bg-secondary);
+  --ag-font-family: 'Google Sans', 'Inter', 'Segoe UI', sans-serif;
+  --ag-font-size: 13px;
+  --ag-header-font-size: 13px;
+  --ag-header-font-weight: 600;
+  --ag-cell-horizontal-padding: 16px;
+  --ag-popup-shadow: var(--shadow-lg);
+  --ag-modal-overlay-background-color: var(--modal-overlay);
+  height: 100%;
+  border: none;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Header Styling */
+:host ::ng-deep .ag-theme-alpine .ag-header-cell,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-cell {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 1px solid var(--border-primary);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell:last-child,
+:host ::ng-deep .ag-theme-alpine-dark .ag-header-cell:last-child {
+  border-right: none;
+}
+
+/* Cell Styling */
+:host ::ng-deep .ag-theme-alpine .ag-cell,
+:host ::ng-deep .ag-theme-alpine-dark .ag-cell {
+  font-size: 13px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border-secondary);
+  line-height: 36px;
+  color: var(--text-primary);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-cell:last-child,
+:host ::ng-deep .ag-theme-alpine-dark .ag-cell:last-child {
+  border-right: none;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-cell.text-right,
+:host ::ng-deep .ag-theme-alpine-dark .ag-cell.text-right {
+  justify-content: flex-end;
+  font-weight: 500;
+}
+
+/* Row Styling */
+:host ::ng-deep .ag-theme-alpine .ag-row,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row {
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row:hover,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-row.ag-row-selected,
+:host ::ng-deep .ag-theme-alpine-dark .ag-row.ag-row-selected {
+  background-color: var(--google-blue-bg) !important;
+}
+
+/* Loading Overlay */
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-wrapper,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-wrapper {
+  background: var(--bg-primary);
+  border-radius: 8px;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-overlay-loading-center,
+:host ::ng-deep .ag-theme-alpine-dark .ag-overlay-loading-center {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-family: 'Google Sans', sans-serif;
+}
+
+/* Filter and Menu Styling */
+:host ::ng-deep .ag-theme-alpine .ag-menu,
+:host ::ng-deep .ag-theme-alpine-dark .ag-menu {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-lg);
+  border-radius: 6px;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-filter-wrapper,
+:host ::ng-deep .ag-theme-alpine-dark .ag-filter-wrapper {
+  background: var(--bg-primary);
+  border-radius: 6px;
+}
+
+/* Pagination Styling */
+:host ::ng-deep .ag-theme-alpine .ag-paging-panel,
+:host ::ng-deep .ag-theme-alpine-dark .ag-paging-panel {
+  border-top: 1px solid var(--border-primary);
+  padding: 8px 16px;
+  background-color: var(--bg-secondary);
+  height: 40px;
+  color: var(--text-primary);
+  font-family: 'Google Sans', sans-serif;
+}
+
+/* Error Details */
+.error-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-primary);
+  color: var(--google-red);
+  border-radius: 0 0 8px 8px;
+}
+
+.error-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.error-message {
+  flex: 1;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.retry-btn {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.table-wrapper {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .table-status-bar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  
+  .table-actions {
+    align-self: flex-end;
+  }
+}
