@@ -120,11 +120,9 @@ public class TlmStatsV2Service {
     public List<String> getReconsForTlmInstance(String tlmInstance) {
         validateTlmInstance(tlmInstance);
         
-        JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(tlmInstance);
-        
-        String sql = "SELECT DISTINCT b.agent_code FROM bank b ORDER BY b.agent_code";
-        
-        return jdbcTemplate.queryForList(sql, String.class);
+        String sql = "SELECT DISTINCT agent_code AS recon FROM recon_bank WHERE recon_engine_env = ? AND recon_engine = 'TLM' ORDER BY agent_code";
+        logger.debug("SQL: {}", sql);
+        return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance);
     }
 
     /**
