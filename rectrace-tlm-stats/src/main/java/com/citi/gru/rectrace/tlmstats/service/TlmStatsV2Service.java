@@ -135,11 +135,9 @@ public class TlmStatsV2Service {
             throw new IllegalArgumentException("Agent code is mandatory");
         }
         
-        JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(tlmInstance);
-        
-        String sql = "SELECT DISTINCT b.local_acc_no FROM bank b WHERE b.agent_code = ? ORDER BY b.local_acc_no";
-        
-        return jdbcTemplate.queryForList(sql, String.class, agentCode);
+        String sql = "SELECT DISTINCT local_acc_no AS set_id FROM recon_bank WHERE recon_engine_env = ? AND recon_engine = 'TLM' AND agent_code = ? ORDER BY local_acc_no";
+        logger.debug("SQL: {}", sql);
+        return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance, agentCode);
     }
 
     /**
