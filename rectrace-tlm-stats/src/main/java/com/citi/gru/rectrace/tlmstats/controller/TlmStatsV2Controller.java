@@ -39,7 +39,7 @@ public class TlmStatsV2Controller {
 
     /**
      * SSRM Break Stats API
-     * POST /api/v2/tlm-stats/dashboard/breaks
+     * POST /api/tlm-stats/v2/dashboard/breaks
      */
     @PostMapping("/dashboard/breaks")
     public ResponseEntity<?> getBreaksTableData(@RequestBody SsrmRequest request) {
@@ -63,7 +63,7 @@ public class TlmStatsV2Controller {
 
     /**
      * SSRM Reconciliation Stats API (Merged Automatch + Manual Match)
-     * POST /api/v2/tlm-stats/dashboard/recon
+     * POST /api/tlm-stats/v2/dashboard/recon
      */
     @PostMapping("/dashboard/recon")
     public ResponseEntity<?> getReconTableData(@RequestBody SsrmRequest request) {
@@ -87,7 +87,7 @@ public class TlmStatsV2Controller {
 
     /**
      * Dashboard Summary API (for pie chart and summary cards)
-     * GET /api/v2/tlm-stats/dashboard/summary
+     * GET /api/tlm-stats/v2/dashboard/summary
      */
     @GetMapping("/dashboard/summary")
     public ResponseEntity<?> getDashboardSummary(
@@ -121,7 +121,7 @@ public class TlmStatsV2Controller {
 
     /**
      * Get all recons for a TLM instance
-     * GET /api/v2/tlm-stats/filters/recons
+     * GET /api/tlm-stats/v2/filters/recons
      */
     @GetMapping("/filters/recons")
     public ResponseEntity<?> getReconsForTlmInstance(@RequestParam("tlm_instance") String tlmInstance) {
@@ -150,7 +150,7 @@ public class TlmStatsV2Controller {
 
     /**
      * Get all set_ids for a recon
-     * GET /api/v2/tlm-stats/filters/set-ids
+     * GET /api/tlm-stats/v2/filters/set-ids
      */
     @GetMapping("/filters/set-ids")
     public ResponseEntity<?> getSetIdsForRecon(
@@ -182,7 +182,7 @@ public class TlmStatsV2Controller {
 
     /**
      * Export Breaks Data (Full Export - bypasses pagination)
-     * POST /api/v2/tlm-stats/export/breaks
+     * POST /api/tlm-stats/v2/export/breaks
      */
     @PostMapping("/export/breaks")
     public ResponseEntity<?> exportBreaksData(@RequestBody SsrmRequest request) {
@@ -211,7 +211,7 @@ public class TlmStatsV2Controller {
 
     /**
      * Export Reconciliation Data (Full Export - bypasses pagination)
-     * POST /api/v2/tlm-stats/export/recon
+     * POST /api/tlm-stats/v2/export/recon
      */
     @PostMapping("/export/recon")
     public ResponseEntity<?> exportReconData(@RequestBody SsrmRequest request) {
