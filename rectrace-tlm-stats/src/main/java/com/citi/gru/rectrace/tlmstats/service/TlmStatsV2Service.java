@@ -287,7 +287,7 @@ public class TlmStatsV2Service {
         sql.append(")");
         
         if (countOnly) {
-            sql.append(" SELECT COUNT(*) FROM (");
+            sql.append(" SELECT SUM(breaks_count) FROM (");
         }
         
         sql.append(" SELECT");
