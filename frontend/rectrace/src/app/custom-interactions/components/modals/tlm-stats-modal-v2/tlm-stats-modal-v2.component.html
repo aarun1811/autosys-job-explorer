@@ -15,8 +15,8 @@
 <mat-dialog-content>
   <div class="dashboard-container">
     
-    <!-- Filters Panel -->
-    <div class="filters-section">
+    <!-- Left Sidebar - Filters Panel -->
+    <div class="filters-sidebar">
       <app-tlm-filters-v2
         [filterState]="filterState"
         [isLoadingRecons]="isLoadingRecons"
@@ -29,84 +29,89 @@
       </app-tlm-filters-v2>
     </div>
 
-    <!-- Summary Cards Section -->
-    <div class="summary-section">
-      <app-tlm-summary-cards-v2
-        [summary]="dashboardSummary"
-        [isLoading]="isLoadingSummary"
-        [hasError]="hasSummaryError">
-      </app-tlm-summary-cards-v2>
-    </div>
-
-    <!-- Chart Section -->
-    <div class="chart-section">
-      <app-tlm-pie-chart-v2
-        [summary]="dashboardSummary"
-        [isLoading]="isLoadingSummary"
-        [hasError]="hasSummaryError"
-        [isDarkTheme]="isDarkTheme">
-      </app-tlm-pie-chart-v2>
-    </div>
-
-    <!-- Tables Section -->
-    <div class="tables-section">
+    <!-- Main Content Area (Scrollable) -->
+    <div class="main-content">
       
-      <!-- Break Statistics Table -->
-      <div class="table-container">
-        <div class="table-header">
-          <mat-icon class="table-icon warning">warning</mat-icon>
-          <h3>Break Statistics</h3>
-          <div class="table-actions">
-            <button mat-stroked-button 
-                    class="export-btn"
-                    (click)="onExportBreaks()"
-                    [disabled]="isLoadingSummary">
-              <mat-icon>file_download</mat-icon>
-              Export
-            </button>
-          </div>
-        </div>
-        
-        <app-tlm-breaks-table-v2
-          [filterState]="filterState"
-          [isDarkTheme]="isDarkTheme">
-        </app-tlm-breaks-table-v2>
+      <!-- Summary Cards Section -->
+      <div class="summary-section">
+        <app-tlm-summary-cards-v2
+          [summary]="dashboardSummary"
+          [isLoading]="isLoadingSummary"
+          [hasError]="hasSummaryError">
+        </app-tlm-summary-cards-v2>
       </div>
 
-      <!-- Reconciliation Statistics Table -->
-      <div class="table-container">
-        <div class="table-header">
-          <mat-icon class="table-icon primary">insights</mat-icon>
-          <h3>Reconciliation Statistics</h3>
-          <div class="table-actions">
-            <button mat-stroked-button 
-                    class="export-btn"
-                    (click)="onExportRecon()"
-                    [disabled]="isLoadingSummary">
-              <mat-icon>file_download</mat-icon>
-              Export
-            </button>
-          </div>
-        </div>
-        
-        <app-tlm-recon-table-v2
-          [filterState]="filterState"
+      <!-- Chart Section -->
+      <div class="chart-section">
+        <app-tlm-pie-chart-v2
+          [summary]="dashboardSummary"
+          [isLoading]="isLoadingSummary"
+          [hasError]="hasSummaryError"
           [isDarkTheme]="isDarkTheme">
-        </app-tlm-recon-table-v2>
+        </app-tlm-pie-chart-v2>
       </div>
 
-    </div>
+      <!-- Tables Section -->
+      <div class="tables-section">
+        
+        <!-- Break Statistics Table -->
+        <div class="table-container">
+          <div class="table-header">
+            <mat-icon class="table-icon warning">warning</mat-icon>
+            <h3>Break Statistics</h3>
+            <div class="table-actions">
+              <button mat-stroked-button 
+                      class="export-btn"
+                      (click)="onExportBreaks()"
+                      [disabled]="isLoadingSummary">
+                <mat-icon>file_download</mat-icon>
+                Export
+              </button>
+            </div>
+          </div>
+          
+          <app-tlm-breaks-table-v2
+            [filterState]="filterState"
+            [isDarkTheme]="isDarkTheme">
+          </app-tlm-breaks-table-v2>
+        </div>
 
-    <!-- Combined Export Section -->
-    <div class="combined-export-section">
-      <button mat-flat-button 
-              color="primary"
-              class="combined-export-btn"
-              (click)="onCombinedExport()"
-              [disabled]="isLoadingSummary">
-        <mat-icon>get_app</mat-icon>
-        Export Combined Data
-      </button>
+        <!-- Reconciliation Statistics Table -->
+        <div class="table-container">
+          <div class="table-header">
+            <mat-icon class="table-icon primary">insights</mat-icon>
+            <h3>Reconciliation Statistics</h3>
+            <div class="table-actions">
+              <button mat-stroked-button 
+                      class="export-btn"
+                      (click)="onExportRecon()"
+                      [disabled]="isLoadingSummary">
+                <mat-icon>file_download</mat-icon>
+                Export
+              </button>
+            </div>
+          </div>
+          
+          <app-tlm-recon-table-v2
+            [filterState]="filterState"
+            [isDarkTheme]="isDarkTheme">
+          </app-tlm-recon-table-v2>
+        </div>
+
+      </div>
+
+      <!-- Combined Export Section -->
+      <div class="combined-export-section">
+        <button mat-flat-button 
+                color="primary"
+                class="combined-export-btn"
+                (click)="onCombinedExport()"
+                [disabled]="isLoadingSummary">
+          <mat-icon>get_app</mat-icon>
+          Export Combined Data
+        </button>
+      </div>
+
     </div>
 
   </div>
