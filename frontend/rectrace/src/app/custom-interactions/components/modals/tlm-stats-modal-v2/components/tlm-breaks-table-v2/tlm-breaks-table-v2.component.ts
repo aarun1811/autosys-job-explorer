@@ -179,7 +179,8 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
       }
     };
 
-    (this.gridApi as any).setServerSideDatasource(datasource);
+    // (this.gridApi as any).setServerSideDatasource(datasource);
+    (this.gridApi as any).setGridOption('serverSideDatasource', datasource);
   }
 
   private createSsrmRequest(request: IServerSideGetRowsRequest): SsrmRequest {
