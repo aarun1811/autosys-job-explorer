@@ -140,6 +140,8 @@
 }
 
 .card-info {
+  --google-purple: #8e24aa;
+  
   .card-icon,
   .card-percentage {
     color: var(--google-purple);

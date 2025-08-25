@@ -52,10 +52,10 @@
       </div>
 
       <!-- Tables Section -->
-      <div class="tables-section">
+      <div class="tables-section" *ngIf="dashboardSummary && (dashboardSummary.total_breaks > 0 || dashboardSummary.total_items > 0)">
         
         <!-- Break Statistics Table -->
-        <div class="table-container">
+        <div class="table-container" *ngIf="dashboardSummary.total_breaks > 0">
           <div class="table-header">
             <mat-icon class="table-icon warning">warning</mat-icon>
             <h3>Break Statistics</h3>
@@ -63,7 +63,7 @@
               <button mat-stroked-button 
                       class="export-btn"
                       (click)="onExportBreaks()"
-                      [disabled]="isLoadingSummary">
+                      [disabled]="isLoadingSummary || dashboardSummary.total_breaks === 0">
                 <mat-icon>file_download</mat-icon>
                 Export
               </button>
@@ -77,7 +77,7 @@
         </div>
 
         <!-- Reconciliation Statistics Table -->
-        <div class="table-container">
+        <div class="table-container" *ngIf="dashboardSummary.total_items > 0">
           <div class="table-header">
             <mat-icon class="table-icon primary">insights</mat-icon>
             <h3>Reconciliation Statistics</h3>
@@ -85,7 +85,7 @@
               <button mat-stroked-button 
                       class="export-btn"
                       (click)="onExportRecon()"
-                      [disabled]="isLoadingSummary">
+                      [disabled]="isLoadingSummary || dashboardSummary.total_items === 0">
                 <mat-icon>file_download</mat-icon>
                 Export
               </button>
@@ -99,14 +99,20 @@
         </div>
 
       </div>
+      
+      <!-- No Data Message -->
+      <div class="no-data-section" *ngIf="dashboardSummary && dashboardSummary.total_breaks === 0 && dashboardSummary.total_items === 0">
+        <mat-icon class="no-data-icon">inbox</mat-icon>
+        <p class="no-data-text">No data available for the selected filters</p>
+      </div>
 
       <!-- Combined Export Section -->
-      <div class="combined-export-section">
+      <div class="combined-export-section" *ngIf="dashboardSummary && (dashboardSummary.total_breaks > 0 || dashboardSummary.total_items > 0)">
         <button mat-flat-button 
                 color="primary"
                 class="combined-export-btn"
                 (click)="onCombinedExport()"
-                [disabled]="isLoadingSummary">
+                [disabled]="isLoadingSummary || (dashboardSummary.total_breaks === 0 && dashboardSummary.total_items === 0)">
           <mat-icon>get_app</mat-icon>
           Export Combined Data
         </button>
