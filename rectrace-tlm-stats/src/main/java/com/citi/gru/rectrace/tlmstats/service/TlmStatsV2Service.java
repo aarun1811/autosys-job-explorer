@@ -1,12 +1,9 @@
 package com.citi.gru.rectrace.tlmstats.service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -50,7 +47,7 @@ public class TlmStatsV2Service {
         String sql = buildBreaksQuery(request, false);
         Object[] params = buildBreaksParameters(request);
         
-        logger.info("Executing V2 Breaks SSRM query for TLM instance: {}", request.getTlmInstance());
+        logger.info("Executing V2 Breaks SSRM query for TLM instance: {}, sql: {}", request.getTlmInstance(), sql);
         
         List<BreakStats> allData = jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
         
