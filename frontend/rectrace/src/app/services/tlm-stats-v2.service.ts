@@ -4,27 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 // V2 Interfaces for API requests and responses
-export interface SsrmRequest {
-  startRow: number;
-  endRow: number;
-  rowGroupCols?: any[];
-  valueCols?: any[];
-  pivotCols?: any[];
-  pivotMode?: boolean;
-  groupKeys?: string[];
-  filterModel?: any;
-  sortModel?: any[];
+export interface TlmStatsRequest {
   tlm_instance: string;
   agent_codes?: string[];
   set_ids?: string[];
   date_range?: number;
-}
-
-export interface SsrmResponse<T> {
-  data: T[];
-  lastRow?: number;
-  status: string;
-  count: number;
 }
 
 export interface DashboardSummary {
@@ -78,17 +62,17 @@ export class TlmStatsV2Service {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get breaks table data with SSRM
+   * Get all breaks table data
    */
-  getBreaksTableData(request: SsrmRequest): Observable<SsrmResponse<BreakStatsV2>> {
-    return this.http.post<SsrmResponse<BreakStatsV2>>(`${this.baseUrl}/dashboard/breaks`, request);
+  getBreaksTableData(request: TlmStatsRequest): Observable<ApiResponse<BreakStatsV2[]>> {
+    return this.http.post<ApiResponse<BreakStatsV2[]>>(`${this.baseUrl}/dashboard/breaks`, request);
   }
 
   /**
-   * Get reconciliation table data with SSRM (merged automatch + manual match)
+   * Get all reconciliation table data (merged automatch + manual match)
    */
-  getReconTableData(request: SsrmRequest): Observable<SsrmResponse<MergedReconStats>> {
-    return this.http.post<SsrmResponse<MergedReconStats>>(`${this.baseUrl}/dashboard/recon`, request);
+  getReconTableData(request: TlmStatsRequest): Observable<ApiResponse<MergedReconStats[]>> {
+    return this.http.post<ApiResponse<MergedReconStats[]>>(`${this.baseUrl}/dashboard/recon`, request);
   }
 
   /**
@@ -139,42 +123,21 @@ export class TlmStatsV2Service {
     return this.http.get<ApiResponse<string[]>>(`${this.baseUrl}/filters/set-ids`, { params: httpParams });
   }
 
-  /**
-   * Export breaks data (full data without pagination)
-   */
-  exportBreaksData(request: SsrmRequest): Observable<ApiResponse<BreakStatsV2[]>> {
-    return this.http.post<ApiResponse<BreakStatsV2[]>>(`${this.baseUrl}/export/breaks`, request);
-  }
 
   /**
-   * Export reconciliation data (full data without pagination)
+   * Create TLM stats request with common parameters
    */
-  exportReconData(request: SsrmRequest): Observable<ApiResponse<MergedReconStats[]>> {
-    return this.http.post<ApiResponse<MergedReconStats[]>>(`${this.baseUrl}/export/recon`, request);
-  }
-
-  /**
-   * Create SSRM request with common parameters
-   */
-  createSsrmRequest(params: {
-    startRow: number;
-    endRow: number;
+  createTlmStatsRequest(params: {
     tlmInstance: string;
     agentCodes?: string[];
     setIds?: string[];
     dateRange?: DateRange;
-    sortModel?: any[];
-    filterModel?: any;
-  }): SsrmRequest {
+  }): TlmStatsRequest {
     return {
-      startRow: params.startRow,
-      endRow: params.endRow,
       tlm_instance: params.tlmInstance,
       agent_codes: params.agentCodes,
       set_ids: params.setIds,
-      date_range: params.dateRange || DateRange.ONE_DAY,
-      sortModel: params.sortModel,
-      filterModel: params.filterModel
+      date_range: params.dateRange || DateRange.ONE_DAY
     };
   }
 
