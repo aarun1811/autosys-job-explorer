@@ -39,9 +39,9 @@
           </mat-option>
         </mat-select>
         <mat-icon matSuffix *ngIf="filterState.reconLocked" class="lock-icon">lock</mat-icon>
-        <mat-hint *ngIf="!filterState.reconLocked">
+        <!-- <mat-hint *ngIf="!filterState.reconLocked">
           {{ getSelectedReconsText() }}
-        </mat-hint>
+        </mat-hint> -->
       </mat-form-field>
     </div>
 
@@ -63,9 +63,9 @@
           </mat-option>
         </mat-select>
         <mat-icon matSuffix *ngIf="filterState.setIdLocked" class="lock-icon">lock</mat-icon>
-        <mat-hint *ngIf="!filterState.setIdLocked">
+        <!-- <mat-hint *ngIf="!filterState.setIdLocked">
           {{ getSelectedSetIdsText() }}
-        </mat-hint>
+        </mat-hint> -->
       </mat-form-field>
     </div>
 
@@ -77,10 +77,7 @@
           [(value)]="filterState.dateRange"
           (selectionChange)="onDateRangeSelectionChange(filterState.dateRange)">
           <mat-option *ngFor="let option of dateRangeOptions" [value]="option.value">
-            <div class="date-range-option">
-              <span class="date-range-label">{{ option.label }}</span>
-              <span class="date-range-description">{{ option.description }}</span>
-            </div>
+            {{ option.label }}
           </mat-option>
         </mat-select>
       </mat-form-field>
@@ -96,16 +93,15 @@
       (click)="onClearFiltersClick()"
       [disabled]="!canClearFilters()">
       <mat-icon>clear</mat-icon>
-      Clear Filters
+      Clear
     </button>
     
     <button 
       mat-flat-button 
-      color="primary"
       class="apply-btn"
       (click)="onApplyFiltersClick()">
       <mat-icon>tune</mat-icon>
-      Apply Filters
+      Apply
     </button>
   </div>
 </div>
