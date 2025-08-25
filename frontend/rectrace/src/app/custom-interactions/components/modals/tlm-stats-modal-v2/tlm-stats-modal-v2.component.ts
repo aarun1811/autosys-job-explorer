@@ -1,10 +1,12 @@
-import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { ThemeService } from '../../../../services/theme.service';
 import { TlmStatsV2Service, DateRange, DashboardSummary } from '../../../../services/tlm-stats-v2.service';
+import { TlmBreaksTableV2Component } from './components/tlm-breaks-table-v2/tlm-breaks-table-v2.component';
+import { TlmReconTableV2Component } from './components/tlm-recon-table-v2/tlm-recon-table-v2.component';
 
 export interface TlmStatsModalV2Data {
   type: 'set_id' | 'recon' | 'tlm_instance';
@@ -32,6 +34,10 @@ export interface FilterState {
   styleUrls: ['./tlm-stats-modal-v2.component.css']
 })
 export class TlmStatsModalV2Component implements OnInit, OnDestroy {
+  
+  // ViewChild references to table components
+  @ViewChild(TlmBreaksTableV2Component) breaksTable!: TlmBreaksTableV2Component;
+  @ViewChild(TlmReconTableV2Component) reconTable!: TlmReconTableV2Component;
   
   // Theme management
   isDarkTheme: boolean = false;
@@ -281,110 +287,32 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
 
   // Export functionality
   onExportBreaks(): void {
-    // This will be handled by the breaks table component
-    // We could emit an event or use ViewChild to call the table's export method
+    if (this.breaksTable) {
+      this.breaksTable.exportToExcel();
+    }
   }
 
   onExportRecon(): void {
-    // This will be handled by the recon table component
-    // We could emit an event or use ViewChild to call the table's export method
+    if (this.reconTable) {
+      this.reconTable.exportToExcel();
+    }
   }
 
   onCombinedExport(): void {
-    // Export both tables to a single Excel file with multiple sheets
-    this.exportCombinedData();
-  }
-
-  private exportCombinedData(): void {
-    // Create requests for both datasets
-    const breaksRequest = this.tlmStatsV2Service.createSsrmRequest({
-      startRow: 0,
-      endRow: Number.MAX_SAFE_INTEGER,
-      tlmInstance: this.filterState.tlmInstance,
-      agentCodes: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
-      setIds: this.filterState.selectedSetIds.length > 0 ? this.filterState.selectedSetIds : undefined,
-      dateRange: this.filterState.dateRange
-    });
-
-    const reconRequest = this.tlmStatsV2Service.createSsrmRequest({
-      startRow: 0,
-      endRow: Number.MAX_SAFE_INTEGER,
-      tlmInstance: this.filterState.tlmInstance,
-      agentCodes: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
-      setIds: this.filterState.selectedSetIds.length > 0 ? this.filterState.selectedSetIds : undefined,
-      dateRange: this.filterState.dateRange
-    });
-
-    // Execute both exports
-    Promise.all([
-      this.tlmStatsV2Service.exportBreaksData(breaksRequest).toPromise(),
-      this.tlmStatsV2Service.exportReconData(reconRequest).toPromise()
-    ]).then(([breaksResponse, reconResponse]) => {
-      if (breaksResponse?.status === 'success' && reconResponse?.status === 'success') {
-        this.createCombinedExcelFile(breaksResponse.data, reconResponse.data);
-      }
-    }).catch(error => {
-      console.error('Error exporting combined data:', error);
-    });
-  }
-
-  private createCombinedExcelFile(breaksData: any[], reconData: any[]): void {
-    // Simple CSV approach - in production, you'd use a proper Excel library
-    const timestamp = new Date().getTime();
-    
-    // Create breaks CSV
-    const breaksHeaders = ['Breaks Count', 'Agent Code', 'Local Account No', 'Statement Date', 'Branch Code'];
-    const breaksCSV = [
-      breaksHeaders.join(','),
-      ...breaksData.map(row => [
-        row.breaks_count || 0,
-        `"${row.agent_code || ''}"`,
-        `"${row.local_acc_no || ''}"`,
-        `"${this.formatDate(row.stmt_date)}"`,
-        `"${row.bran_code || ''}"`
-      ].join(','))
-    ].join('\n');
-
-    // Create recon CSV
-    const reconHeaders = [
-      'TLM Instance', 'Agent Code', 'Set ID', 'Statement Date', 'Branch Code', 
-      'Corr Account', 'Total Items', 'Automatch Items', 'Manual Match Count'
-    ];
-    const reconCSV = [
-      reconHeaders.join(','),
-      ...reconData.map(row => [
-        `"${row.tlm_instance || ''}"`,
-        `"${row.agent_code || ''}"`,
-        `"${row.setid || ''}"`,
-        `"${this.formatDate(row.stmt_date)}"`,
-        `"${row.bran_code || ''}"`,
-        `"${row.corr_acc_no || ''}"`,
-        row.total_items || 0,
-        row.automatch_items || 0,
-        row.total_manual_match_count || 0
-      ].join(','))
-    ].join('\n');
-
-    // Download breaks data
-    this.downloadFile(breaksCSV, `tlm-breaks-${timestamp}.csv`);
-    
-    // Download recon data with slight delay
+    // Export both tables sequentially with AG-Grid Enterprise
     setTimeout(() => {
-      this.downloadFile(reconCSV, `tlm-reconciliation-${timestamp}.csv`);
-    }, 500);
+      if (this.breaksTable && this.breaksTable.hasData()) {
+        this.breaksTable.exportToExcel();
+      }
+    }, 100);
+    
+    setTimeout(() => {
+      if (this.reconTable && this.reconTable.hasData()) {
+        this.reconTable.exportToExcel();
+      }
+    }, 600);
   }
 
-  private downloadFile(content: string, filename: string): void {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 
   private formatDate(dateString: string): string {
     if (!dateString) return '';
