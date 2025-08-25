@@ -134,8 +134,8 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
   }
 
   private loadInitialData(): void {
-    // Load summary data immediately
-    this.loadDashboardSummary();
+    // Load all data initially
+    this.loadAllData();
     
     // Load filter options if needed
     if (!this.filterState.reconLocked) {
@@ -232,22 +232,19 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
     this.filterState.selectedSetIds = [];
     this.loadAvailableSetIds();
     
-    // Reload summary
-    this.loadDashboardSummary();
+    // Don't reload data here - wait for Apply button
   }
 
   onSetIdSelectionChange(selectedSetIds: string[]): void {
     this.filterState.selectedSetIds = selectedSetIds;
     
-    // Reload summary
-    this.loadDashboardSummary();
+    // Don't reload data here - wait for Apply button
   }
 
   onDateRangeChange(dateRange: DateRange): void {
     this.filterState.dateRange = dateRange;
     
-    // Reload summary
-    this.loadDashboardSummary();
+    // Don't reload data here - wait for Apply button
   }
 
   onClearFilters(): void {
@@ -263,13 +260,23 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
     // Reset date range
     this.filterState.dateRange = DateRange.ONE_DAY;
     
-    // Reload data
-    this.loadDashboardSummary();
+    // Automatically apply after clearing to show updated results
+    this.loadAllData();
   }
 
   onApplyFilters(): void {
     // Reload all data with current filters
+    this.loadAllData();
+  }
+  
+  private loadAllData(): void {
+    // Load dashboard summary
     this.loadDashboardSummary();
+    
+    // Trigger refresh for tables by updating the filter state
+    // The tables watch filterState changes via ngOnChanges
+    // We need to create a new object reference to trigger change detection
+    this.filterState = { ...this.filterState };
   }
 
   // Export functionality

@@ -316,6 +316,13 @@ mat-dialog-content {
   color: var(--text-secondary);
 }
 
+.no-data-hint {
+  margin: 8px 0 0 0;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+
 /* Dark mode for no data section */
 :host-context(.dark-theme) .no-data-section {
   color: var(--text-secondary-dark, rgba(255, 255, 255, 0.54));
@@ -327,6 +334,10 @@ mat-dialog-content {
 
 :host-context(.dark-theme) .no-data-text {
   color: var(--text-secondary-dark, rgba(255, 255, 255, 0.54));
+}
+
+:host-context(.dark-theme) .no-data-hint {
+  color: var(--text-tertiary-dark, rgba(255, 255, 255, 0.38));
 }
 
 /* Animations */
