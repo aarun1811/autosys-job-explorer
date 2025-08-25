@@ -19,8 +19,7 @@ import com.citi.gru.rectrace.tlmstats.model.BreakStats;
 import com.citi.gru.rectrace.tlmstats.model.ManualMatchStats;
 import com.citi.gru.rectrace.tlmstats.model.v2.DashboardSummary;
 import com.citi.gru.rectrace.tlmstats.model.v2.MergedReconStats;
-import com.citi.gru.rectrace.tlmstats.model.v2.SsrmRequest;
-import com.citi.gru.rectrace.tlmstats.model.v2.SsrmResponse;
+import com.citi.gru.rectrace.tlmstats.model.v2.TlmStatsRequest;
 
 /**
  * Service class for executing TLM statistics V2 queries with SSRM support
@@ -37,9 +36,9 @@ public class TlmStatsV2Service {
     private JdbcTemplate reconmgmtJdbcTemplate;
 
     /**
-     * Get breaks table data with SSRM support
+     * Get all breaks table data
      */
-    public SsrmResponse<BreakStats> getBreaksTableData(SsrmRequest request) {
+    public List<BreakStats> getBreaksTableData(TlmStatsRequest request) {
         validateTlmInstance(request.getTlmInstance());
         
         JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
@@ -47,43 +46,19 @@ public class TlmStatsV2Service {
         String sql = buildBreaksQuery(request, false);
         Object[] params = buildBreaksParameters(request);
         
-        logger.info("Executing V2 Breaks SSRM query for TLM instance: {}, sql: {}", request.getTlmInstance(), sql);
+        logger.info("Executing V2 Breaks query for TLM instance: {}", request.getTlmInstance());
         
-        List<BreakStats> allData = jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
-        
-        // Apply sorting
-        allData = applySorting(allData, request.getSortModel());
-        
-        // Calculate pagination
-        int totalRows = allData.size();
-        List<BreakStats> paginatedData = allData.stream()
-            .skip(request.getStartRow())
-            .limit(request.getEndRow() - request.getStartRow())
-            .collect(Collectors.toList());
-        
-        return new SsrmResponse<>(paginatedData, totalRows);
+        return jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
     }
 
     /**
-     * Get reconciliation table data with SSRM support (merged automatch + manual match)
+     * Get all reconciliation table data (merged automatch + manual match)
      */
-    public SsrmResponse<MergedReconStats> getReconTableData(SsrmRequest request) {
+    public List<MergedReconStats> getReconTableData(TlmStatsRequest request) {
         validateTlmInstance(request.getTlmInstance());
         
         // Get merged data
-        List<MergedReconStats> mergedData = getMergedReconData(request);
-        
-        // Apply sorting
-        mergedData = applySorting(mergedData, request.getSortModel());
-        
-        // Calculate pagination
-        int totalRows = mergedData.size();
-        List<MergedReconStats> paginatedData = mergedData.stream()
-            .skip(request.getStartRow())
-            .limit(request.getEndRow() - request.getStartRow())
-            .collect(Collectors.toList());
-        
-        return new SsrmResponse<>(paginatedData, totalRows);
+        return getMergedReconData(request);
     }
 
     /**
@@ -97,7 +72,7 @@ public class TlmStatsV2Service {
         long totalBreaks = getTotalBreaksCount(tlmInstance, agentCodes, setIds, dateRange);
         
         // Calculate totals for automatch and manual match
-        SsrmRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange);
+        TlmStatsRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange);
         List<MergedReconStats> reconData = getMergedReconData(tempRequest);
         
         long totalAutomatchItems = reconData.stream()
@@ -137,42 +112,9 @@ public class TlmStatsV2Service {
         return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance, agentCode);
     }
 
-    /**
-     * Export all breaks data (bypass pagination)
-     */
-    public List<BreakStats> exportBreaksData(SsrmRequest request) {
-        validateTlmInstance(request.getTlmInstance());
-        
-        JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
-        
-        String sql = buildBreaksQuery(request, false);
-        Object[] params = buildBreaksParameters(request);
-        
-        logger.info("Exporting all V2 Breaks data for TLM instance: {}", request.getTlmInstance());
-        
-        List<BreakStats> allData = jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
-        
-        // Apply sorting but no pagination
-        return applySorting(allData, request.getSortModel());
-    }
-
-    /**
-     * Export all reconciliation data (bypass pagination)
-     */
-    public List<MergedReconStats> exportReconData(SsrmRequest request) {
-        validateTlmInstance(request.getTlmInstance());
-        
-        // Get merged data without pagination
-        List<MergedReconStats> mergedData = getMergedReconData(request);
-        
-        logger.info("Exporting all V2 Recon data for TLM instance: {}", request.getTlmInstance());
-        
-        // Apply sorting but no pagination
-        return applySorting(mergedData, request.getSortModel());
-    }
 
     // Helper method to merge automatch and manual match data
-    private List<MergedReconStats> getMergedReconData(SsrmRequest request) {
+    private List<MergedReconStats> getMergedReconData(TlmStatsRequest request) {
         JdbcTemplate tlmJdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
         
         // Get automatch data
@@ -254,7 +196,7 @@ public class TlmStatsV2Service {
     }
 
     // Build breaks query with filters
-    private String buildBreaksQuery(SsrmRequest request, boolean countOnly) {
+    private String buildBreaksQuery(TlmStatsRequest request, boolean countOnly) {
         StringBuilder sql = new StringBuilder();
         sql.append("WITH static AS (");
         sql.append("  SELECT");
@@ -317,7 +259,7 @@ public class TlmStatsV2Service {
     }
 
     // Build automatch query with filters
-    private String buildAutomatchQuery(SsrmRequest request) {
+    private String buildAutomatchQuery(TlmStatsRequest request) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT");
         sql.append("  sys_context('USERENV', 'DB_NAME') tlm_instance,");
@@ -360,7 +302,7 @@ public class TlmStatsV2Service {
     }
 
     // Build manual match query with filters
-    private String buildManualMatchQuery(SsrmRequest request) {
+    private String buildManualMatchQuery(TlmStatsRequest request) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT");
         sql.append("  tlm_instance,");
@@ -449,7 +391,7 @@ public class TlmStatsV2Service {
     }
 
     // Build parameters for breaks query
-    private Object[] buildBreaksParameters(SsrmRequest request) {
+    private Object[] buildBreaksParameters(TlmStatsRequest request) {
         List<Object> params = new ArrayList<>();
         
         if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
@@ -463,7 +405,7 @@ public class TlmStatsV2Service {
     }
 
     // Build parameters for automatch query
-    private Object[] buildAutomatchParameters(SsrmRequest request) {
+    private Object[] buildAutomatchParameters(TlmStatsRequest request) {
         List<Object> params = new ArrayList<>();
         
         if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
@@ -477,7 +419,7 @@ public class TlmStatsV2Service {
     }
 
     // Build parameters for manual match query
-    private Object[] buildManualMatchParameters(SsrmRequest request) {
+    private Object[] buildManualMatchParameters(TlmStatsRequest request) {
         List<Object> params = new ArrayList<>();
         
         // First part of UNION
@@ -505,83 +447,12 @@ public class TlmStatsV2Service {
         return params.toArray();
     }
 
-    // Generic sorting method
-    @SuppressWarnings("unchecked")
-    private <T> List<T> applySorting(List<T> data, List<Map<String, Object>> sortModel) {
-        if (sortModel == null || sortModel.isEmpty()) {
-            return data;
-        }
-        
-        return data.stream().sorted((o1, o2) -> {
-            for (Map<String, Object> sort : sortModel) {
-                String colId = (String) sort.get("colId");
-                String sortDirection = (String) sort.get("sort");
-                
-                Comparable<Object> value1 = getFieldValue(o1, colId);
-                Comparable<Object> value2 = getFieldValue(o2, colId);
-                
-                int result = 0;
-                if (value1 != null && value2 != null) {
-                    result = value1.compareTo(value2);
-                } else if (value1 != null) {
-                    result = 1;
-                } else if (value2 != null) {
-                    result = -1;
-                }
-                
-                if ("desc".equals(sortDirection)) {
-                    result = -result;
-                }
-                
-                if (result != 0) {
-                    return result;
-                }
-            }
-            return 0;
-        }).collect(Collectors.toList());
-    }
-
-    // Get field value using reflection for sorting
-    @SuppressWarnings("unchecked")
-    private Comparable<Object> getFieldValue(Object obj, String fieldName) {
-        try {
-            String methodName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-            if (fieldName.equals("stmt_date")) {
-                methodName = "getStmtDate";
-            } else if (fieldName.equals("agent_code")) {
-                methodName = "getAgentCode";
-            } else if (fieldName.equals("local_acc_no")) {
-                methodName = "getLocalAccNo";
-            } else if (fieldName.equals("breaks_count")) {
-                methodName = "getBreaksCount";
-            } else if (fieldName.equals("bran_code")) {
-                methodName = "getBranCode";
-            } else if (fieldName.equals("tlm_instance")) {
-                methodName = "getTlmInstance";
-            } else if (fieldName.equals("setid")) {
-                methodName = "getSetid";
-            } else if (fieldName.equals("corr_acc_no")) {
-                methodName = "getCorrAccNo";
-            } else if (fieldName.equals("total_items")) {
-                methodName = "getTotalItems";
-            } else if (fieldName.equals("automatch_items")) {
-                methodName = "getAutomatchItems";
-            } else if (fieldName.equals("total_manual_match_count")) {
-                methodName = "getTotalManualMatchCount";
-            }
-            
-            return (Comparable<Object>) obj.getClass().getMethod(methodName).invoke(obj);
-        } catch (Exception e) {
-            logger.warn("Could not get field value for sorting: {}", fieldName, e);
-            return null;
-        }
-    }
 
     // Get total breaks count for summary
     private long getTotalBreaksCount(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange) {
         JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(tlmInstance);
         
-        SsrmRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange);
+        TlmStatsRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange);
         String sql = buildBreaksQuery(tempRequest, true);
         Object[] params = buildBreaksParameters(tempRequest);
         
@@ -590,8 +461,8 @@ public class TlmStatsV2Service {
     }
 
     // Create temporary request for summary calculations
-    private SsrmRequest createTempRequest(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange) {
-        SsrmRequest request = new SsrmRequest();
+    private TlmStatsRequest createTempRequest(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange) {
+        TlmStatsRequest request = new TlmStatsRequest();
         request.setTlmInstance(tlmInstance);
         request.setAgentCodes(agentCodes);
         request.setSetIds(setIds);
