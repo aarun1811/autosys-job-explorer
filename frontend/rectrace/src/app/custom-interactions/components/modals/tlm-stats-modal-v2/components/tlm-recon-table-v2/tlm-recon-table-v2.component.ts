@@ -43,6 +43,12 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
   hasError: boolean = false;
   errorMessage: string = '';
   totalRows: number = 0;
+  
+  // Dynamic height calculation
+  private readonly ROW_HEIGHT = 36; // AG-Grid row height
+  private readonly HEADER_HEIGHT = 40; // AG-Grid header height
+  private readonly MIN_ROWS = 3; // Minimum rows to show
+  private readonly MAX_ROWS = 10; // Maximum rows to show
 
   constructor(private tlmStatsV2Service: TlmStatsV2Service) {
     // Column definitions
@@ -272,6 +278,19 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
   }
 
   // Public methods
+  getTableHeight(): string {
+    // Calculate height based on actual row count
+    let rowsToShow = this.totalRows || this.MIN_ROWS;
+    
+    // Clamp between min and max rows
+    rowsToShow = Math.max(this.MIN_ROWS, Math.min(rowsToShow, this.MAX_ROWS));
+    
+    // Calculate total height: header + (rows * row height)
+    const calculatedHeight = this.HEADER_HEIGHT + (rowsToShow * this.ROW_HEIGHT);
+    
+    return `${calculatedHeight}px`;
+  }
+  
   refreshData(): void {
     if (this.gridApi) {
       this.setupServerSideDatasource();

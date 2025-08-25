@@ -30,7 +30,8 @@
       [gridOptions]="gridOptions"
       [columnDefs]="columnDefs"
       (gridReady)="onGridReady($event)"
-      style="width: 100%; height: 400px;">
+      [style.width.%]="100"
+      [style.height]="getTableHeight()">
     </ag-grid-angular>
   </div>
 
