@@ -106,8 +106,12 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
         this.filterState.tlmInstanceLocked = true;
         this.filterState.reconLocked = true;
         this.filterState.setIdLocked = true;
-        this.filterState.selectedRecons = [this.data.rowData?.agent_code || this.data.rowData?.recon];
+        const reconValue = this.data.rowData?.agent_code || this.data.rowData?.recon;
+        this.filterState.selectedRecons = reconValue ? [reconValue] : [];
         this.filterState.selectedSetIds = [this.data.value];
+        // Populate available options with the locked values so they display properly
+        this.filterState.availableRecons = reconValue ? [reconValue] : [];
+        this.filterState.availableSetIds = [this.data.value];
         break;
         
       case 'recon':
@@ -116,6 +120,8 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
         this.filterState.reconLocked = true;
         this.filterState.setIdLocked = false;
         this.filterState.selectedRecons = [this.data.value];
+        // Populate available recons with the locked value
+        this.filterState.availableRecons = [this.data.value];
         break;
         
       case 'tlm_instance':
