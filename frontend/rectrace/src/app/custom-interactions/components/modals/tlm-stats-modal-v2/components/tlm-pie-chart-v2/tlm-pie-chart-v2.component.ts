@@ -1,13 +1,6 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { DashboardSummary } from '../../../../../../services/tlm-stats-v2.service';
 
-interface ChartData {
-  category: string;
-  value: number;
-  percentage: number;
-  color: string;
-}
-
 @Component({
   selector: 'app-tlm-pie-chart-v2',
   templateUrl: './tlm-pie-chart-v2.component.html',
@@ -20,83 +13,146 @@ export class TlmPieChartV2Component implements OnInit, OnChanges {
   @Input() hasError: boolean = false;
   @Input() isDarkTheme: boolean = false;
 
-  chartData: ChartData[] = [];
+  chartOptions: any = {};
+  hasChartData: boolean = false;
 
   constructor() { }
 
   ngOnInit(): void {
-    this.updateChartData();
+    this.updateChart();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['summary'] || changes['isDarkTheme']) {
-      this.updateChartData();
+      this.updateChart();
     }
   }
 
-  private updateChartData(): void {
+  private updateChart(): void {
     if (!this.summary || this.summary.total_items === 0) {
-      this.chartData = [];
+      this.hasChartData = false;
       return;
     }
 
-    this.chartData = [
+    const chartData = [
       {
         category: 'Breaks',
         value: this.summary.total_breaks,
-        percentage: this.summary.breaks_percentage,
-        color: this.getColorValue('--google-yellow')
+        percentage: this.summary.breaks_percentage
       },
       {
         category: 'Automatch',
         value: this.summary.total_automatch_items,
-        percentage: this.summary.automatch_percentage,
-        color: this.getColorValue('--google-green')
+        percentage: this.summary.automatch_percentage
       },
       {
         category: 'Manual Match',
         value: this.summary.total_manual_match_items,
-        percentage: this.summary.manual_match_percentage,
-        color: this.getColorValue('--google-purple')
+        percentage: this.summary.manual_match_percentage
       }
-    ].filter(item => item.value > 0); // Only show categories with data
-  }
+    ].filter(item => item.value > 0);
 
-  private getColorValue(cssVariable: string): string {
-    // Define fallback colors for chart
-    const colorMap: { [key: string]: string } = {
-      '--google-yellow': '#fbbc04',
-      '--google-green': '#34a853',
-      '--google-purple': '#8e24aa',
-      '--google-blue': '#4285f4',
-      '--google-red': '#ea4335'
-    };
+    this.hasChartData = chartData.length > 0;
 
-    try {
-      const computedValue = getComputedStyle(document.documentElement)
-        .getPropertyValue(cssVariable)
-        .trim();
-      return computedValue || colorMap[cssVariable] || '#4285f4';
-    } catch {
-      return colorMap[cssVariable] || '#4285f4';
+    if (!this.hasChartData) {
+      return;
     }
+
+    const textColor = this.isDarkTheme ? '#e0e0e0' : '#333333';
+    const backgroundColor = this.isDarkTheme ? '#1e1e1e' : '#ffffff';
+    const gridLineColor = this.isDarkTheme ? '#424242' : '#e0e0e0';
+
+    this.chartOptions = {
+      theme: this.isDarkTheme ? 'ag-default-dark' : 'ag-default',
+      background: {
+        fill: backgroundColor
+      },
+      data: chartData,
+      series: [
+        {
+          type: 'pie',
+          angleKey: 'value',
+          labelKey: 'category',
+          calloutLabelKey: 'category',
+          sectorLabelKey: 'percentage',
+          calloutLabel: {
+            enabled: true,
+            fontWeight: '500',
+            fontSize: 11,
+            color: textColor
+          },
+          sectorLabel: {
+            enabled: true,
+            formatter: (params: any) => {
+              return `${params.value.toFixed(1)}%`;
+            },
+            fontWeight: 'bold',
+            fontSize: 12,
+            color: '#ffffff'
+          },
+          tooltip: {
+            renderer: (params: any) => {
+              return {
+                title: params.datum.category,
+                content: `${params.datum.value.toLocaleString()} items (${params.datum.percentage.toFixed(1)}%)`
+              };
+            }
+          },
+          fills: ['#fbbc04', '#34a853', '#8e24aa'],
+          strokes: ['#fbbc04', '#34a853', '#8e24aa'],
+          strokeWidth: 2,
+          shadow: {
+            enabled: true,
+            blur: 5,
+            xOffset: 2,
+            yOffset: 2,
+            color: 'rgba(0, 0, 0, 0.1)'
+          },
+          highlightStyle: {
+            item: {
+              fill: undefined,
+              stroke: undefined,
+              strokeWidth: 3
+            }
+          },
+          innerRadiusRatio: 0.5
+        }
+      ],
+      legend: {
+        enabled: true,
+        position: 'bottom',
+        spacing: 20,
+        item: {
+          label: {
+            fontWeight: '500',
+            fontSize: 12,
+            color: textColor
+          },
+          marker: {
+            size: 15,
+            strokeWidth: 2
+          }
+        }
+      },
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 20,
+        left: 20
+      }
+    };
   }
 
-  // Export chart as image - simplified for CSS chart
+  hasData(): boolean {
+    return this.hasChartData;
+  }
+
+  getTotalItems(): number {
+    return this.summary ? this.summary.total_items : 0;
+  }
+
   exportChartAsImage(format: 'png' | 'jpg' = 'png'): void {
-    // For now, just log the export request
-    // Could be implemented with html2canvas or similar library
     console.log(`Export chart as ${format} requested`);
     alert(`Chart export as ${format.toUpperCase()} - Feature coming soon!`);
-  }
-
-  // Check if chart has data
-  hasData(): boolean {
-    return this.chartData.length > 0 && this.chartData.some(item => item.value > 0);
-  }
-
-  // Get total items for display
-  getTotalItems(): number {
-    return this.chartData.reduce((sum, item) => sum + item.value, 0);
   }
 }

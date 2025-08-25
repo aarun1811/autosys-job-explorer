@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AgGridModule } from 'ag-grid-angular';
-// AgChartsModule removed - using simple CSS charts instead
+import { AgChartsModule } from 'ag-charts-angular';
 
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -83,6 +83,7 @@ const MATERIAL_MODULES = [
     FormsModule,
     ReactiveFormsModule,
     AgGridModule,
+    AgChartsModule,
     ...MATERIAL_MODULES
   ],
   exports: [
