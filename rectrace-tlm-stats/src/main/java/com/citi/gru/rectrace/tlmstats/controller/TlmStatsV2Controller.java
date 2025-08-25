@@ -20,8 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.citi.gru.rectrace.tlmstats.model.BreakStats;
 import com.citi.gru.rectrace.tlmstats.model.v2.DashboardSummary;
 import com.citi.gru.rectrace.tlmstats.model.v2.MergedReconStats;
-import com.citi.gru.rectrace.tlmstats.model.v2.SsrmRequest;
-import com.citi.gru.rectrace.tlmstats.model.v2.SsrmResponse;
+import com.citi.gru.rectrace.tlmstats.model.v2.TlmStatsRequest;
 import com.citi.gru.rectrace.tlmstats.service.TlmStatsV2Service;
 
 /**
@@ -38,48 +37,58 @@ public class TlmStatsV2Controller {
     private TlmStatsV2Service tlmStatsV2Service;
 
     /**
-     * SSRM Break Stats API
+     * Break Stats API
      * POST /api/tlm-stats/v2/dashboard/breaks
      */
     @PostMapping("/dashboard/breaks")
-    public ResponseEntity<?> getBreaksTableData(@RequestBody SsrmRequest request) {
+    public ResponseEntity<?> getBreaksTableData(@RequestBody TlmStatsRequest request) {
         try {
-            logger.info("V2 Breaks SSRM API called - Request: {}", request);
+            logger.info("V2 Breaks API called - Request: {}", request);
             
-            SsrmResponse<BreakStats> response = tlmStatsV2Service.getBreaksTableData(request);
+            List<BreakStats> data = tlmStatsV2Service.getBreaksTableData(request);
             
-            logger.info("V2 Breaks SSRM API completed successfully - Found {} records", response.getCount());
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("data", data);
+            response.put("count", data.size());
+            
+            logger.info("V2 Breaks API completed successfully - Found {} records", data.size());
             return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
-            logger.error("V2 Breaks SSRM API validation error: {}", e.getMessage());
+            logger.error("V2 Breaks API validation error: {}", e.getMessage());
             return ResponseEntity.badRequest().body(createErrorResponse("validation_error", e.getMessage()));
         } catch (Exception e) {
-            logger.error("V2 Breaks SSRM API error: {}", e.getMessage(), e);
+            logger.error("V2 Breaks API error: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("internal_error", "An internal error occurred"));
         }
     }
 
     /**
-     * SSRM Reconciliation Stats API (Merged Automatch + Manual Match)
+     * Reconciliation Stats API (Merged Automatch + Manual Match)
      * POST /api/tlm-stats/v2/dashboard/recon
      */
     @PostMapping("/dashboard/recon")
-    public ResponseEntity<?> getReconTableData(@RequestBody SsrmRequest request) {
+    public ResponseEntity<?> getReconTableData(@RequestBody TlmStatsRequest request) {
         try {
-            logger.info("V2 Recon SSRM API called - Request: {}", request);
+            logger.info("V2 Recon API called - Request: {}", request);
             
-            SsrmResponse<MergedReconStats> response = tlmStatsV2Service.getReconTableData(request);
+            List<MergedReconStats> data = tlmStatsV2Service.getReconTableData(request);
             
-            logger.info("V2 Recon SSRM API completed successfully - Found {} records", response.getCount());
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("data", data);
+            response.put("count", data.size());
+            
+            logger.info("V2 Recon API completed successfully - Found {} records", data.size());
             return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
-            logger.error("V2 Recon SSRM API validation error: {}", e.getMessage());
+            logger.error("V2 Recon API validation error: {}", e.getMessage());
             return ResponseEntity.badRequest().body(createErrorResponse("validation_error", e.getMessage()));
         } catch (Exception e) {
-            logger.error("V2 Recon SSRM API error: {}", e.getMessage(), e);
+            logger.error("V2 Recon API error: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("internal_error", "An internal error occurred"));
         }
@@ -180,63 +189,6 @@ public class TlmStatsV2Controller {
         }
     }
 
-    /**
-     * Export Breaks Data (Full Export - bypasses pagination)
-     * POST /api/tlm-stats/v2/export/breaks
-     */
-    @PostMapping("/export/breaks")
-    public ResponseEntity<?> exportBreaksData(@RequestBody SsrmRequest request) {
-        try {
-            logger.info("V2 Export Breaks API called - Request: {}", request);
-            
-            List<BreakStats> allData = tlmStatsV2Service.exportBreaksData(request);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("data", allData);
-            response.put("count", allData.size());
-            
-            logger.info("V2 Export Breaks API completed successfully - Exported {} records", allData.size());
-            return ResponseEntity.ok(response);
-            
-        } catch (IllegalArgumentException e) {
-            logger.error("V2 Export Breaks API validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(createErrorResponse("validation_error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("V2 Export Breaks API error: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("internal_error", "An internal error occurred"));
-        }
-    }
-
-    /**
-     * Export Reconciliation Data (Full Export - bypasses pagination)
-     * POST /api/tlm-stats/v2/export/recon
-     */
-    @PostMapping("/export/recon")
-    public ResponseEntity<?> exportReconData(@RequestBody SsrmRequest request) {
-        try {
-            logger.info("V2 Export Recon API called - Request: {}", request);
-            
-            List<MergedReconStats> allData = tlmStatsV2Service.exportReconData(request);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("data", allData);
-            response.put("count", allData.size());
-            
-            logger.info("V2 Export Recon API completed successfully - Exported {} records", allData.size());
-            return ResponseEntity.ok(response);
-            
-        } catch (IllegalArgumentException e) {
-            logger.error("V2 Export Recon API validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(createErrorResponse("validation_error", e.getMessage()));
-        } catch (Exception e) {
-            logger.error("V2 Export Recon API error: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("internal_error", "An internal error occurred"));
-        }
-    }
 
     /**
      * Health check endpoint
