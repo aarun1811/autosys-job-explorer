@@ -5,15 +5,13 @@ import { AgGridAngular } from 'ag-grid-angular';
 import { 
   ColDef, 
   GridOptions, 
-  GridApi, 
-  IServerSideGetRowsParams,
-  IServerSideGetRowsRequest
+  GridApi
 } from 'ag-grid-community';
 
 import { 
   TlmStatsV2Service, 
   MergedReconStats, 
-  SsrmRequest, 
+  TlmStatsRequest, 
   DateRange 
 } from '../../../../../../services/tlm-stats-v2.service';
 import { FilterState } from '../../tlm-stats-modal-v2.component';
@@ -43,6 +41,20 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
   hasError: boolean = false;
   errorMessage: string = '';
   totalRows: number = 0;
+  
+  // Status message
+  get statusMessage(): string {
+    if (this.isLoading) {
+      return 'Loading data...';
+    }
+    if (this.hasError) {
+      return this.errorMessage || 'Error loading data';
+    }
+    if (this.totalRows === 0) {
+      return 'No data available';
+    }
+    return `${this.totalRows} record${this.totalRows === 1 ? '' : 's'} found`;
+  }
   
   // Dynamic height calculation
   private readonly ROW_HEIGHT = 36; // AG-Grid row height
@@ -146,10 +158,7 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
         resizable: true,
         minWidth: 100
       },
-      rowModelType: 'serverSide',
-      cacheBlockSize: 100,
-      maxConcurrentDatasourceRequests: 1,
-      blockLoadDebounceMillis: 300,
+      rowModelType: 'clientSide',
       animateRows: true,
       suppressRowClickSelection: true,
       suppressCellFocus: true,
@@ -158,6 +167,7 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
       onGridReady: (params) => {
         this.gridApi = params.api;
         this.updateGridTheme();
+        this.loadData();
       },
       onFirstDataRendered: () => {
         this.autoSizeColumns();
@@ -186,64 +196,56 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
 
   onGridReady(params: any): void {
     this.gridApi = params.api;
-    this.setupServerSideDatasource();
     this.updateGridTheme();
+    this.loadData();
   }
 
-  private setupServerSideDatasource(): void {
-    const datasource = {
-      getRows: (params: IServerSideGetRowsParams) => {
-        this.isLoading = true;
-        this.hasError = false;
-
-        const request = this.createSsrmRequest(params.request);
-        
-        this.tlmStatsV2Service.getReconTableData(request)
-          .pipe(
-            takeUntil(this.destroy$),
-            finalize(() => this.isLoading = false)
-          )
-          .subscribe({
-            next: (response) => {
-              if (response.status === 'success') {
-                this.totalRows = response.lastRow || 0;
-                params.success({
-                  rowData: response.data,
-                  rowCount: response.lastRow
-                });
-              } else {
-                this.handleError('Failed to load reconciliation data', params);
-              }
-            },
-            error: (error) => {
-              console.error('Error loading reconciliation data:', error);
-              this.handleError('Error loading reconciliation data', params);
-            }
-          });
-      }
-    };
-
-    // (this.gridApi as any).setServerSideDatasource(datasource);
-    (this.gridApi as any).setGridOption('serverSideDatasource', datasource);
-  }
-
-  private createSsrmRequest(request: IServerSideGetRowsRequest): SsrmRequest {
-    return this.tlmStatsV2Service.createSsrmRequest({
-      startRow: request.startRow || 0,
-      endRow: request.endRow || 100,
+  private loadData(): void {
+    if (!this.filterState?.tlmInstance) {
+      return;
+    }
+    
+    this.isLoading = true;
+    this.hasError = false;
+    this.errorMessage = '';
+    
+    const request: TlmStatsRequest = this.tlmStatsV2Service.createTlmStatsRequest({
       tlmInstance: this.filterState.tlmInstance,
       agentCodes: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
       setIds: this.filterState.selectedSetIds.length > 0 ? this.filterState.selectedSetIds : undefined,
-      dateRange: this.filterState.dateRange,
-      sortModel: request.sortModel,
-      filterModel: request.filterModel
+      dateRange: this.filterState.dateRange
     });
+    
+    this.tlmStatsV2Service.getReconTableData(request)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.status === 'success') {
+            this.totalRows = response.count || response.data.length;
+            this.gridApi?.setGridOption('rowData', response.data);
+            this.calculateDynamicHeight();
+          } else {
+            this.hasError = true;
+            this.errorMessage = 'Failed to load data';
+            this.gridApi?.setGridOption('rowData', []);
+          }
+        },
+        error: (error) => {
+          console.error('Error loading recon data:', error);
+          this.hasError = true;
+          this.errorMessage = 'Error loading data: ' + (error.message || 'Unknown error');
+          this.gridApi?.setGridOption('rowData', []);
+        }
+      });
   }
 
-  private handleError(message: string, params: IServerSideGetRowsParams): void {
-    this.hasError = true;
-    this.errorMessage = message;
-    params.fail();
+  refreshData(): void {
+    this.loadData();
   }
 
   private updateGridTheme(): void {
@@ -277,102 +279,57 @@ export class TlmReconTableV2Component implements OnInit, OnDestroy, OnChanges {
     }
   }
 
+  private calculateDynamicHeight(): void {
+    // Calculate height based on actual row count
+    let rowsToShow = Math.min(Math.max(this.totalRows || this.MIN_ROWS, this.MIN_ROWS), this.MAX_ROWS);
+    const calculatedHeight = this.HEADER_HEIGHT + (rowsToShow * this.ROW_HEIGHT);
+    
+    const gridElement = document.querySelector('.recon-grid-container');
+    if (gridElement) {
+      (gridElement as HTMLElement).style.height = `${calculatedHeight}px`;
+    }
+  }
+
   // Public methods
   getTableHeight(): string {
     // Calculate height based on actual row count
     let rowsToShow = this.totalRows || this.MIN_ROWS;
+    rowsToShow = Math.min(Math.max(rowsToShow, this.MIN_ROWS), this.MAX_ROWS);
     
-    // Clamp between min and max rows
-    rowsToShow = Math.max(this.MIN_ROWS, Math.min(rowsToShow, this.MAX_ROWS));
-    
-    // Calculate total height: header + (rows * row height)
     const calculatedHeight = this.HEADER_HEIGHT + (rowsToShow * this.ROW_HEIGHT);
-    
     return `${calculatedHeight}px`;
   }
-  
-  refreshData(): void {
-    if (this.gridApi) {
-      this.setupServerSideDatasource();
+
+  exportToExcel(): void {
+    if (this.gridApi && this.totalRows > 0) {
+      const params = {
+        fileName: `tlm-reconciliation-${Date.now()}.xlsx`,
+        sheetName: 'TLM Reconciliation',
+        exportMode: 'xlsx',
+        processHeaderCallback: (params: any) => params.column.getColDef().headerName,
+        processRowGroupCallback: () => '',
+        processCellCallback: (params: any) => {
+          // Format dates and numbers for export
+          if (params.column.getColId() === 'stmt_date' && params.value) {
+            return this.formatDate(params.value);
+          }
+          if (['total_items', 'automatch_items', 'total_manual_match_count'].includes(params.column.getColId()) 
+              && params.value !== null && params.value !== undefined) {
+            return params.value.toLocaleString();
+          }
+          return params.value;
+        }
+      };
+      
+      this.gridApi.exportDataAsExcel(params);
     }
   }
 
-  exportData(): void {
-    if (!this.gridApi) return;
-
-    this.isLoading = true;
-    
-    // Create export request without pagination
-    const exportRequest = this.tlmStatsV2Service.createSsrmRequest({
-      startRow: 0,
-      endRow: Number.MAX_SAFE_INTEGER,
-      tlmInstance: this.filterState.tlmInstance,
-      agentCodes: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
-      setIds: this.filterState.selectedSetIds.length > 0 ? this.filterState.selectedSetIds : undefined,
-      dateRange: this.filterState.dateRange
-    });
-
-    this.tlmStatsV2Service.exportReconData(exportRequest)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
-      )
-      .subscribe({
-        next: (response) => {
-          if (response.status === 'success') {
-            this.downloadExcel(response.data, 'reconciliation-statistics');
-          }
-        },
-        error: (error) => {
-          console.error('Error exporting reconciliation data:', error);
-        }
-      });
-  }
-
-  private downloadExcel(data: MergedReconStats[], filename: string): void {
-    // Convert data to CSV format for Excel compatibility
-    if (data.length === 0) return;
-
-    const headers = [
-      'TLM Instance', 'Agent Code', 'Set ID', 'Statement Date', 'Branch Code', 
-      'Corr Account', 'Total Items', 'Automatch Items', 'Manual Match Count'
-    ];
-    
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => [
-        `"${row.tlm_instance || ''}"`,
-        `"${row.agent_code || ''}"`,
-        `"${row.setid || ''}"`,
-        `"${this.formatDate(row.stmt_date)}"`,
-        `"${row.bran_code || ''}"`,
-        `"${row.corr_acc_no || ''}"`,
-        row.total_items || 0,
-        row.automatch_items || 0,
-        row.total_manual_match_count || 0
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}-${new Date().getTime()}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  // Getters for template
-  get hasData(): boolean {
+  hasData(): boolean {
     return this.totalRows > 0;
   }
 
-  get statusMessage(): string {
-    if (this.isLoading) return 'Loading reconciliation data...';
-    if (this.hasError) return this.errorMessage;
-    if (!this.hasData) return 'No reconciliation data found';
-    return `Showing ${this.totalRows.toLocaleString()} reconciliation records`;
+  getRowCount(): number {
+    return this.totalRows;
   }
 }
