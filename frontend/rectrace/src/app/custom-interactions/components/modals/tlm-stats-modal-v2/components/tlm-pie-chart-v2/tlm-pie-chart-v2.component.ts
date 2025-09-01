@@ -34,6 +34,13 @@ export class TlmPieChartV2Component implements OnInit, OnChanges {
       return;
     }
 
+    // Define a mapping of categories to their fixed colors.
+    const categoryColors = {
+      'Breaks': '#fbbc04',
+      'Automatch': '#34a853',
+      'Manual Match': '#8e24aa'
+    };
+
     const chartData = [
       {
         category: 'Breaks',
@@ -51,6 +58,9 @@ export class TlmPieChartV2Component implements OnInit, OnChanges {
         percentage: this.summary.manual_match_percentage
       }
     ].filter(item => item.value > 0);
+
+    // Create the fills array dynamically based on the filtered data.
+    const dynamicFills = chartData.map(item => categoryColors[item.category as keyof typeof categoryColors]);
 
     this.hasChartData = chartData.length > 0;
 
@@ -98,8 +108,8 @@ export class TlmPieChartV2Component implements OnInit, OnChanges {
               };
             }
           },
-          fills: ['#fbbc04', '#34a853', '#8e24aa'],
-          strokes: ['#fbbc04', '#34a853', '#8e24aa'],
+          fills: dynamicFills,
+          strokes: dynamicFills,
           strokeWidth: 2,
           shadow: {
             enabled: true,
