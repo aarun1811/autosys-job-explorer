@@ -88,6 +88,10 @@
   overflow: hidden;
 }
 
+ag-grid-angular {
+  z-index: 0;
+}
+
 /* AG-Grid Styling - Light Theme */
 :host ::ng-deep .ag-theme-alpine {
   --ag-header-height: 40px;
@@ -114,6 +118,7 @@
   height: 100%;
   border: none;
   border-radius: 0 0 8px 8px;
+  position: relative;
 }
 
 /* AG-Grid Styling - Dark Theme */
@@ -145,6 +150,36 @@
   height: 100%;
   border: none;
   border-radius: 0 0 8px 8px;
+  position: relative;
+}
+
+/* Ensure overlays are visible */
+:host ::ng-deep .ag-theme-alpine .ag-popoup-child {
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-popoup-child {
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-popup {
+  position: absolute;
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup {
+  position: absolute;
+  z-index: 5;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-popup-backdrop {
+  z-index: 4;
+  display: none !important;
+}
+
+:host ::ng-deep .ag-theme-alpine-dark .ag-popup-backdrop {
+  z-index: 4;
+  display: none !important;
 }
 
 /* Header Styling */

@@ -63,13 +63,13 @@
               <mat-icon class="table-icon warning">warning</mat-icon>
               <h3>Break Statistics</h3>
               <div class="table-actions">
-                <button mat-stroked-button 
+                <!-- <button mat-stroked-button 
                         class="export-btn"
                         (click)="onExportBreaks()"
                         [disabled]="isLoadingSummary || dashboardSummary.total_breaks === 0">
                   <mat-icon>file_download</mat-icon>
                   Export
-                </button>
+                </button> -->
               </div>
             </div>
             
@@ -85,13 +85,13 @@
               <mat-icon class="table-icon primary">insights</mat-icon>
               <h3>Reconciliation Statistics</h3>
               <div class="table-actions">
-                <button mat-stroked-button 
+                <!-- <button mat-stroked-button 
                         class="export-btn"
                         (click)="onExportRecon()"
                         [disabled]="isLoadingSummary || dashboardSummary.total_items === 0">
                   <mat-icon>file_download</mat-icon>
                   Export
-                </button>
+                </button> -->
               </div>
             </div>
             
@@ -113,14 +113,14 @@
 
       <!-- Combined Export Section -->
       <div class="combined-export-section" *ngIf="dashboardSummary && (dashboardSummary.total_breaks > 0 || dashboardSummary.total_items > 0)">
-        <button mat-flat-button 
+        <!-- <button mat-flat-button 
                 color="primary"
                 class="combined-export-btn"
                 (click)="onCombinedExport()"
                 [disabled]="isLoadingSummary || (dashboardSummary.total_breaks === 0 && dashboardSummary.total_items === 0)">
           <mat-icon>get_app</mat-icon>
           Export Combined Data
-        </button>
+        </button> -->
       </div>
 
     </div>

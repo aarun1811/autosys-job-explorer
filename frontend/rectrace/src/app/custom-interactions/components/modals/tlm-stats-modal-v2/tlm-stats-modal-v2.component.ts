@@ -5,8 +5,6 @@ import { takeUntil } from 'rxjs/operators';
 
 import { ThemeService } from '../../../../services/theme.service';
 import { TlmStatsV2Service, DateRange, DashboardSummary } from '../../../../services/tlm-stats-v2.service';
-import { TlmBreaksTableV2Component } from './components/tlm-breaks-table-v2/tlm-breaks-table-v2.component';
-import { TlmReconTableV2Component } from './components/tlm-recon-table-v2/tlm-recon-table-v2.component';
 
 export interface TlmStatsModalV2Data {
   type: 'set_id' | 'recon' | 'tlm_instance';
@@ -34,10 +32,6 @@ export interface FilterState {
   styleUrls: ['./tlm-stats-modal-v2.component.css']
 })
 export class TlmStatsModalV2Component implements OnInit, OnDestroy {
-  
-  // ViewChild references to table components
-  @ViewChild(TlmBreaksTableV2Component) breaksTable!: TlmBreaksTableV2Component;
-  @ViewChild(TlmReconTableV2Component) reconTable!: TlmReconTableV2Component;
   
   // Theme management
   isDarkTheme: boolean = false;
@@ -283,49 +277,6 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
     // The tables watch filterState changes via ngOnChanges
     // We need to create a new object reference to trigger change detection
     this.filterState = { ...this.filterState };
-  }
-
-  // Export functionality
-  onExportBreaks(): void {
-    if (this.breaksTable) {
-      this.breaksTable.exportToExcel();
-    }
-  }
-
-  onExportRecon(): void {
-    if (this.reconTable) {
-      this.reconTable.exportToExcel();
-    }
-  }
-
-  onCombinedExport(): void {
-    // Export both tables sequentially with AG-Grid Enterprise
-    setTimeout(() => {
-      if (this.breaksTable && this.breaksTable.hasData()) {
-        this.breaksTable.exportToExcel();
-      }
-    }, 100);
-    
-    setTimeout(() => {
-      if (this.reconTable && this.reconTable.hasData()) {
-        this.reconTable.exportToExcel();
-      }
-    }, 600);
-  }
-
-
-  private formatDate(dateString: string): string {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit'
-      });
-    } catch {
-      return dateString;
-    }
   }
 
   // Utility methods
