@@ -29,7 +29,8 @@ public class DashboardSummary {
     private double manualMatchPercentage;
     
     // Default constructor
-    public DashboardSummary() {}
+    public DashboardSummary() {
+    }
     
     // Constructor with calculations
     public DashboardSummary(long totalBreaks, long totalAutomatchItems, long totalManualMatchItems) {
@@ -39,9 +40,10 @@ public class DashboardSummary {
         this.totalItems = totalBreaks + totalAutomatchItems + totalManualMatchItems;
         
         if (this.totalItems > 0) {
-            this.breaksPercentage = Math.round(((double) totalBreaks / totalItems) * 10000.0) / 100.0;
-            this.automatchPercentage = Math.round(((double) totalAutomatchItems / totalItems) * 10000.0) / 100.0;
-            this.manualMatchPercentage = Math.round(((double) totalManualMatchItems / totalItems) * 10000.0) / 100.0;
+            this.breaksPercentage = Math.floor(((double) totalBreaks / totalItems) * 10000.0) / 100.0;
+            this.automatchPercentage = Math.floor(((double) totalAutomatchItems / totalItems) * 10000.0) / 100.0;
+            // this.manualMatchPercentage = Math.round(((double) totalManualMatchItems / totalItems) * 10000.0) / 100.0;
+            this.manualMatchPercentage = 100 - this.breaksPercentage - this.automatchPercentage;
         } else {
             this.breaksPercentage = 0.0;
             this.automatchPercentage = 0.0;
