@@ -120,7 +120,7 @@ public class TlmStatsV2Service {
         validateTlmInstance(tlmInstance);
         
         String sql = "SELECT DISTINCT agent_code AS recon FROM recon_bank WHERE recon_engine_env = ? AND recon_engine = 'TLM' ORDER BY agent_code";
-        logger.info("SQL: {}", sql);
+        // logger.info("SQL: {}", sql);
         return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance);
     }
 
@@ -135,7 +135,7 @@ public class TlmStatsV2Service {
         }
         
         String sql = "SELECT DISTINCT local_acc_no AS set_id FROM recon_bank WHERE recon_engine_env = ? AND recon_engine = 'TLM' AND agent_code = ? ORDER BY local_acc_no";
-        logger.info("SQL: {}", sql);
+        // logger.info("SQL: {}", sql);
         return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance, agentCode);
     }
 
@@ -152,7 +152,7 @@ public class TlmStatsV2Service {
         // Get manual match data
         String manualSql = buildManualMatchQuery(request);
         Object[] manualParams = buildManualMatchParameters(request);
-        logger.info("Manual SQL: {}", manualSql);
+        // logger.info("Manual SQL: {}", manualSql);
         List<ManualMatchStats> manualData = reconmgmtJdbcTemplate.query(manualSql, manualParams, getManualMatchStatsRowMapper());
         
         // Merge data
