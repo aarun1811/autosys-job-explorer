@@ -9,6 +9,7 @@ export interface TlmStatsRequest {
   agent_codes?: string[];
   set_ids?: string[];
   date_range?: number;
+  entry_point?: string; // "set_id", "recon", or "tlm_instance"
 }
 
 export interface DashboardSummary {
@@ -83,6 +84,7 @@ export class TlmStatsV2Service {
     agent_code?: string[];
     set_id?: string[];
     date_range?: number;
+    entry_point?: string;
   }): Observable<ApiResponse<DashboardSummary>> {
     let httpParams = new HttpParams().set('tlm_instance', params.tlm_instance);
 
@@ -100,6 +102,10 @@ export class TlmStatsV2Service {
 
     if (params.date_range) {
       httpParams = httpParams.set('date_range', params.date_range.toString());
+    }
+
+    if (params.entry_point) {
+      httpParams = httpParams.set('entry_point', params.entry_point);
     }
 
     return this.http.get<ApiResponse<DashboardSummary>>(`${this.baseUrl}/dashboard/summary`, { params: httpParams });
@@ -132,12 +138,14 @@ export class TlmStatsV2Service {
     agentCodes?: string[];
     setIds?: string[];
     dateRange?: DateRange;
+    entryPoint?: string;
   }): TlmStatsRequest {
     return {
       tlm_instance: params.tlmInstance,
       agent_codes: params.agentCodes,
       set_ids: params.setIds,
-      date_range: params.dateRange || DateRange.ONE_DAY
+      date_range: params.dateRange || DateRange.ONE_DAY,
+      entry_point: params.entryPoint
     };
   }
 

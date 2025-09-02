@@ -24,6 +24,7 @@ export interface FilterState {
   tlmInstanceLocked: boolean;
   reconLocked: boolean;
   setIdLocked: boolean;
+  entryPoint: string; // "set_id", "recon", or "tlm_instance"
 }
 
 @Component({
@@ -47,7 +48,8 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
     availableSetIds: [],
     tlmInstanceLocked: false,
     reconLocked: false,
-    setIdLocked: false
+    setIdLocked: false,
+    entryPoint: ''
   };
 
   // Loading states
@@ -97,7 +99,8 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
     this.filterState = {
       ...this.filterState,
       tlmInstance: tlmInstance,
-      dateRange: DateRange.ONE_DAY
+      dateRange: DateRange.ONE_DAY,
+      entryPoint: this.data.type
     };
 
     switch (this.data.type) {
@@ -155,7 +158,8 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
       tlm_instance: this.filterState.tlmInstance,
       agent_code: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
       set_id: this.filterState.selectedSetIds.length > 0 ? this.filterState.selectedSetIds : undefined,
-      date_range: this.filterState.dateRange
+      date_range: this.filterState.dateRange,
+      entry_point: this.filterState.entryPoint
     };
 
     this.tlmStatsV2Service.getDashboardSummary(params)

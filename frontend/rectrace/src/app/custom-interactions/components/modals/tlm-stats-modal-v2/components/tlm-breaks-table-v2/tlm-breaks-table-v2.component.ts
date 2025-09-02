@@ -175,7 +175,8 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
       tlmInstance: this.filterState.tlmInstance,
       agentCodes: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
       setIds: this.filterState.selectedSetIds.length > 0 ? this.filterState.selectedSetIds : undefined,
-      dateRange: this.filterState.dateRange
+      dateRange: this.filterState.dateRange,
+      entryPoint: this.filterState.entryPoint
     });
     
     this.tlmStatsV2Service.getBreaksTableData(request)
