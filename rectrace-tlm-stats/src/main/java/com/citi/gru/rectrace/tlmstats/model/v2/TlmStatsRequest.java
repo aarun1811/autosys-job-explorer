@@ -11,6 +11,7 @@ public class TlmStatsRequest {
     private List<String> agentCodes;
     private List<String> setIds;
     private int dateRange = 1; // Default to 1 day
+    private String entryPoint; // "set_id", "recon", or "tlm_instance"
     
     // Constructors
     public TlmStatsRequest() {
@@ -21,6 +22,14 @@ public class TlmStatsRequest {
         this.agentCodes = agentCodes;
         this.setIds = setIds;
         this.dateRange = dateRange;
+    }
+    
+    public TlmStatsRequest(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange, String entryPoint) {
+        this.tlmInstance = tlmInstance;
+        this.agentCodes = agentCodes;
+        this.setIds = setIds;
+        this.dateRange = dateRange;
+        this.entryPoint = entryPoint;
     }
     
     // Getters and Setters
@@ -56,6 +65,14 @@ public class TlmStatsRequest {
         this.dateRange = dateRange;
     }
     
+    public String getEntryPoint() {
+        return entryPoint;
+    }
+    
+    public void setEntryPoint(String entryPoint) {
+        this.entryPoint = entryPoint;
+    }
+    
     @Override
     public String toString() {
         return "TlmStatsRequest{" +
@@ -63,6 +80,7 @@ public class TlmStatsRequest {
                 ", agentCodes=" + agentCodes +
                 ", setIds=" + setIds +
                 ", dateRange=" + dateRange +
+                ", entryPoint='" + entryPoint + '\'' +
                 '}';
     }
 }

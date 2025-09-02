@@ -103,13 +103,14 @@ public class TlmStatsV2Controller {
             @RequestParam("tlm_instance") String tlmInstance,
             @RequestParam(value = "agent_code", required = false) List<String> agentCodes,
             @RequestParam(value = "set_id", required = false) List<String> setIds,
-            @RequestParam(value = "date_range", defaultValue = "1") int dateRange) {
+            @RequestParam(value = "date_range", defaultValue = "1") int dateRange,
+            @RequestParam(value = "entry_point", required = false) String entryPoint) {
         
         try {
-            logger.info("V2 Dashboard Summary API called - TLM Instance: {}, Agent Codes: {}, Set IDs: {}, Date Range: {}", 
-                       tlmInstance, agentCodes, setIds, dateRange);
+            logger.info("V2 Dashboard Summary API called - TLM Instance: {}, Agent Codes: {}, Set IDs: {}, Date Range: {}, Entry Point: {}", 
+                       tlmInstance, agentCodes, setIds, dateRange, entryPoint);
             
-            DashboardSummary summary = tlmStatsV2Service.getDashboardSummary(tlmInstance, agentCodes, setIds, dateRange);
+            DashboardSummary summary = tlmStatsV2Service.getDashboardSummary(tlmInstance, agentCodes, setIds, dateRange, entryPoint);
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");

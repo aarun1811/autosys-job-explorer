@@ -68,14 +68,21 @@ public class TlmStatsV2Service {
     public List<BreakStats> getBreaksTableData(TlmStatsRequest request) {
         validateTlmInstance(request.getTlmInstance());
         
-        JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
+        logger.info("Executing V2 Breaks query for TLM instance: {}, Entry Point: {}", 
+                   request.getTlmInstance(), request.getEntryPoint());
         
-        String sql = buildBreaksQuery(request, false);
-        Object[] params = buildBreaksParameters(request);
-        
-        logger.info("Executing V2 Breaks query for TLM instance: {}", request.getTlmInstance());
-        
-        return jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
+        // Check if we need to filter in Java based on entry point
+        if ("recon".equals(request.getEntryPoint()) || "tlm_instance".equals(request.getEntryPoint())) {
+            // Fetch all data without date filter and filter in Java
+            List<BreakStats> allBreaks = getBreaksWithoutDateFilter(request);
+            return filterBreaksByDate(allBreaks, request.getDateRange());
+        } else {
+            // Use normal SQL filtering for set_id entry point
+            JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
+            String sql = buildBreaksQuery(request, false);
+            Object[] params = buildBreaksParameters(request);
+            return jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
+        }
     }
 
     /**
@@ -92,14 +99,14 @@ public class TlmStatsV2Service {
      * Get dashboard summary for pie chart and summary cards
      */
     public DashboardSummary getDashboardSummary(String tlmInstance, List<String> agentCodes, 
-                                               List<String> setIds, int dateRange) {
+                                               List<String> setIds, int dateRange, String entryPoint) {
         validateTlmInstance(tlmInstance);
         
         // Calculate totals for breaks
-        long totalBreaks = getTotalBreaksCount(tlmInstance, agentCodes, setIds, dateRange);
+        long totalBreaks = getTotalBreaksCount(tlmInstance, agentCodes, setIds, dateRange, entryPoint);
         
         // Calculate totals for automatch and manual match
-        TlmStatsRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange);
+        TlmStatsRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange, entryPoint);
         List<MergedReconStats> reconData = getMergedReconData(tempRequest);
         
         long totalAutomatchItems = reconData.stream()
@@ -139,24 +146,124 @@ public class TlmStatsV2Service {
         return reconmgmtJdbcTemplate.queryForList(sql, String.class, tlmInstance, agentCode);
     }
 
-
+    // Helper method to get breaks without date filter
+    private List<BreakStats> getBreaksWithoutDateFilter(TlmStatsRequest request) {
+        JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
+        
+        // Build query without date filter
+        String sql = buildBreaksQueryWithoutDateFilter(request);
+        Object[] params = buildBreaksParameters(request);
+        
+        return jdbcTemplate.query(sql, params, getBreakStatsRowMapper());
+    }
+    
+    // Filter breaks by date in Java
+    private List<BreakStats> filterBreaksByDate(List<BreakStats> breaks, int dateRange) {
+        if (breaks == null || breaks.isEmpty()) {
+            return breaks;
+        }
+        
+        // Calculate the date threshold
+        java.sql.Date threshold = getDateThreshold(dateRange);
+        
+        return breaks.stream()
+            .filter(breakStat -> {
+                try {
+                    if (breakStat.getStmtDate() == null) {
+                        return false;
+                    }
+                    // Parse the date string (assuming format like "2024-01-15" or similar)
+                    java.sql.Date stmtDate = java.sql.Date.valueOf(breakStat.getStmtDate());
+                    return stmtDate.after(threshold) || stmtDate.equals(threshold);
+                } catch (Exception e) {
+                    logger.warn("Failed to parse date: {}", breakStat.getStmtDate());
+                    return false;
+                }
+            })
+            .collect(Collectors.toList());
+    }
+    
+    // Calculate date threshold based on date range
+    private java.sql.Date getDateThreshold(int dateRange) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        
+        if (dateRange == 1) {
+            // Business day logic
+            int dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK);
+            if (dayOfWeek == java.util.Calendar.MONDAY) {
+                cal.add(java.util.Calendar.DAY_OF_MONTH, -3); // Friday
+            } else if (dayOfWeek == java.util.Calendar.SUNDAY) {
+                cal.add(java.util.Calendar.DAY_OF_MONTH, -2); // Friday
+            } else {
+                cal.add(java.util.Calendar.DAY_OF_MONTH, -1); // Previous day
+            }
+        } else {
+            // Calendar days
+            cal.add(java.util.Calendar.DAY_OF_MONTH, -dateRange);
+        }
+        
+        return new java.sql.Date(cal.getTimeInMillis());
+    }
+    
     // Helper method to merge automatch and manual match data
     private List<MergedReconStats> getMergedReconData(TlmStatsRequest request) {
-        JdbcTemplate tlmJdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
+        // Check if we should use reconmgmt-only query
+        boolean useReconmgmtOnly = shouldUseReconmgmtOnlyQuery(request);
         
-        // Get automatch data
-        String automatchSql = buildAutomatchQuery(request);
-        Object[] automatchParams = buildAutomatchParameters(request);
-        List<AutomatchStats> automatchData = tlmJdbcTemplate.query(automatchSql, automatchParams, getAutomatchStatsRowMapper());
+        if (useReconmgmtOnly) {
+            // Use reconmgmt-only query for recon data
+            return getReconDataFromReconmgmtOnly(request);
+        } else {
+            // Original logic for set_id with date range 1
+            JdbcTemplate tlmJdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(request.getTlmInstance());
+            
+            // Get automatch data
+            String automatchSql = buildAutomatchQuery(request);
+            Object[] automatchParams = buildAutomatchParameters(request);
+            List<AutomatchStats> automatchData = tlmJdbcTemplate.query(automatchSql, automatchParams, getAutomatchStatsRowMapper());
+            
+            // Get manual match data
+            String manualSql = buildManualMatchQuery(request);
+            Object[] manualParams = buildManualMatchParameters(request);
+            List<ManualMatchStats> manualData = reconmgmtJdbcTemplate.query(manualSql, manualParams, getManualMatchStatsRowMapper());
+            
+            // Merge data
+            return mergeAutomatchAndManualData(automatchData, manualData);
+        }
+    }
+    
+    // Check if we should use reconmgmt-only query
+    private boolean shouldUseReconmgmtOnlyQuery(TlmStatsRequest request) {
+        if ("set_id".equals(request.getEntryPoint())) {
+            // For set_id: use reconmgmt-only for date range 7 and 30
+            return request.getDateRange() != 1;
+        } else {
+            // For recon and tlm_instance: always use reconmgmt-only
+            return "recon".equals(request.getEntryPoint()) || "tlm_instance".equals(request.getEntryPoint());
+        }
+    }
+    
+    // Get recon data from reconmgmt database only
+    private List<MergedReconStats> getReconDataFromReconmgmtOnly(TlmStatsRequest request) {
+        String sql = buildReconmgmtOnlyQuery(request);
+        Object[] params = buildReconmgmtOnlyParameters(request);
         
-        // Get manual match data
-        String manualSql = buildManualMatchQuery(request);
-        Object[] manualParams = buildManualMatchParameters(request);
-        // logger.info("Manual SQL: {}", manualSql);
-        List<ManualMatchStats> manualData = reconmgmtJdbcTemplate.query(manualSql, manualParams, getManualMatchStatsRowMapper());
+        logger.info("Using reconmgmt-only query for entry point: {}, date range: {}", 
+                   request.getEntryPoint(), request.getDateRange());
         
-        // Merge data
-        return mergeAutomatchAndManualData(automatchData, manualData);
+        return reconmgmtJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            MergedReconStats stats = new MergedReconStats();
+            stats.setTlmInstance(TLM_INSTANCE_MAP.get(rs.getString("tlm_instance")));
+            stats.setAgentCode(rs.getString("agent_code"));
+            stats.setSetid(rs.getString("setid"));
+            stats.setStmtDate(rs.getString("stmt_date"));
+            stats.setBranCode(rs.getString("bran_code"));
+            stats.setCorrAccNo(rs.getString("corr_acc_no"));
+            stats.setTotalItems(rs.getLong("total_items"));
+            stats.setAutomatchItems(rs.getLong("automatch_items"));
+            stats.setTotalManualMatchCount(rs.getLong("manual_match_count"));
+            return stats;
+        });
     }
 
     // Merge automatch and manual match data by common keys
@@ -223,6 +330,60 @@ public class TlmStatsV2Service {
                             corrAccNo != null ? corrAccNo : "");
     }
 
+    // Build breaks query without date filter
+    private String buildBreaksQueryWithoutDateFilter(TlmStatsRequest request) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("WITH static AS (");
+        sql.append("  SELECT");
+        sql.append("    f.mlnv,");
+        sql.append("    f.sub_acc_no,");
+        sql.append("    f.short_code,");
+        sql.append("    f.latest_stmt_date,");
+        sql.append("    f.latest_stmt_no,");
+        sql.append("    k.agent_code,");
+        sql.append("    k.local_acc_no,");
+        sql.append("    k.corr_acc_no");
+        sql.append("  FROM");
+        sql.append("    bank k,");
+        sql.append("    message_feed f");
+        sql.append("  WHERE");
+        sql.append("    f.corr_acc_no = k.corr_acc_no");
+        
+        // Add filters
+        if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
+            sql.append(" AND k.agent_code IN (");
+            sql.append(request.getAgentCodes().stream().map(s -> "?").collect(Collectors.joining(",")));
+            sql.append(")");
+        }
+        if (request.getSetIds() != null && !request.getSetIds().isEmpty()) {
+            sql.append(" AND k.local_acc_no IN (");
+            sql.append(request.getSetIds().stream().map(s -> "?").collect(Collectors.joining(",")));
+            sql.append(")");
+        }
+        
+        sql.append(")");
+        sql.append(" SELECT");
+        sql.append("   COUNT(*) AS breaks_count,");
+        sql.append("   s.agent_code,");
+        sql.append("   s.local_acc_no,");
+        sql.append("   i.stmt_date,");
+        sql.append("   i.bran_code");
+        sql.append(" FROM");
+        sql.append("   item i,");
+        sql.append("   static s");
+        sql.append(" WHERE");
+        sql.append("   s.corr_acc_no = i.corr_acc_no");
+        sql.append("   AND i.flag_2 = 0");
+        // No date filter here - will filter in Java
+        sql.append(" GROUP BY");
+        sql.append("   s.agent_code,");
+        sql.append("   s.local_acc_no,");
+        sql.append("   i.stmt_date,");
+        sql.append("   i.bran_code");
+        
+        return sql.toString();
+    }
+    
     // Build breaks query with filters
     private String buildBreaksQuery(TlmStatsRequest request, boolean countOnly) {
         StringBuilder sql = new StringBuilder();
@@ -329,6 +490,59 @@ public class TlmStatsV2Service {
         return sql.toString();
     }
 
+    // Build reconmgmt-only query that combines automatch and manual match data
+    private String buildReconmgmtOnlyQuery(TlmStatsRequest request) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ");
+        sql.append("  tlm_instance, ");
+        sql.append("  agent_code, ");
+        sql.append("  setid, ");
+        sql.append("  stmt_date, ");
+        sql.append("  bran_code, ");
+        sql.append("  corr_acc_no, ");
+        sql.append("  SUM(total_items) as total_items, ");
+        sql.append("  SUM(automatch_items) as automatch_items, ");
+        sql.append("  SUM(manual_match_count) as manual_match_count ");
+        sql.append("  FROM reconmgmt.mr_csum_man_match_stats_hist ");
+        sql.append("  WHERE ").append(getDateRangeClause(request.getDateRange(), "stmt_date"));
+        
+        if (request.getTlmInstance() != null) {
+            sql.append(" AND tlm_instance = ?");
+        }
+        if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
+            sql.append(" AND agent_code IN (");
+            sql.append(request.getAgentCodes().stream().map(s -> "?").collect(Collectors.joining(",")));
+            sql.append(")");
+        }
+        if (request.getSetIds() != null && !request.getSetIds().isEmpty()) {
+            sql.append(" AND setid IN (");
+            sql.append(request.getSetIds().stream().map(s -> "?").collect(Collectors.joining(",")));
+            sql.append(")");
+        }
+        
+        sql.append("GROUP BY tlm_instance, agent_code, setid, stmt_date, bran_code, corr_acc_no ");
+        sql.append("ORDER BY agent_code, setid, stmt_date, bran_code, corr_acc_no");
+        
+        return sql.toString();
+    }
+    
+    // Build parameters for reconmgmt-only query
+    private Object[] buildReconmgmtOnlyParameters(TlmStatsRequest request) {
+        List<Object> params = new ArrayList<>();
+        
+        if (request.getTlmInstance() != null) {
+            params.add(TLM_INSTANCE_MAP.get(request.getTlmInstance()));
+        }
+        if (request.getAgentCodes() != null && !request.getAgentCodes().isEmpty()) {
+            params.addAll(request.getAgentCodes());
+        }
+        if (request.getSetIds() != null && !request.getSetIds().isEmpty()) {
+            params.addAll(request.getSetIds());
+        }
+        
+        return params.toArray();
+    }
+    
     // Build manual match query with filters
     private String buildManualMatchQuery(TlmStatsRequest request) {
         StringBuilder sql = new StringBuilder();
@@ -475,26 +689,33 @@ public class TlmStatsV2Service {
         return params.toArray();
     }
 
-
     // Get total breaks count for summary
-    private long getTotalBreaksCount(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange) {
+    private long getTotalBreaksCount(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange, String entryPoint) {
         JdbcTemplate jdbcTemplate = tlmJdbcTemplateFactory.getJdbcTemplate(tlmInstance);
         
-        TlmStatsRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange);
-        String sql = buildBreaksQuery(tempRequest, true);
-        Object[] params = buildBreaksParameters(tempRequest);
+        TlmStatsRequest tempRequest = createTempRequest(tlmInstance, agentCodes, setIds, dateRange, entryPoint);
         
-        Long count = jdbcTemplate.queryForObject(sql, params, Long.class);
-        return count != null ? count : 0L;
+        // If entry point is recon or tlm_instance, we need to fetch all and filter in Java
+        if ("recon".equals(entryPoint) || "tlm_instance".equals(entryPoint)) {
+            List<BreakStats> allBreaks = getBreaksWithoutDateFilter(tempRequest);
+            List<BreakStats> filteredBreaks = filterBreaksByDate(allBreaks, dateRange);
+            return filteredBreaks.stream().mapToLong(BreakStats::getBreaksCount).sum();
+        } else {
+            String sql = buildBreaksQuery(tempRequest, true);
+            Object[] params = buildBreaksParameters(tempRequest);
+            Long count = jdbcTemplate.queryForObject(sql, params, Long.class);
+            return count != null ? count : 0L;
+        }
     }
 
     // Create temporary request for summary calculations
-    private TlmStatsRequest createTempRequest(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange) {
+    private TlmStatsRequest createTempRequest(String tlmInstance, List<String> agentCodes, List<String> setIds, int dateRange, String entryPoint) {
         TlmStatsRequest request = new TlmStatsRequest();
         request.setTlmInstance(tlmInstance);
         request.setAgentCodes(agentCodes);
         request.setSetIds(setIds);
         request.setDateRange(dateRange);
+        request.setEntryPoint(entryPoint);
         return request;
     }
 
