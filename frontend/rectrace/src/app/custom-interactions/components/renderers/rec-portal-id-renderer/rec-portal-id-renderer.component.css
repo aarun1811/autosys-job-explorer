@@ -1,0 +1,36 @@
+.rec-portal-id-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.rec-portal-id-cell.clickable {
+  cursor: pointer;
+  color: #9c27b0;
+  text-decoration: underline;
+}
+
+.rec-portal-id-cell.clickable:hover {
+  background-color: rgba(156, 39, 176, 0.08);
+}
+
+.rec-portal-id-cell.disabled {
+  cursor: default;
+  color: inherit;
+  text-decoration: none;
+}
+
+.link-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #9c27b0;
+  opacity: 0.7;
+}
+
+.rec-portal-id-cell.clickable:hover .link-icon {
+  opacity: 1;
+}

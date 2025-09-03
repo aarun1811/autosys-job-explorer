@@ -1,0 +1,13 @@
+<div class="table-container">
+  <div *ngIf="loading" class="loading-overlay">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+  
+  <ag-grid-angular
+    class="ag-theme-alpine quickrec-grid"
+    [gridOptions]="gridOptions"
+    [rowData]="data"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef">
+  </ag-grid-angular>
+</div>

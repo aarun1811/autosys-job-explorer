@@ -1,0 +1,6 @@
+<div class="rec-portal-id-cell" [class.clickable]="isClickable" [class.disabled]="!isClickable">
+  <span (click)="onClick()" [title]="isClickable ? 'Click to view QuickRec stats for ' + value : value">
+    {{ value }}
+  </span>
+  <mat-icon *ngIf="isClickable" class="link-icon">launch</mat-icon>
+</div>

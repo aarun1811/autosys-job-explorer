@@ -36,6 +36,13 @@ import { TlmSummaryCardsV2Component } from './components/modals/tlm-stats-modal-
 import { TlmPieChartV2Component } from './components/modals/tlm-stats-modal-v2/components/tlm-pie-chart-v2/tlm-pie-chart-v2.component';
 import { TlmBreaksTableV2Component } from './components/modals/tlm-stats-modal-v2/components/tlm-breaks-table-v2/tlm-breaks-table-v2.component';
 import { TlmReconTableV2Component } from './components/modals/tlm-stats-modal-v2/components/tlm-recon-table-v2/tlm-recon-table-v2.component';
+import { ReconIdRendererComponent } from './components/renderers/recon-id-renderer/recon-id-renderer.component';
+import { RecPortalIdRendererComponent } from './components/renderers/rec-portal-id-renderer/rec-portal-id-renderer.component';
+import { QuickRecStatsModalComponent } from './components/modals/quickrec-stats-modal/quickrec-stats-modal.component';
+import { QuickRecFiltersComponent } from './components/modals/quickrec-stats-modal/components/quickrec-filters/quickrec-filters.component';
+import { QuickRecSummaryComponent } from './components/modals/quickrec-stats-modal/components/quickrec-summary/quickrec-summary.component';
+import { QuickRecAutomatchTableComponent } from './components/modals/quickrec-stats-modal/components/quickrec-automatch-table/quickrec-automatch-table.component';
+import { QuickRecManualTableComponent } from './components/modals/quickrec-stats-modal/components/quickrec-manual-table/quickrec-manual-table.component';
 
 const DECLARATIONS_EXPORTS = [
   ExecutionOrderButtonComponent,
@@ -54,7 +61,14 @@ const DECLARATIONS_EXPORTS = [
   TlmSummaryCardsV2Component,
   TlmPieChartV2Component,
   TlmBreaksTableV2Component,
-  TlmReconTableV2Component
+  TlmReconTableV2Component,
+  ReconIdRendererComponent,
+  RecPortalIdRendererComponent,
+  QuickRecStatsModalComponent,
+  QuickRecFiltersComponent,
+  QuickRecSummaryComponent,
+  QuickRecAutomatchTableComponent,
+  QuickRecManualTableComponent
 ];
 
 const MATERIAL_MODULES = [

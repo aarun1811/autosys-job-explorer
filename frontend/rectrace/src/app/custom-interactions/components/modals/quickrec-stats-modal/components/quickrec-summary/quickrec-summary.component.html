@@ -1,0 +1,36 @@
+<div class="summary-container" *ngIf="summary">
+  <div class="summary-grid">
+    <div *ngFor="let card of getSummaryCards()" class="summary-card">
+      <h4 class="card-title">{{ card.title }}</h4>
+      <div class="stats-grid">
+        <div *ngFor="let item of card.items" class="stat-item">
+          <div class="stat-header">
+            <mat-icon [color]="item.color || ''">{{ item.icon }}</mat-icon>
+            <span class="stat-label">{{ item.label }}</span>
+          </div>
+          <div class="stat-value">
+            <span class="main-value">{{ formatNumber(item.value) }}</span>
+            <span *ngIf="item.percentage !== undefined" class="percentage-value">
+              ({{ formatPercentage(item.percentage) }})
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="summary-totals">
+    <div class="total-item">
+      <span class="total-label">Total Records:</span>
+      <span class="total-value">{{ formatNumber(summary.totalLeftRecords + summary.totalRightRecords) }}</span>
+    </div>
+    <div class="total-item">
+      <span class="total-label">Total Matches:</span>
+      <span class="total-value">{{ formatNumber(summary.totalLeftAutoMatches + summary.totalRightAutoMatches + summary.totalLeftManualMatches + summary.totalRightManualMatches) }}</span>
+    </div>
+    <div class="total-item">
+      <span class="total-label">Total Breaks:</span>
+      <span class="total-value">{{ formatNumber(summary.totalLeftBreaks + summary.totalRightBreaks) }}</span>
+    </div>
+  </div>
+</div>

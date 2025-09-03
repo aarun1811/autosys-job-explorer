@@ -23,6 +23,8 @@ import { ExecutionOrderButtonComponent } from '../../../custom-interactions/comp
 import { SetIdV2RendererComponent } from '../../../custom-interactions/components/renderers/v2/set-id-v2-renderer.component';
 import { ReconV2RendererComponent } from '../../../custom-interactions/components/renderers/v2/recon-v2-renderer.component';
 import { TlmInstanceV2RendererComponent } from '../../../custom-interactions/components/renderers/v2/tlm-instance-v2-renderer.component';
+import { ReconIdRendererComponent } from '../../../custom-interactions/components/renderers/recon-id-renderer/recon-id-renderer.component';
+import { RecPortalIdRendererComponent } from '../../../custom-interactions/components/renderers/rec-portal-id-renderer/rec-portal-id-renderer.component';
 
 @Component({
   selector: 'app-search-v5-grid',
@@ -182,7 +184,9 @@ export class SearchV5GridComponent implements OnInit, OnDestroy {
         executionOrderButtonRenderer: ExecutionOrderButtonComponent,
         setIdV2Renderer: SetIdV2RendererComponent,
         reconV2Renderer: ReconV2RendererComponent,
-        tlmInstanceV2Renderer: TlmInstanceV2RendererComponent
+        tlmInstanceV2Renderer: TlmInstanceV2RendererComponent,
+        reconIdRenderer: ReconIdRendererComponent,
+        recPortalIdRenderer: RecPortalIdRendererComponent
       },
       onGridReady: this.onGridReady.bind(this),
       onFilterChanged: this.onFilterChanged.bind(this),
