@@ -500,9 +500,9 @@ public class TlmStatsV2Service {
         sql.append("  stmt_date, ");
         sql.append("  bran_code, ");
         sql.append("  corr_acc_no, ");
-        sql.append("  SUM(total_items) as total_items, ");
+        sql.append("  SUM(total_item) as total_items, ");
         sql.append("  SUM(automatch_items) as automatch_items, ");
-        sql.append("  SUM(manual_match_count) as manual_match_count ");
+        sql.append("  SUM(manualmatch_items) as manual_match_count ");
         sql.append("  FROM reconmgmt.mr_csum_man_match_stats_hist ");
         sql.append("  WHERE ").append(getDateRangeClause(request.getDateRange(), "stmt_date"));
         
