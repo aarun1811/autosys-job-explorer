@@ -46,6 +46,21 @@ public class DatabaseConfig {
     @Value("${reconmgmt.datasource.db-schema}")
     private String reconmgmtDbSchema;
 
+    @Value("${recportal.datasource.driver-class-name:oracle.jdbc.OracleDriver}")
+    private String recportalDriverClassName;
+
+    @Value("${recportal.datasource.url}")
+    private String recportalUrl;
+
+    @Value("${recportal.datasource.username}")
+    private String recportalUsername;
+
+    @Value("${recportal.datasource.service-name}")
+    private String recportalServiceName;
+
+    @Value("${recportal.datasource.db-schema}")
+    private String recportalDbSchema;
+
     @Value("${password.script.path:/opt/rectify/control/scripts/get_password.sh}")
     private String passwordScriptPath;
 
@@ -78,6 +93,34 @@ public class DatabaseConfig {
     @Bean(name = "reconmgmtJdbcTemplate")
     public JdbcTemplate reconmgmtJdbcTemplate() {
         return new JdbcTemplate(reconmgmtDataSource());
+    }
+
+    /**
+     * Creates a DataSource for the recportal database
+     */
+    @Bean(name = "recportalDataSource")
+    public DataSource recportalDataSource() {
+        logger.info("Creating recportal DataSource for service: {} and schema: {}", 
+                   recportalServiceName, recportalDbSchema);
+        
+        String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
+                recportalServiceName.toUpperCase(), recportalDbSchema.toUpperCase());
+        
+        return DataSourceBuilder
+                .create()
+                .url(recportalUrl)
+                .username(recportalUsername)
+                .driverClassName(recportalDriverClassName)
+                .password(decryptedPassword)
+                .build();
+    }
+
+    /**
+     * Creates a JdbcTemplate for the recportal database
+     */
+    @Bean(name = "recportalJdbcTemplate")
+    public JdbcTemplate recportalJdbcTemplate() {
+        return new JdbcTemplate(recportalDataSource());
     }
 
     /**
