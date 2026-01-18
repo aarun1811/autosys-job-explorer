@@ -7,8 +7,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class BreakStats {
     
-    @JsonProperty("count")
-    private Long count;
+    @JsonProperty("breaks_count")
+    private Long breaksCount;
     
     @JsonProperty("agent_code")
     private String agentCode;
@@ -16,6 +16,9 @@ public class BreakStats {
     @JsonProperty("local_acc_no")
     private String localAccNo;
     
+    @JsonProperty("stmt_date")
+    private String stmtDate;
+
     @JsonProperty("bran_code")
     private String branCode;
     
@@ -23,20 +26,21 @@ public class BreakStats {
     public BreakStats() {}
     
     // Constructor with all fields
-    public BreakStats(Long count, String agentCode, String localAccNo, String branCode) {
-        this.count = count;
+    public BreakStats(Long breaksCount, String agentCode, String localAccNo, String stmtDate, String branCode) {
+        this.breaksCount = breaksCount;
         this.agentCode = agentCode;
         this.localAccNo = localAccNo;
         this.branCode = branCode;
+        this.stmtDate = stmtDate;
     }
     
     // Getters and Setters
-    public Long getCount() {
-        return count;
+    public Long getBreaksCount() {
+        return breaksCount;
     }
     
-    public void setCount(Long count) {
-        this.count = count;
+    public void setBreaksCount(Long breaksCount) {
+        this.breaksCount = breaksCount;
     }
     
     public String getAgentCode() {
@@ -63,13 +67,22 @@ public class BreakStats {
         this.branCode = branCode;
     }
     
+    public String getStmtDate() {
+        return stmtDate;
+    }
+    
+    public void setStmtDate(String stmtDate) {
+        this.stmtDate = stmtDate;
+    }
+    
     @Override
     public String toString() {
         return "BreakStats{" +
-                "count=" + count +
+                "breaksCount=" + breaksCount +
                 ", agentCode='" + agentCode + '\'' +
                 ", localAccNo='" + localAccNo + '\'' +
                 ", branCode='" + branCode + '\'' +
+                ", stmtDate='" + stmtDate + '\'' +
                 '}';
     }
 } 

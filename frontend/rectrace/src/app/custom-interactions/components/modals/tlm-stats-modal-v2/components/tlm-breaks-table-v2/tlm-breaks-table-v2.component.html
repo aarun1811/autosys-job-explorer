@@ -1,0 +1,47 @@
+<div class="table-wrapper">
+  
+  <!-- Status Bar -->
+  <div class="table-status-bar">
+    <div class="status-info">
+      <mat-icon *ngIf="isLoading" class="status-icon spinning">refresh</mat-icon>
+      <mat-icon *ngIf="hasError" class="status-icon error">error_outline</mat-icon>
+      <mat-icon *ngIf="!isLoading && !hasError && hasData" class="status-icon success">check_circle</mat-icon>
+      <mat-icon *ngIf="!isLoading && !hasError && !hasData" class="status-icon info">info</mat-icon>
+      <span class="status-text">{{ statusMessage }}</span>
+    </div>
+    
+    <div class="table-actions">
+      <button 
+        mat-stroked-button 
+        class="refresh-btn"
+        (click)="refreshData()"
+        [disabled]="isLoading">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- AG-Grid Table -->
+  <div class="grid-container">
+    <ag-grid-angular
+      #agGrid
+      [ngClass]="gridTheme"
+      [gridOptions]="gridOptions"
+      [columnDefs]="columnDefs"
+      (gridReady)="onGridReady($event)"
+      [style.width.%]="100"
+      [style.height]="getTableHeight()">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Error Details -->
+  <div *ngIf="hasError" class="error-details">
+    <mat-icon class="error-icon">warning</mat-icon>
+    <span class="error-message">{{ errorMessage }}</span>
+    <button mat-button color="primary" (click)="refreshData()" class="retry-btn">
+      Retry
+    </button>
+  </div>
+
+</div>

@@ -1,0 +1,55 @@
+<div class="filters-container">
+  <form [formGroup]="filterForm" class="filter-form">
+    <div class="filter-row">
+      <!-- Date Range Selection -->
+      <div class="date-range-section">
+        <label class="filter-label">Date Range</label>
+        <div class="date-range-buttons">
+          <button 
+            *ngFor="let option of dateRangeOptions"
+            mat-raised-button
+            [color]="isDateRangeSelected(option.value) ? 'primary' : ''"
+            (click)="onDateRangeSelect(option.value)"
+            class="date-button">
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Filter Inputs -->
+      <div class="filter-inputs">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Recon ID</mat-label>
+          <input 
+            matInput 
+            formControlName="reconId"
+            placeholder="Enter Recon ID"
+            [disabled]="entryPoint === 'rec_portal_id'">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Rec Portal ID</mat-label>
+          <input 
+            matInput 
+            formControlName="recPortalId"
+            placeholder="Enter Rec Portal ID"
+            [disabled]="entryPoint === 'recon_id'">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+      
+      <!-- Clear Button -->
+      <div class="filter-actions">
+        <button 
+          mat-stroked-button 
+          color="warn" 
+          (click)="clearFilters()"
+          class="clear-button">
+          <mat-icon>clear</mat-icon>
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

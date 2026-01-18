@@ -1,0 +1,86 @@
+<div class="summary-cards-container">
+  
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-cards">
+    <div class="summary-card skeleton-card" *ngFor="let i of [1,2,3,4]">
+      <div class="card-content">
+        <div class="skeleton-icon"></div>
+        <div class="card-details">
+          <div class="skeleton-line skeleton-value"></div>
+          <div class="skeleton-line skeleton-label"></div>
+          <div class="skeleton-line skeleton-percentage"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="hasError && !isLoading" class="error-state">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <span class="error-text">Failed to load summary statistics</span>
+  </div>
+
+  <!-- Success State -->
+  <div *ngIf="summary && !isLoading && !hasError" class="summary-cards">
+    
+    <!-- Total Items Card -->
+    <div class="summary-card" [ngClass]="getCardColorClass('total')">
+      <div class="card-content">
+        <mat-icon class="card-icon">{{ getCardIcon('total') }}</mat-icon>
+        <div class="card-details">
+          <div class="card-value">{{ formatNumber(summary.total_items) }}</div>
+          <div class="card-label">Total Items</div>
+          <div class="card-description">All processed items</div>
+        </div>
+      </div>
+      <div class="card-accent"></div>
+    </div>
+
+    <!-- Breaks Card -->
+    <div class="summary-card" [ngClass]="getCardColorClass('breaks')">
+      <div class="card-content">
+        <mat-icon class="card-icon">{{ getCardIcon('breaks') }}</mat-icon>
+        <div class="card-details">
+          <div class="card-value">{{ formatNumber(summary.total_breaks) }}</div>
+          <div class="card-label">Breaks</div>
+          <div class="card-percentage">{{ formatPercentage(summary.breaks_percentage) }}</div>
+        </div>
+      </div>
+      <div class="card-accent"></div>
+    </div>
+
+    <!-- Automatch Card -->
+    <div class="summary-card" [ngClass]="getCardColorClass('automatch')">
+      <div class="card-content">
+        <mat-icon class="card-icon">{{ getCardIcon('automatch') }}</mat-icon>
+        <div class="card-details">
+          <div class="card-value">{{ formatNumber(summary.total_automatch_items) }}</div>
+          <div class="card-label">Automatch</div>
+          <div class="card-percentage">{{ formatPercentage(summary.automatch_percentage) }}</div>
+        </div>
+      </div>
+      <div class="card-accent"></div>
+    </div>
+
+    <!-- Manual Match Card -->
+    <div class="summary-card" [ngClass]="getCardColorClass('manual')">
+      <div class="card-content">
+        <mat-icon class="card-icon">{{ getCardIcon('manual') }}</mat-icon>
+        <div class="card-details">
+          <div class="card-value">{{ formatNumber(summary.total_manual_match_items) }}</div>
+          <div class="card-label">Manual Match</div>
+          <div class="card-percentage">{{ formatPercentage(summary.manual_match_percentage) }}</div>
+        </div>
+      </div>
+      <div class="card-accent"></div>
+    </div>
+
+  </div>
+  
+  <!-- Empty State -->
+  <div *ngIf="!summary && !isLoading && !hasError" class="empty-state">
+    <mat-icon class="empty-icon">inbox</mat-icon>
+    <span class="empty-text">No summary data available</span>
+  </div>
+
+</div>

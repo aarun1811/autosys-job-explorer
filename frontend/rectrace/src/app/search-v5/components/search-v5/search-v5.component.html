@@ -1,0 +1,133 @@
+<div class="app-container">
+  <div class="navbar">
+    <div class="navbar-content">
+      <div class="navbar-search" [class.visible]="hasSearched">
+        <div class="logo-container" (click)="resetToHome()" style="cursor: pointer">
+          <img [src]="logoPath" alt="Rectrace Label" class="logo-image"/>
+        </div>
+        <div class="search-box">
+          <div appearance="outline" class="search-input-container" [class.focused]="isFocused">
+            <mat-icon class="search-icon" (click)="onSearchIconClick()" style="cursor: pointer;">search</mat-icon>
+            <input
+              matInput
+              #searchInputNavbar
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="performSearch()"
+              (focus)="onSearchFocus()"
+              (blur)="onSearchBlur()"
+              (input)="onSearchInput()"
+              placeholder="Search by {{currentPlaceholder}}"
+              class="search-input"
+              [class.has-value]="searchTerm"
+              [matAutocomplete]="autoNavbar"
+              aria-label="Search Jobs"
+            />
+            <mat-icon class="clear-icon" *ngIf="searchTerm" (click)="clearSearch()" style="cursor: pointer;">close</mat-icon>
+            <mat-icon class="mic-icon">mic</mat-icon>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-right">
+        <button mat-icon-button 
+                class="theme-toggle-button" 
+                (click)="toggleTheme()"
+                [matTooltip]="isDarkMode ? 'Light mode' : 'Dark mode'" 
+                matTooltipPosition="below">
+          <mat-icon>{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+        <ng-container *ngIf="isUserIdentified; else signInButton">
+          <div class="user-profile-indicator"
+               [matTooltip]="userLoginId" matTooltipPosition="below">
+            {{ userInitials }}
+          </div>
+        </ng-container>
+        <ng-template #signInButton>
+          <button class="sign-in-button">Sign in</button>
+        </ng-template>
+      </div>
+    </div>
+    <div class="tabs-navigation" *ngIf="hasSearched && searchResults.length > 0">
+      <nav class="tabs-container">
+        <a *ngFor="let tab of searchResults; let i = index"
+           [class.active]="selectedTab === i"
+           (click)="selectTab(i)"
+           class="tab-link">
+          {{ getTabLabel(tab) }}
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="search-container" [class.has-searched]="hasSearched">
+    <div class="search-content" [class.hidden]="hasSearched">
+      <div class="logo-container">
+        <img [src]="logoPath" alt="Rectrace Label" class="logo-image"/>
+      </div>
+      <div class="search-box">
+        <div class="search-input-container" [class.focused]="isFocused">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            matInput
+            #searchInput
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="performSearch()"
+            (focus)="onSearchFocus()"
+            (blur)="onSearchBlur()"
+            (input)="onSearchInput()"
+            placeholder="Are you looking for {{currentPlaceholder}} ?"
+            class="search-input"
+            [class.has-value]="searchTerm"
+            [matAutocomplete]="autoCentered"
+            aria-label="Search Jobs"
+          />
+          <mat-icon class="clear-icon" *ngIf="searchTerm" (click)="clearSearch()" style="cursor: pointer;">close</mat-icon>
+          <mat-icon class="mic-icon">mic</mat-icon>
+        </div>
+        <div class="search-buttons">
+          <button mat-stroked-button (click)="performSearch()">Search</button>
+          <button mat-stroked-button class="try-button" (mouseenter)="updateTryButtonText()" (click)="onTryButtonClick()">Try "{{tryButtonText}}"</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loading-dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+
+    <div *ngIf="searchResults.length > 0 && hasSearched" class="results-container" [class.visible]="searchResults.length > 0">
+      <div class="tab-content">
+        <ng-container *ngFor="let category of searchResults; let i = index">
+          <app-search-v5-grid
+            [hidden]="selectedTab !== i"
+            [category]="category.key"
+            [categoryLabel]="category.label"
+            [initialFilter]="category.values"
+            [columns]="category.columns"
+            [searchColumn]="category.key">
+          </app-search-v5-grid>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoading && showNoResultsMessage && hasSearched" class="no-results-container">
+      <mat-icon class="no-results-icon">search_off</mat-icon>
+      <p>No results found for "<strong>{{ searchTerm }}</strong>".</p>
+      <p class="suggestion-text">Try searching for something else.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Autocomplete panels -->
+<mat-autocomplete #autoNavbar="matAutocomplete" [autoActiveFirstOption]="false" (optionSelected)="onSuggestionSelected($event)">
+  <mat-option *ngFor="let suggestion of suggestions$ | async" [value]="suggestion">
+    {{ suggestion }}
+  </mat-option>
+</mat-autocomplete>
+
+<mat-autocomplete #autoCentered="matAutocomplete" [autoActiveFirstOption]="false" (optionSelected)="onSuggestionSelected($event)">
+  <mat-option *ngFor="let suggestion of suggestions$ | async" [value]="suggestion">
+    {{ suggestion }}
+  </mat-option>
+</mat-autocomplete>

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class SearchConfigServiceV3 {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchConfigServiceV3.class);
-    @Value("${search-config.location}")
+    @Value("${search-config.location-old}")
     private String CONFIG_FILE;
 
     private final ObjectMapper objectMapper;

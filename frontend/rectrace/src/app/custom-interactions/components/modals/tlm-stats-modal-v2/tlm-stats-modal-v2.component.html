@@ -1,0 +1,129 @@
+<div class="modal-header">
+  <div class="header-content">
+    <h2 mat-dialog-title>
+      <mat-icon class="header-icon">analytics</mat-icon>
+      <div class="title-content">
+        <div class="main-title">{{ getModalTitle() }}</div>
+      </div>
+    </h2>
+  </div>
+  <button mat-icon-button mat-dialog-close aria-label="Close dialog">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <div class="dashboard-container">
+    
+    <!-- Left Sidebar - Filters Panel -->
+    <div class="filters-sidebar">
+      <app-tlm-filters-v2
+        [filterState]="filterState"
+        [isLoadingRecons]="isLoadingRecons"
+        [isLoadingSetIds]="isLoadingSetIds"
+        (reconSelectionChange)="onReconSelectionChange($event)"
+        (setIdSelectionChange)="onSetIdSelectionChange($event)"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (clearFilters)="onClearFilters()"
+        (applyFilters)="onApplyFilters()">
+      </app-tlm-filters-v2>
+    </div>
+
+    <!-- Main Content Area (Scrollable) -->
+    <div class="main-content">
+      
+      <!-- Summary Cards Section -->
+      <div class="summary-section">
+        <app-tlm-summary-cards-v2
+          [summary]="dashboardSummary"
+          [isLoading]="isLoadingSummary"
+          [hasError]="hasSummaryError">
+        </app-tlm-summary-cards-v2>
+      </div>
+
+      <!-- Show chart and tables only when there's data -->
+      <ng-container *ngIf="dashboardSummary && (dashboardSummary.total_breaks > 0 || dashboardSummary.total_items > 0)">
+        
+        <!-- Chart Section -->
+        <div class="chart-section">
+          <app-tlm-pie-chart-v2
+            [summary]="dashboardSummary"
+            [isLoading]="isLoadingSummary"
+            [hasError]="hasSummaryError"
+            [isDarkTheme]="isDarkTheme">
+          </app-tlm-pie-chart-v2>
+        </div>
+
+        <!-- Tables Section -->
+        <div class="tables-section">
+          
+          <!-- Break Statistics Table -->
+          <div class="table-container" *ngIf="dashboardSummary.total_breaks > 0">
+            <div class="table-header">
+              <mat-icon class="table-icon warning">warning</mat-icon>
+              <h3>Break Statistics</h3>
+              <div class="table-actions">
+                <!-- <button mat-stroked-button 
+                        class="export-btn"
+                        (click)="onExportBreaks()"
+                        [disabled]="isLoadingSummary || dashboardSummary.total_breaks === 0">
+                  <mat-icon>file_download</mat-icon>
+                  Export
+                </button> -->
+              </div>
+            </div>
+            
+            <app-tlm-breaks-table-v2
+              [filterState]="filterState"
+              [isDarkTheme]="isDarkTheme">
+            </app-tlm-breaks-table-v2>
+          </div>
+
+          <!-- Reconciliation Statistics Table -->
+          <div class="table-container" *ngIf="dashboardSummary.total_items > 0">
+            <div class="table-header">
+              <mat-icon class="table-icon primary">insights</mat-icon>
+              <h3>Reconciliation Statistics</h3>
+              <div class="table-actions">
+                <!-- <button mat-stroked-button 
+                        class="export-btn"
+                        (click)="onExportRecon()"
+                        [disabled]="isLoadingSummary || dashboardSummary.total_items === 0">
+                  <mat-icon>file_download</mat-icon>
+                  Export
+                </button> -->
+              </div>
+            </div>
+            
+            <app-tlm-recon-table-v2
+              [filterState]="filterState"
+              [isDarkTheme]="isDarkTheme">
+            </app-tlm-recon-table-v2>
+          </div>
+
+        </div>
+      </ng-container>
+      
+      <!-- Single No Data Message -->
+      <div class="no-data-section" *ngIf="dashboardSummary && dashboardSummary.total_breaks === 0 && dashboardSummary.total_items === 0">
+        <mat-icon class="no-data-icon">inbox</mat-icon>
+        <p class="no-data-text">No data available for the selected filters</p>
+        <p class="no-data-hint">Try adjusting your filter criteria and click Apply</p>
+      </div>
+
+      <!-- Combined Export Section -->
+      <div class="combined-export-section" *ngIf="dashboardSummary && (dashboardSummary.total_breaks > 0 || dashboardSummary.total_items > 0)">
+        <!-- <button mat-flat-button 
+                color="primary"
+                class="combined-export-btn"
+                (click)="onCombinedExport()"
+                [disabled]="isLoadingSummary || (dashboardSummary.total_breaks === 0 && dashboardSummary.total_items === 0)">
+          <mat-icon>get_app</mat-icon>
+          Export Combined Data
+        </button> -->
+      </div>
+
+    </div>
+
+  </div>
+</mat-dialog-content>

@@ -1,0 +1,423 @@
+/* Override Material Dialog styles */
+::ng-deep .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: transparent !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .mdc-dialog__surface {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .mat-mdc-dialog-surface {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .mat-dialog-container {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  background: var(--gradient-blue);
+  color: var(--text-inverse);
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  color: var(--text-inverse);
+}
+
+.header-icon {
+  margin-right: 16px;
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
+}
+
+.title-content {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.main-title {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+}
+
+.modal-header button {
+  color: var(--text-inverse);
+}
+
+/* Dialog Content */
+mat-dialog-content {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-height: 85vh;
+  overflow: hidden !important;
+}
+
+.dashboard-container {
+  display: flex;
+  flex-direction: row;
+  height: 85vh;
+  background-color: var(--bg-secondary);
+  overflow: hidden;
+}
+
+/* Left Sidebar - Filters */
+.filters-sidebar {
+  flex-shrink: 0;
+  width: 320px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-sm);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Dark mode support */
+:host-context(.dark-theme) .filters-sidebar {
+  background: var(--bg-primary-dark, #1e1e1e);
+  border-right-color: var(--border-primary-dark, rgba(255, 255, 255, 0.12));
+}
+
+:host-context(.dark-theme) .main-content {
+  background: var(--bg-secondary-dark, #121212);
+}
+
+:host-context(.dark-theme) .table-container {
+  background: var(--bg-primary-dark, #1e1e1e);
+  border-color: var(--border-primary-dark, rgba(255, 255, 255, 0.12));
+}
+
+:host-context(.dark-theme) .combined-export-section {
+  background: var(--bg-primary-dark, #1e1e1e);
+  border-top-color: var(--border-primary-dark, rgba(255, 255, 255, 0.12));
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-secondary);
+  min-height: 0; /* Important for flex child scrolling */
+}
+
+/* Summary Section */
+.summary-section {
+  flex-shrink: 0;
+  padding: 20px 24px;
+  background: var(--bg-secondary);
+}
+
+/* Chart Section */
+.chart-section {
+  flex-shrink: 0;
+  padding: 0 24px 20px 24px;
+  background: var(--bg-secondary);
+}
+
+/* Tables Section */
+.tables-section {
+  padding: 0 24px 20px 24px;
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.table-container {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-primary);
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.table-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.table-icon.warning {
+  color: var(--google-yellow);
+}
+
+.table-icon.primary {
+  color: var(--google-blue);
+}
+
+.table-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.table-actions {
+  margin-left: auto;
+}
+
+.export-btn {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--google-blue);
+  border-color: var(--google-blue);
+  
+  &:hover:not(:disabled) {
+    background-color: var(--google-blue-bg);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  :is(mat-icon) {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+  }
+}
+
+/* Combined Export Section */
+.combined-export-section {
+  flex-shrink: 0;
+  padding: 16px 24px 24px 24px;
+  margin-bottom: 20px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-primary);
+  display: flex;
+  justify-content: center;
+}
+
+.combined-export-btn {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 8px;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  :is(mat-icon) {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+  }
+}
+
+/* Scrollbar Styling */
+.main-content::-webkit-scrollbar,
+.filters-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track,
+.filters-sidebar::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb,
+.filters-sidebar::-webkit-scrollbar-thumb {
+  background: var(--google-blue);
+  border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover,
+.filters-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--google-blue-hover);
+}
+
+/* Loading States */
+::ng-deep .mat-progress-spinner circle {
+  stroke: var(--google-blue);
+}
+
+/* No Data Section */
+.no-data-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+.no-data-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.no-data-text {
+  margin: 0;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.no-data-hint {
+  margin: 8px 0 0 0;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+
+/* Dark mode for no data section */
+:host-context(.dark-theme) .no-data-section {
+  color: var(--text-secondary-dark, rgba(255, 255, 255, 0.54));
+}
+
+:host-context(.dark-theme) .no-data-icon {
+  color: var(--text-tertiary-dark, rgba(255, 255, 255, 0.38));
+}
+
+:host-context(.dark-theme) .no-data-text {
+  color: var(--text-secondary-dark, rgba(255, 255, 255, 0.54));
+}
+
+:host-context(.dark-theme) .no-data-hint {
+  color: var(--text-tertiary-dark, rgba(255, 255, 255, 0.38));
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table-container,
+.summary-section,
+.chart-section {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1400px) {
+  .dashboard-container {
+    height: 90vh;
+  }
+  
+  .filters-sidebar {
+    width: 280px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .main-title {
+    font-size: 20px;
+  }
+  
+  .header-icon {
+    font-size: 24px;
+    height: 24px;
+    width: 24px;
+  }
+  
+  .modal-header {
+    padding: 16px 20px;
+  }
+  
+  .filters-sidebar {
+    width: 260px;
+  }
+  
+  .summary-section {
+    padding: 16px 20px;
+  }
+  
+  .chart-section {
+    padding: 0 20px 16px 20px;
+  }
+  
+  .tables-section {
+    padding: 0 20px 16px 20px;
+  }
+  
+  .combined-export-section {
+    padding: 16px 20px 20px 20px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 992px) {
+  .filters-sidebar {
+    width: 240px;
+  }
+}
+
+/* Material Design Consistency */
+::ng-deep .mat-mdc-dialog-container {
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+::ng-deep .cdk-overlay-dark-backdrop {
+  background: var(--modal-overlay);
+}

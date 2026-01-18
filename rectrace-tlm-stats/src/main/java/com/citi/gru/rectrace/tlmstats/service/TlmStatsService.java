@@ -136,9 +136,10 @@ public class TlmStatsService {
         
         sql.append(")");
         sql.append("SELECT");
-        sql.append("  COUNT(*),");
+        sql.append("  COUNT(*) AS breaks_count,");
         sql.append("  s.agent_code,");
         sql.append("  s.local_acc_no,");
+        sql.append("  s.stmt_date,");
         sql.append("  i.bran_code");
         sql.append("FROM");
         sql.append("  item  i,");
@@ -149,6 +150,7 @@ public class TlmStatsService {
         sql.append("GROUP BY");
         sql.append("  s.agent_code,");
         sql.append("  s.local_acc_no,");
+        sql.append("  s.stmt_date,");
         sql.append("  i.bran_code");
         
         return sql.toString();
@@ -179,15 +181,7 @@ public class TlmStatsService {
         sql.append("      ELSE");
         sql.append("        0");
         sql.append("    END");
-        sql.append("  )                 automatch_items,");
-        sql.append("  SUM(");
-        sql.append("    CASE");
-        sql.append("      WHEN i.flag_2 = 0 THEN");
-        sql.append("        1");
-        sql.append("      ELSE");
-        sql.append("        0");
-        sql.append("    END");
-        sql.append("  )                 outstanding_items");
+        sql.append("  )                 automatch_items");
         sql.append("FROM");
         sql.append("  bank            b,");
         sql.append("  message_feed        mf,");
@@ -254,14 +248,10 @@ public class TlmStatsService {
         sql.append("    FROM");
         sql.append("      reconmgmt.mr_csum_man_match_details");
         sql.append("    WHERE");
-        sql.append("      stmt_date BETWEEN (");
-        sql.append("        SELECT");
-        sql.append("          trunc(sysdate) - ( decode(to_char(sysdate, 'D'), 1, 1, 2, 3,");
-        sql.append("                       3, 1, 4, 1, 5,");
-        sql.append("                       1, 6, 1, 7, 1) )");
-        sql.append("        FROM");
-        sql.append("          dual");
-        sql.append("      ) AND sysdate - 1");
+        sql.append("      stmt_date BETWEEN TRUNC(SYSDATE) - (DECODE(TO_CHAR(SYSDATE, 'D'), 1, 1, 2, 3,");
+        sql.append("                            3, 1, 4, 1, 5,");
+        sql.append("                            1, 6, 1, 7, 1))");
+        sql.append("              AND TRUNC(SYSDATE) - 1");
         
         if (setId != null && !setId.trim().isEmpty()) {
             sql.append("      AND setid = ?");
@@ -292,14 +282,10 @@ public class TlmStatsService {
         sql.append("    FROM");
         sql.append("      reconmgmt.mr_csum_netting_hist");
         sql.append("    WHERE");
-        sql.append("      stmt_date BETWEEN (");
-        sql.append("        SELECT");
-        sql.append("          trunc(sysdate) - ( decode(to_char(sysdate, 'D'), 1, 1, 2, 3,");
-        sql.append("                       3, 1, 4, 1, 5,");
-        sql.append("                       1, 6, 1, 7, 1) )");
-        sql.append("        FROM");
-        sql.append("          dual");
-        sql.append("      ) AND sysdate - 1");
+        sql.append("      stmt_date BETWEEN TRUNC(SYSDATE) - (DECODE(TO_CHAR(SYSDATE, 'D'), 1, 1, 2, 3,");
+        sql.append("                            3, 1, 4, 1, 5,");
+        sql.append("                            1, 6, 1, 7, 1))");
+        sql.append("              AND TRUNC(SYSDATE) - 1");
         
         if (setId != null && !setId.trim().isEmpty()) {
             sql.append("      AND local_acc_no = ?");
@@ -388,36 +374,36 @@ public class TlmStatsService {
     // Row mappers
     private RowMapper<BreakStats> getBreakStatsRowMapper() {
         return (rs, rowNum) -> new BreakStats(
-            rs.getLong(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4)
+            rs.getLong("breaks_count"),
+            rs.getString("agent_code"),
+            rs.getString("local_acc_no"),
+            rs.getString("stmt_date"),
+            rs.getString("bran_code")
         );
     }
 
     private RowMapper<AutomatchStats> getAutomatchStatsRowMapper() {
         return (rs, rowNum) -> new AutomatchStats(
-            rs.getString(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4),
-            rs.getString(5),
-            rs.getString(6),
-            rs.getLong(7),
-            rs.getLong(8),
-            rs.getLong(9)
+            rs.getString("tlm_instance"),
+            rs.getString("agent_code"),
+            rs.getString("setid"),
+            rs.getString("stmt_date"),
+            rs.getString("bran_code"),
+            rs.getString("corr_acc_no"),
+            rs.getLong("total_items"),
+            rs.getLong("automatch_items")
         );
     }
 
     private RowMapper<ManualMatchStats> getManualMatchStatsRowMapper() {
         return (rs, rowNum) -> new ManualMatchStats(
-            rs.getString(1),
-            rs.getString(2),
-            rs.getString(3),
-            rs.getString(4),
-            rs.getString(5),
-            rs.getString(6),
-            rs.getLong(7)
+            rs.getString("tlm_instance"),
+            rs.getString("agent_code"),
+            rs.getString("setid"),
+            rs.getString("stmt_date"),
+            rs.getString("bran_code"),
+            rs.getString("corr_acc_no"),
+            rs.getLong("total_manual_match_count")
         );
     }
 } 

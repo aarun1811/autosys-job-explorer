@@ -3,7 +3,7 @@
   height: 100%;
   min-height: 500px;
   position: relative;
-  background: #FFFFFF;
+  background: var(--bg-primary);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -14,7 +14,7 @@
   width: 100%;
   flex: 1;
   position: relative;
-  background: linear-gradient(135deg, #FFFFFF 25%, #F8F9FA 25%, #F8F9FA 50%, #FFFFFF 50%, #FFFFFF 75%, #F8F9FA 75%, #F8F9FA);
+  background: linear-gradient(135deg, var(--bg-primary) 25%, var(--bg-secondary) 25%, var(--bg-secondary) 50%, var(--bg-primary) 50%, var(--bg-primary) 75%, var(--bg-secondary) 75%, var(--bg-secondary));
   background-size: 16px 16px;
   border: none;
   border-radius: 0 0 8px 8px;
@@ -26,8 +26,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E8EAED;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
   z-index: 10;
 }
 
@@ -38,16 +38,16 @@
 }
 
 .zoom-controls button {
-  color: #1A73E8;
+  color: var(--google-blue);
   transition: all 0.2s ease;
 }
 
 .zoom-controls button:hover {
-  background-color: #F1F7FE;
+  background-color: var(--bg-hover);
 }
 
 .zoom-controls button:active {
-  background-color: #E8F0FE;
+  background-color: var(--google-blue-bg);
 }
 
 .zoom-level {
@@ -55,10 +55,10 @@
   font-family: 'Google Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #1A73E8;
+  color: var(--google-blue);
   min-width: 48px;
   text-align: center;
-  background-color: #F1F7FE;
+  background-color: var(--google-blue-bg);
   padding: 4px 8px;
   border-radius: 16px;
 }
@@ -66,7 +66,7 @@
 .help-text {
   font-family: 'Google Sans', sans-serif;
   font-size: 13px;
-  color: #5F6368;
+  color: var(--text-secondary);
   margin-right: 8px;
   display: flex;
   align-items: center;
@@ -89,9 +89,9 @@
   transform: translate(-50%, -50%);
   width: 40px;
   height: 40px;
-  border: 2px solid #E8F0FE;
+  border: 2px solid var(--google-blue-bg);
   border-radius: 50%;
-  border-top-color: #1A73E8;
+  border-top-color: var(--google-blue);
   animation: spin 1s ease-in-out infinite;
 }
 

@@ -38,7 +38,7 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
       font-family: 'Google Sans', sans-serif;
       font-size: 12px;
       font-weight: 500;
-      color: #1a73e8;
+      color: var(--google-blue, #1a73e8);
       background-color: transparent;
       border: none;
       line-height: 1;
@@ -47,18 +47,18 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
     }
 
     .set-id-btn:hover:not(:disabled) {
-      background-color: rgba(26, 115, 232, 0.04);
+      background-color: var(--bg-hover, rgba(26, 115, 232, 0.04));
       text-decoration: none;
     }
 
     .set-id-btn:active:not(:disabled) {
-      background-color: rgba(26, 115, 232, 0.08);
+      background-color: var(--bg-active, rgba(26, 115, 232, 0.08));
     }
 
     .set-id-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      color: #5f6368;
+      color: var(--text-secondary, #5f6368);
     }
 
     .btn-content {
@@ -78,9 +78,6 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
       font-size: 12px;
       line-height: 1;
       font-weight: 500;
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
     }
 
@@ -91,11 +88,6 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
       transform: translateY(-50%);
     }
 
-    @media (max-width: 768px) {
-      .btn-text {
-        max-width: 100px;
-      }
-    }
   `]
 })
 export class SetIdCellRendererComponent implements ICellRendererAngularComp {

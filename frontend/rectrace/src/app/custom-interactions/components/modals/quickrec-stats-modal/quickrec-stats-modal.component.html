@@ -1,0 +1,59 @@
+<div class="quickrec-modal-container">
+  <div class="modal-header">
+    <h2 mat-dialog-title>QuickRec Statistics Dashboard</h2>
+    <button mat-icon-button (click)="onClose()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  
+  <mat-dialog-content>
+    <div class="content-wrapper">
+      <!-- Filters Section -->
+      <app-quickrec-filters 
+        [initialReconId]="data.reconId"
+        [initialRecPortalId]="data.recPortalId"
+        [entryPoint]="data.entryPoint"
+        (dateRangeChange)="onDateRangeChange($event)"
+        (filterChange)="onFilterChange($event)">
+      </app-quickrec-filters>
+      
+      <!-- Loading Indicator -->
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading QuickRec statistics...</p>
+      </div>
+      
+      <!-- Error Message -->
+      <div *ngIf="error && !loading" class="error-container">
+        <mat-icon color="warn">error</mat-icon>
+        <p>{{ error }}</p>
+      </div>
+      
+      <!-- Dashboard Summary -->
+      <div *ngIf="!loading && !error && dashboardSummary" class="dashboard-summary">
+        <app-quickrec-summary [summary]="dashboardSummary"></app-quickrec-summary>
+      </div>
+      
+      <!-- Stats Tables -->
+      <div *ngIf="!loading && !error" class="stats-container">
+        <!-- Auto-Match Stats -->
+        <div class="stats-section">
+          <h3>Auto-Match Statistics</h3>
+          <app-quickrec-automatch-table 
+            [data]="autoMatchStats"
+            [loading]="loading">
+          </app-quickrec-automatch-table>
+        </div>
+        
+        <!-- Manual Match Stats -->
+        <div class="stats-section">
+          <h3>Manual Match Statistics</h3>
+          <app-quickrec-manual-table 
+            [data]="manualMatchStats"
+            [loading]="loading">
+          </app-quickrec-manual-table>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+</div>

@@ -63,7 +63,7 @@ interface ExecutionOrderResponse {
     font-family: 'Google Sans', sans-serif;
     font-size: 12px;
     font-weight: 500;
-    color: #1a73e8;
+    color: var(--google-blue, #1a73e8);
     background-color: transparent;
     border: none;
     line-height: 1;
@@ -71,17 +71,17 @@ interface ExecutionOrderResponse {
   }
 
   .execution-order-btn:hover:not(:disabled) {
-    background-color: rgba(26, 115, 232, 0.04);
+    background-color: var(--bg-hover, rgba(26, 115, 232, 0.04));
   }
 
   .execution-order-btn:active:not(:disabled) {
-    background-color: rgba(26, 115, 232, 0.08);
+    background-color: var(--bg-active, rgba(26, 115, 232, 0.08));
   }
 
   .execution-order-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    color: #5f6368;
+    color: var(--text-secondary, #5f6368);
   }
 
   .btn-content {
@@ -171,8 +171,7 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
 
     this.isLoading = true;
 
-    // Use v2 API for enhanced data with job status and next start time
-    this.executionOrderService.getExecutionOrderV2(jobName).subscribe(
+    this.executionOrderService.getExecutionOrder(jobName).subscribe(
       (data: ExecutionOrderResponse) => {
         this.isLoading = false;
         if (!data || !data.executionSequence || data.executionSequence.length === 0) {
@@ -188,7 +187,7 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
           autoFocus: false
         });
       },
-      (error) => {
+      (error: any) => {
         console.error('Error fetching execution order:', error);
         this.isLoading = false;
         this.showError('Failed to load execution order');
