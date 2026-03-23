@@ -43,6 +43,7 @@ import { QuickRecFiltersComponent } from './components/modals/quickrec-stats-mod
 import { QuickRecSummaryComponent } from './components/modals/quickrec-stats-modal/components/quickrec-summary/quickrec-summary.component';
 import { QuickRecAutomatchTableComponent } from './components/modals/quickrec-stats-modal/components/quickrec-automatch-table/quickrec-automatch-table.component';
 import { QuickRecManualTableComponent } from './components/modals/quickrec-stats-modal/components/quickrec-manual-table/quickrec-manual-table.component';
+import { RecvizEmbedDialogComponent } from './components/modals/recviz-embed-dialog/recviz-embed-dialog.component';
 
 const DECLARATIONS_EXPORTS = [
   ExecutionOrderButtonComponent,
@@ -68,7 +69,8 @@ const DECLARATIONS_EXPORTS = [
   QuickRecFiltersComponent,
   QuickRecSummaryComponent,
   QuickRecAutomatchTableComponent,
-  QuickRecManualTableComponent
+  QuickRecManualTableComponent,
+  RecvizEmbedDialogComponent
 ];
 
 const MATERIAL_MODULES = [

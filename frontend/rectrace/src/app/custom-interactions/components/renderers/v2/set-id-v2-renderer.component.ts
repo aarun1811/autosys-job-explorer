@@ -3,6 +3,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { ICellRendererAngularComp } from 'ag-grid-angular';
 import { ICellRendererParams } from 'ag-grid-enterprise';
 import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-stats-modal-v2/tlm-stats-modal-v2.component';
+import { RecvizEmbedDialogComponent } from '../../modals/recviz-embed-dialog/recviz-embed-dialog.component';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-set-id-v2-renderer',
@@ -102,20 +104,21 @@ export class SetIdV2RendererComponent implements ICellRendererAngularComp {
 
     this.isLoading = true;
 
-    const modalData: TlmStatsModalV2Data = {
-      type: 'set_id',
-      value: this.setId,
-      rowData: this.params.data,
-      tlm_instance: this.params.data?.tlm_instance
-    };
+    const params = new URLSearchParams();
+    params.set('filter.tlm_instance', this.params.data?.tlm_instance || '');
+    params.set('filter.recon', this.params.data?.agent_code || this.params.data?.recon || '');
+    params.set('filter.set_id', this.setId);
+    params.set('lock', 'tlm_instance,recon,set_id');
+    params.set('theme', 'dark');
 
-    const dialogRef = this.dialog.open(TlmStatsModalV2Component, {
+    const url = `${environment.recvizUrl}/embed/dashboards/tlm-stats?${params.toString()}`;
+
+    const dialogRef = this.dialog.open(RecvizEmbedDialogComponent, {
       width: '95vw',
       height: '90vh',
-      data: modalData,
+      data: { url },
       panelClass: ['tlm-dashboard-modal-v2', 'no-padding'],
       autoFocus: false,
-      disableClose: false
     });
 
     dialogRef.afterClosed().subscribe(() => {
