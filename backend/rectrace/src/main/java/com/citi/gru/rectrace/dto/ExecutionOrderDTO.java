@@ -7,6 +7,8 @@ public class ExecutionOrderDTO {
     private String loadJob;
     private List<JobNodeDTO> executionSequence;
     private Map<String, JobDetailsDTO> jobDetails;
+    private Map<String, JobStatusInfo> jobStatuses;
+    private boolean statusAvailable = true;
 
     // Nested DTO for each job node in the sequence
     public static class JobNodeDTO {
@@ -129,5 +131,21 @@ public class ExecutionOrderDTO {
 
     public void setJobDetails(Map<String, JobDetailsDTO> jobDetails) {
         this.jobDetails = jobDetails;
+    }
+
+    public Map<String, JobStatusInfo> getJobStatuses() {
+        return jobStatuses;
+    }
+
+    public void setJobStatuses(Map<String, JobStatusInfo> jobStatuses) {
+        this.jobStatuses = jobStatuses;
+    }
+
+    public boolean isStatusAvailable() {
+        return statusAvailable;
+    }
+
+    public void setStatusAvailable(boolean statusAvailable) {
+        this.statusAvailable = statusAvailable;
     }
 } 

@@ -13,17 +13,35 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobDetailsDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobNodeDTO;
+import com.citi.gru.rectrace.service.JobStatusService;
 
 @Service
 public class ExecutionOrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExecutionOrderService.class);
+
     @PersistenceContext
     private EntityManager em;
+
+    private final JobStatusService jobStatusService;
+
+    @Autowired
+    public ExecutionOrderService(@Autowired(required = false) JobStatusService jobStatusService) {
+        this.jobStatusService = jobStatusService;
+        if (jobStatusService == null) {
+            logger.info("JobStatusService is not available");
+        } else {
+            logger.info("JobStatusService is available");
+        }
+    }
 
     public ExecutionOrderDTO getExecutionOrder(String loadJobName) {
         ExecutionOrderDTO result = new ExecutionOrderDTO();
@@ -100,6 +118,23 @@ public class ExecutionOrderService {
         }
         result.setJobDetails(jobDetails);
 
+        // Fetch live job statusses from Autosys database
+        if (jobStatusService != null) {
+            try {
+                logger.debug("Fetching live job statusses for {} jobs", jobNames.size());
+                Map<String, JobStatusService.JobStatusDTO> jobStatusses = jobStatusService.getJobStatus(jobNames);
+                result.setJobStatusses(jobStatusses);
+                result.setStatusAvailable(true);
+                logger.debug("Successfully fetched live job statusses for {} jobs", jobNames.size());
+            } catch (Exception e) {
+                logger.error("Failed to fetch live job statusses", e);
+                result.setStatusAvailable(false);
+            }    
+        } else {
+            logger.warn("JobStatusService is not available, skipping live job statusses fetch");
+            result.setStatusAvailable(false);
+        }
+        
         return result;
     }
 

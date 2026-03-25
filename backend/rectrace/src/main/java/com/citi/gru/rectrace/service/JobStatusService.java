@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@ConditionalOnBean(name = "autosysDataSource")
 public class JobStatusService {
     
     private static final Logger logger = LoggerFactory.getLogger(JobStatusService.class);
@@ -112,11 +113,9 @@ public class JobStatusService {
     private JobStatusInfo createDefaultStatus(String jobName) {
         return JobStatusInfo.builder()
                 .jobName(jobName)
-                .status(8) // INACTIVE
+                .status(null) // INACTIVE
                 .statusName("UNKNOWN")
-                .statusIcon("?")
                 .isScheduledToday(false)
-                .hasRunToday(false)
                 .isCurrentlyActive(false)
                 .visualState(JobStatusInfo.VisualState.CURRENT_STATE)
                 .build();
