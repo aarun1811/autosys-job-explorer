@@ -372,14 +372,17 @@
     transform: translateY(100%);
     opacity: 0;
   }
+
   10% {
     transform: translateY(0);
     opacity: 1;
   }
+
   90% {
     transform: translateY(0);
     opacity: 1;
   }
+
   100% {
     transform: translateY(-100%);
     opacity: 0;
@@ -555,7 +558,8 @@
   border-radius: 8px;
 }
 
-.mat-header-cell, .mat-cell {
+.mat-header-cell,
+.mat-cell {
   padding: 8px 16px;
   text-align: left;
 }
@@ -618,10 +622,14 @@ mat-label {
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.3;
   }
+
   40% {
     transform: scale(1);
     opacity: 1;
@@ -702,9 +710,11 @@ mat-label {
 }
 
 .no-results-container {
-  margin-top: 40px; /* Space below search bar/tabs */
+  margin-top: 40px;
+  /* Space below search bar/tabs */
   text-align: center;
-  color: var(--text-secondary); /* Secondary text color */
+  color: var(--text-secondary);
+  /* Secondary text color */
   font-family: 'Google Sans', sans-serif;
   padding: 20px;
   width: 100%;
@@ -718,7 +728,8 @@ mat-label {
   font-size: 64px;
   width: 64px;
   height: 64px;
-  color: var(--text-tertiary); /* Lighter grey for icon */
+  color: var(--text-tertiary);
+  /* Lighter grey for icon */
   margin-bottom: 16px;
 }
 
@@ -730,7 +741,8 @@ mat-label {
 
 .no-results-container strong {
   font-weight: 500;
-  color: var(--text-primary); /* Primary text color for emphasis */
+  color: var(--text-primary);
+  /* Primary text color for emphasis */
 }
 
 .suggestion-text {
@@ -739,32 +751,51 @@ mat-label {
 }
 
 .mat-mdc-option {
-    font-family: 'Google Sans', sans-serif;
-    font-size: 14.5px;
-    line-height: 24px;
-    /* max-height: 20px; */
-    min-height: 36px;
+  font-family: 'Google Sans', sans-serif;
+  font-size: 14.5px;
+  line-height: 24px;
+  /* max-height: 20px; */
+  min-height: 36px;
 }
-  
+
 ::ng-deep .mat-mdc-autocomplete-panel {
-    max-height: 350px !important;
+  max-height: 350px !important;
 }
 
 .user-profile-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px; /* Match sign-in button height for consistency */
-  height: 36px; /* Match sign-in button height for consistency */
-  border-radius: 50%; /* Makes it circular */
-  background-color: var(--google-blue); /* Example: Google Blue, or your theme's primary color */
+  width: 36px;
+  /* Match sign-in button height for consistency */
+  height: 36px;
+  /* Match sign-in button height for consistency */
+  border-radius: 50%;
+  /* Makes it circular */
+  background-color: var(--google-blue);
+  /* Example: Google Blue, or your theme's primary color */
   color: var(--text-inverse);
-  font-size: 14px; /* Adjust as needed */
+  font-size: 14px;
+  /* Adjust as needed */
   font-weight: 500;
-  cursor: default; 
+  cursor: default;
 }
 
 /* Hide inactive grids but keep them in DOM for state preservation */
 app-search-v5-grid[hidden] {
   display: none !important;
+}
+
+::ng-deep .mat-mdc-menu-content {
+  padding: 0px !important;
+  margin: 0px;
+}
+
+::ng-deep .mat-mdc-menu-content .menu-list>ul {
+  margin: 0px;
+  padding: 0px;
+}
+
+::ng-deep .launch-menu-container {
+  height: 16px !important;
 }

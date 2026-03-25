@@ -1,13 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { SearchComponent } from './search-feature/components/search/search.component';
 
 const routes: Routes = [
-  // Route for the main search functionality
-  {
-    path: 'search-old',
-    component: SearchComponent
-  }, // Route for the new V5 search functionality (combining V4 logic with old UI)
+  // Route for the new V5 search functionality (combining V4 logic with old UI)
   {
     path: 'search',
     loadChildren: () => import('./search-v5/search-v5.module').then(m => m.SearchV5Module)

@@ -1,6 +1,11 @@
-<div class="recon-id-cell" [class.clickable]="isClickable" [class.disabled]="!isClickable">
-  <span (click)="onClick()" [title]="isClickable ? 'Click to view QuickRec stats for ' + value : value">
-    {{ value }}
-  </span>
-  <mat-icon *ngIf="isClickable" class="link-icon">launch</mat-icon>
-</div>
+@if (isClickable) {
+<span class="recon-id-link" (click)="onClick()" [class.loading]="isLoading">
+  <mat-icon>insights</mat-icon>
+  <span class="recon-id-text">{{ value }}</span>
+  @if (isLoading) {
+  <mat-spinner diameter="14" class="spinner"></mat-spinner>
+
+</span>
+} @else {
+<span>{{ value }}</span>
+}

@@ -2,10 +2,9 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
-
+import { environment } from '@env/environment';
 import { AppComponent } from './app.component';
 import { CoreModule } from './core/core.module';
-import { SearchModule } from './search-feature/search.module';
 
 @NgModule({
   declarations: [
@@ -14,10 +13,11 @@ import { SearchModule } from './search-feature/search.module';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    CoreModule,
-    SearchModule
+    CoreModule
   ],
-  providers: [],
+  providers: [
+    { provide: 'ENVIRONMENT', useValue: environment }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

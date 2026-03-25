@@ -7,19 +7,24 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
 @Component({
   selector: 'app-recon-cell-renderer',
   template: `
-    <button
-      *ngIf="recon"
-      class="recon-btn"
-      (click)="showTlmStats()"
-      [disabled]="isLoading"
-      aria-label="View TLM Stats">
+    @if(recon) {
+      <button
+        class="recon-btn"
+        (click)="showTlmStats()"
+        [disabled]="isLoading"
+        aria-label="View TLM Stats">
       <div class="btn-content">
         <mat-icon>analytics</mat-icon>
         <span class="btn-text">{{ recon }}</span>
       </div>
-      <mat-spinner *ngIf="isLoading" diameter="16" class="spinner"></mat-spinner>
+      @if(isLoading) {
+        <mat-spinner diameter="16" class="spinner"></mat-spinner>
+      }
     </button>
-    <span *ngIf="!recon">{{ recon }}</span>
+    }
+    @if(!recon) {
+      <span>{{ recon }}</span>
+    }
   `,
   styles: [`
     .recon-btn {
@@ -95,7 +100,7 @@ export class ReconCellRendererComponent implements ICellRendererAngularComp {
   isLoading: boolean = false;
   recon: string | null = null;
 
-  constructor(private readonly dialog: MatDialog) {}
+  constructor(private readonly dialog: MatDialog) { }
 
   agInit(params: ICellRendererParams): void {
     this.params = params;

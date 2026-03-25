@@ -7,19 +7,24 @@ import { TlmStatsModalComponent, TlmStatsModalData } from '../modals/tlm-stats-m
 @Component({
   selector: 'app-set-id-cell-renderer',
   template: `
-    <button
-      *ngIf="setId"
-      class="set-id-btn"
-      (click)="showTlmStats()"
-      [disabled]="isLoading"
+    @if(setId) {
+      <button
+        class="set-id-btn"
+        (click)="showTlmStats()"
+        [disabled]="isLoading"
       aria-label="View TLM Stats">
       <div class="btn-content">
         <mat-icon>analytics</mat-icon>
         <span class="btn-text">{{ setId }}</span>
       </div>
-      <mat-spinner *ngIf="isLoading" diameter="16" class="spinner"></mat-spinner>
+      @if(isLoading) {
+        <mat-spinner diameter="16" class="spinner"></mat-spinner>
+      }
     </button>
-    <span *ngIf="!setId">{{ setId }}</span>
+    }
+    @if(!setId) {
+      <span>{{ setId }}</span>
+    }
   `,
   styles: [`
     .set-id-btn {
@@ -95,7 +100,7 @@ export class SetIdCellRendererComponent implements ICellRendererAngularComp {
   isLoading: boolean = false;
   setId: string | null = null;
 
-  constructor(private readonly dialog: MatDialog) {}
+  constructor(private readonly dialog: MatDialog) { }
 
   agInit(params: ICellRendererParams): void {
     this.params = params;
