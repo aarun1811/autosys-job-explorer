@@ -88,7 +88,7 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
       font-family: 'Google Sans', sans-serif;
       font-size: 11px;
       color: rgba(0, 0, 0, 0.87);
-      
+  }
   `]
 })
 export class SetIdV2RendererComponent implements ICellRendererAngularComp {
@@ -102,13 +102,13 @@ export class SetIdV2RendererComponent implements ICellRendererAngularComp {
   agInit(params: ICellRendererParams): void {
     this.params = params;
     this.setId = params.value;
-    this.isQuickRec = params.data?.tlm_instance === 'Quickec';
+    this.isQuickRec = params.data?.tlm_instance === 'QuickRec';
   }
 
   refresh(params: ICellRendererParams): boolean {
     this.params = params;
     this.setId = params.value;
-    this.isQuickRec = params.data?.tlm_instance === 'Quickec';
+    this.isQuickRec = params.data?.tlm_instance === 'QuickRec';
     return true;
   }
 
@@ -117,9 +117,9 @@ export class SetIdV2RendererComponent implements ICellRendererAngularComp {
       return;
     }
 
-    // Disable clicking for QuickRec rows - they should use the Quickec-specific renderers
+    // Disable clicking for QuickRec rows - they should use the QuickRec-specific renderers
     const tlmInstance = this.params.data?.tlm_instance;
-    if (tlmInstance === 'Quickec') {
+    if (tlmInstance === 'QuickRec') {
       return;
     }
 
