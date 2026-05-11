@@ -7,16 +7,24 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
 @Component({
   selector: 'app-tlm-instance-v2-renderer',
   template: `
+    @if (tlmInstance && !isQuickRec) {
     <span
-      *ngIf="tlmInstance"
       class="tlm-instance-link"
       (click)="showTlmDashboard()"
       [class.loading]="isLoading">
       <mat-icon>insights</mat-icon>
       <span class="tlm-text">{{ tlmInstance }}</span>
-      <mat-spinner *ngIf="isLoading" diameter="14" class="spinner"></mat-spinner>
+      @if (isLoading) {
+        <mat-spinner diameter="14" class="spinner"></mat-spinner>
+      }
     </span>
-    <span *ngIf="!tlmInstance" class="empty-cell"></span>
+    }
+    @else if (tlmInstance && isQuickRec) {
+    <span class="tlm-text-plain">{{ tlmInstance }}</span>
+    }
+    @if (!tlmInstance) {
+    <span class="empty-cell"></span>
+    }
   `,
   styles: [`
     .tlm-instance-link {
@@ -75,28 +83,42 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
     .empty-cell {
       display: none;
     }
+
+    .tlm-text-plain {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.87);
+    }
   `]
 })
 export class TlmInstanceV2RendererComponent implements ICellRendererAngularComp {
   params!: ICellRendererParams;
   isLoading: boolean = false;
   tlmInstance: string | null = null;
+  isQuickRec: boolean = false;
 
-  constructor(private readonly dialog: MatDialog) {}
+  constructor(private readonly dialog: MatDialog) { }
 
   agInit(params: ICellRendererParams): void {
     this.params = params;
     this.tlmInstance = params.value;
+    this.isQuickRec = this.tlmInstance === 'QuickRec';
   }
 
   refresh(params: ICellRendererParams): boolean {
     this.params = params;
     this.tlmInstance = params.value;
+    this.isQuickRec = this.tlmInstance === 'QuickRec';
     return true;
   }
 
   showTlmDashboard(): void {
     if (!this.tlmInstance) {
+      return;
+    }
+
+    // Disable clicking for QuickRec - Quickrec should use the QuickRec-specific renderer
+    if (this.tlmInstance === 'QuickRec') {
       return;
     }
 

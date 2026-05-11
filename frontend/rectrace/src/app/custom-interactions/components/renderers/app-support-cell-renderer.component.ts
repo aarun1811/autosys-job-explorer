@@ -5,14 +5,18 @@ import { ICellRendererParams } from 'ag-grid-community';
 @Component({
   selector: 'app-app-support-cell-renderer',
   template: `
-    <a *ngIf="supportEmail"
+    @if (supportEmail) {
+    <a
        [href]="'mailto:' + supportEmail"
        target="_blank"
        class="file-link"
        [matTooltip]="getTooltipText()">
       {{ supportEmail }}
     </a>
-    <span *ngIf="!supportEmail">{{ supportEmail }}</span>
+    }
+    @else {
+    <span>{{ supportEmail }}</span>
+    }
   `,
   styles: [`
     .file-link {

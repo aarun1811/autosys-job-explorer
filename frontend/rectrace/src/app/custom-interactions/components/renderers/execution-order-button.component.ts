@@ -33,8 +33,8 @@ interface ExecutionOrderResponse {
 @Component({
   selector: 'app-execution-order-button',
   template: `
+    @if (jobName) {
     <button
-      *ngIf="jobName"
       class="execution-order-btn"
       (click)="showExecutionOrder()"
       [disabled]="isLoading"
@@ -43,8 +43,11 @@ interface ExecutionOrderResponse {
         <mat-icon>account_tree</mat-icon>
         <span class="btn-text">View</span>
       </div>
-      <mat-spinner *ngIf="isLoading" diameter="16" class="spinner"></mat-spinner>
+      @if (isLoading) {
+        <mat-spinner diameter="16" class="spinner"></mat-spinner>
+      }
     </button>
+    }
   `,
   styles: [`
   .execution-order-btn {
@@ -140,7 +143,7 @@ export class ExecutionOrderButtonComponent implements ICellRendererAngularComp {
     private readonly executionOrderService: ExecutionOrderService,
     private readonly dialog: MatDialog,
     private readonly snackBar: MatSnackBar
-  ) {}
+  ) { }
 
   agInit(params: ExecutionOrderButtonParams): void {
     this.params = params;

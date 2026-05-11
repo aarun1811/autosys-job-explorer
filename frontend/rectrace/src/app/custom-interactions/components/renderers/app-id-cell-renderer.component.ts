@@ -5,14 +5,17 @@ import { ICellRendererParams } from 'ag-grid-community';
 @Component({
   selector: 'app-app-id-cell-renderer',
   template: `
-    <a *ngIf="appId"
+    @if (appId) {
+    <a
        [href]="getFileUrl()"
        target="_blank"
        class="file-link"
        [matTooltip]="getTooltipText()">
       {{ appId }}
     </a>
-    <span *ngIf="!appId">{{ appId }}</span>
+    } @else {
+    <span>{{ appId }}</span>
+    }
   `,
   styles: [`
     .file-link {

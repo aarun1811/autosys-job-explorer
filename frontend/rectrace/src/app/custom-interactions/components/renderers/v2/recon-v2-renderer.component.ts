@@ -7,16 +7,24 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
 @Component({
   selector: 'app-recon-v2-renderer',
   template: `
+  @if (recon && !isQuickRec) {
     <span
-      *ngIf="recon"
       class="recon-link"
       (click)="showTlmDashboard()"
       [class.loading]="isLoading">
       <mat-icon>insights</mat-icon>
       <span class="recon-text">{{ recon }}</span>
-      <mat-spinner *ngIf="isLoading" diameter="14" class="spinner"></mat-spinner>
+      @if (isLoading) { 
+        <mat-spinner diameter="14" class="spinner"></mat-spinner>
+      }
     </span>
-    <span *ngIf="!recon" class="empty-cell"></span>
+  }
+  @if (recon && isQuickRec) {
+    <span class="recon-text-plain">{{ recon }}</span>
+  }
+  @if (!recon) {
+    <span class="empty-cell"></span>
+  }
   `,
   styles: [`
     .recon-link {
@@ -75,28 +83,43 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
     .empty-cell {
       display: none;
     }
+
+    .recon-text-plain {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.87);
+    }
   `]
 })
 export class ReconV2RendererComponent implements ICellRendererAngularComp {
   params!: ICellRendererParams;
   isLoading: boolean = false;
   recon: string | null = null;
+  isQuickRec: boolean = false;
 
-  constructor(private readonly dialog: MatDialog) {}
+  constructor(private readonly dialog: MatDialog) { }
 
   agInit(params: ICellRendererParams): void {
     this.params = params;
     this.recon = params.value;
+    this.isQuickRec = params.data?.tlm_instance === 'QuickRec';
   }
 
   refresh(params: ICellRendererParams): boolean {
     this.params = params;
     this.recon = params.value;
+    this.isQuickRec = params.data?.tlm_instance === 'QuickRec';
     return true;
   }
 
   showTlmDashboard(): void {
     if (!this.recon) {
+      return;
+    }
+
+    // Disable clicking for Quickec rows - they should use the QuickRec specific renderers
+    const tlmInstance = this.params.data?.tlm_instance;
+    if (tlmInstance === 'QuickRec') {
       return;
     }
 

@@ -1,6 +1,14 @@
-<div class="rec-portal-id-cell" [class.clickable]="isClickable" [class.disabled]="!isClickable">
-  <span (click)="onClick()" [title]="isClickable ? 'Click to view QuickRec stats for ' + value : value">
-    {{ value }}
-  </span>
-  <mat-icon *ngIf="isClickable" class="link-icon">launch</mat-icon>
-</div>
+@if (isClickable) {
+<span class="rec-portal-id-link" (click)="onClick()" [class.loading]="isLoading">
+  <mat-icon>insights</mat-icon>
+  <span class="rec-portal-id-text">{{ value }}</span>
+  @if (isLoading) {
+  <mat-spinner diameter="14" class="spinner"></mat-spinner>
+  }
+</span>
+} @if (!isClickable && value) {
+<span class="rec-portal-id-text-plain">{{ value }}</span>
+}
+@if (!value || value === "-") {
+<span class="empty-cell"></span>
+}

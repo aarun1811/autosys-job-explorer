@@ -13,28 +13,32 @@ export class ReconIdRendererComponent implements ICellRendererAngularComp {
   params: any;
   value: string = '';
   isClickable: boolean = false;
+  isLoading: boolean = false;
   tlmInstance: string = '';
+  recPortalId: string = '';
 
-  constructor(private dialog: MatDialog) {}
+  constructor(private dialog: MatDialog) { }
 
   agInit(params: ICellRendererParams): void {
     this.params = params;
     this.value = this.getValueToDisplay(params);
-    
+
     // Check if tlm_instance is "QuickRec" to enable clickability
     const rowData = params.data;
     this.tlmInstance = rowData?.tlm_instance || '';
+    this.recPortalId = rowData?.rec_portal_id || '';
     this.isClickable = this.tlmInstance === 'QuickRec' && !!this.value && this.value !== '-';
   }
 
   refresh(params: ICellRendererParams): boolean {
     this.params = params;
     this.value = this.getValueToDisplay(params);
-    
+
     const rowData = params.data;
     this.tlmInstance = rowData?.tlm_instance || '';
+    this.recPortalId = rowData?.rec_portal_id || '';
     this.isClickable = this.tlmInstance === 'QuickRec' && !!this.value && this.value !== '-';
-    
+
     return true;
   }
 
@@ -49,19 +53,25 @@ export class ReconIdRendererComponent implements ICellRendererAngularComp {
       return;
     }
 
+    this.isLoading = true;
+
     const dialogRef = this.dialog.open(QuickRecStatsModalComponent, {
       width: '95vw',
       maxWidth: '1400px',
       height: '85vh',
       data: {
         reconId: this.value,
+        recPortalId: this.recPortalId,
         entryPoint: 'recon_id',
         dateRange: 1
-      }
+      },
+      panelClass: ['quickrec-dashboard-modal', 'no-padding'],
+      autoFocus: false,
+      disableClose: false
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log('QuickRec modal closed for recon_id:', this.value);
+      this.isLoading = false;
     });
   }
 }

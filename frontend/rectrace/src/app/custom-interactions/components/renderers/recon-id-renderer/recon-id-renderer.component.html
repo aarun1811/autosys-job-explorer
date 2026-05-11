@@ -4,8 +4,11 @@
   <span class="recon-id-text">{{ value }}</span>
   @if (isLoading) {
   <mat-spinner diameter="14" class="spinner"></mat-spinner>
-
+  }
 </span>
-} @else {
-<span>{{ value }}</span>
+} @if (!isClickable && value) {
+<span class="recon-id-text-plain">{{ value }}</span>
+}
+@if (!value || value === "-") {
+<span class="empty-cell"></span>
 }

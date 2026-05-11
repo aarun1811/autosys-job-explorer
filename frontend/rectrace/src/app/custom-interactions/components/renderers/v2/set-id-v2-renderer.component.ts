@@ -7,16 +7,24 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
 @Component({
   selector: 'app-set-id-v2-renderer',
   template: `
-    <span
-      *ngIf="setId"
-      class="set-id-link"
-      (click)="showTlmDashboard()"
-      [class.loading]="isLoading">
-      <mat-icon>insights</mat-icon>
+    @if(setId && !isQuickRec) {
+      <span
+        class="set-id-link"
+        (click)="showTlmDashboard()"
+        [class.loading]="isLoading">
+        <mat-icon>insights</mat-icon>
       <span class="set-id-text">{{ setId }}</span>
-      <mat-spinner *ngIf="isLoading" diameter="14" class="spinner"></mat-spinner>
+      @if(isLoading) {
+        <mat-spinner diameter="14" class="spinner"></mat-spinner>
+      }
     </span>
-    <span *ngIf="!setId" class="empty-cell"></span>
+    }
+    @if (setId && isQuickRec) {
+      <span class="set-id-text-plain">{{ setId }}</span>
+    }
+    @if (!setId) {
+      <span class="empty-cell"></span>
+    }
   `,
   styles: [`
     .set-id-link {
@@ -75,28 +83,43 @@ import { TlmStatsModalV2Component, TlmStatsModalV2Data } from '../../modals/tlm-
     .empty-cell {
       display: none;
     }
+
+    .set-id-text-plain {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.87);
+      
   `]
 })
 export class SetIdV2RendererComponent implements ICellRendererAngularComp {
   params!: ICellRendererParams;
   isLoading: boolean = false;
   setId: string | null = null;
+  isQuickRec: boolean = false;
 
-  constructor(private readonly dialog: MatDialog) {}
+  constructor(private readonly dialog: MatDialog) { }
 
   agInit(params: ICellRendererParams): void {
     this.params = params;
     this.setId = params.value;
+    this.isQuickRec = params.data?.tlm_instance === 'Quickec';
   }
 
   refresh(params: ICellRendererParams): boolean {
     this.params = params;
     this.setId = params.value;
+    this.isQuickRec = params.data?.tlm_instance === 'Quickec';
     return true;
   }
 
   showTlmDashboard(): void {
     if (!this.setId) {
+      return;
+    }
+
+    // Disable clicking for QuickRec rows - they should use the Quickec-specific renderers
+    const tlmInstance = this.params.data?.tlm_instance;
+    if (tlmInstance === 'Quickec') {
       return;
     }
 
