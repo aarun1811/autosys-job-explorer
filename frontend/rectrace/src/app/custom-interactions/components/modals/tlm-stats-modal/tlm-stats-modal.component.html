@@ -15,26 +15,30 @@
 <mat-dialog-content>
   <div class="modal-content" [class.with-sidebar]="data.type === 'recon'">
     <!-- Sidebar for Set ID list (only for recon type) -->
-    <div class="sidebar" *ngIf="data.type === 'recon'">
-      <div class="sidebar-header">
-        <mat-icon class="sidebar-icon">list</mat-icon>
-        <h3>Associated Set IDs</h3>
-      </div>
-      <div class="set-id-list">
-        <div
-          *ngFor="let setId of setIdList"
-          class="set-id-item"
-          [class.selected]="selectedSetId === setId"
-          (click)="onSetIdSelected(setId)">
-          <mat-icon class="set-id-icon">account_balance</mat-icon>
-          <span class="set-id-text">{{ setId }}</span>
+    @if (data.type === 'recon') {
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <mat-icon class="sidebar-icon">list</mat-icon>
+          <h3>Associated Set IDs</h3>
         </div>
-        <div *ngIf="setIdList.length === 0" class="no-set-ids">
-          <mat-icon>info</mat-icon>
-          <span>No Set IDs found</span>
+        <div class="set-id-list">
+          @for (setId of setIdList; track setId) {
+            <div
+              class="set-id-item"
+              [class.selected]="selectedSetId === setId"
+              (click)="onSetIdSelected(setId)">
+              <mat-icon class="set-id-icon">account_balance</mat-icon>
+              <span class="set-id-text">{{ setId }}</span>
+            </div>
+          } @empty {
+            <div class="no-set-ids">
+              <mat-icon>info</mat-icon>
+              <span>No Set IDs found</span>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
 
     <!-- Main content area -->
     <div class="main-content">
@@ -43,32 +47,39 @@
         <div class="section-header">
           <mat-icon class="section-icon warning">warning</mat-icon>
           <h3>Break Statistics</h3>
-          <div class="loading-indicator" *ngIf="isLoadingBreakStats">
-            <mat-spinner diameter="20"></mat-spinner>
-          </div>
+          @if (isLoadingBreakStats) {
+            <div class="loading-indicator">
+              <mat-spinner diameter="20"></mat-spinner>
+            </div>
+          }
         </div>
         
         <div class="grid-container breaks-grid" [class.error]="hasBreakStatsError">
-          <div *ngIf="hasBreakStatsError" class="error-message">
-            <mat-icon>error_outline</mat-icon>
-            <span>Failed to load break statistics</span>
-          </div>
+          @if (hasBreakStatsError) {
+            <div class="error-message">
+              <mat-icon>error_outline</mat-icon>
+              <span>Failed to load break statistics</span>
+            </div>
+          }
           
-          <div *ngIf="!hasBreakStatsError && breakStatsData.length === 0 && !isLoadingBreakStats" class="empty-state">
-            <mat-icon>inbox</mat-icon>
-            <span>No break statistics available</span>
-          </div>
+          @if (!hasBreakStatsError && breakStatsData.length === 0 && !isLoadingBreakStats) {
+            <div class="empty-state">
+              <mat-icon>inbox</mat-icon>
+              <span>No break statistics available</span>
+            </div>
+          }
           
-          <ag-grid-angular
-            *ngIf="!hasBreakStatsError"
-            #breaksGrid
-            [ngClass]="gridTheme"
-            [gridOptions]="breaksGridOptions"
-            [rowData]="breakStatsData"
-            [columnDefs]="breaksColumnDefs"
-            (gridReady)="onBreaksGridReady($event)"
-            style="width: 100%; height: 250px;">
-          </ag-grid-angular>
+          @if (!hasBreakStatsError) {
+            <ag-grid-angular
+              #breaksGrid
+              [ngClass]="gridTheme"
+              [gridOptions]="breaksGridOptions"
+              [rowData]="breakStatsData"
+              [columnDefs]="breaksColumnDefs"
+              (gridReady)="onBreaksGridReady($event)"
+              style="width: 100%; height: 250px;">
+            </ag-grid-angular>
+          }
         </div>
       </div>
 
@@ -77,32 +88,39 @@
         <div class="section-header">
           <mat-icon class="section-icon primary">insights</mat-icon>
           <h3>Reconciliation Statistics</h3>
-          <div class="loading-indicator" *ngIf="isLoadingAutomatchStats || isLoadingManualMatchStats">
-            <mat-spinner diameter="20"></mat-spinner>
-          </div>
+          @if (isLoadingAutomatchStats || isLoadingManualMatchStats) {
+            <div class="loading-indicator">
+              <mat-spinner diameter="20"></mat-spinner>
+            </div>
+          }
         </div>
         
         <div class="grid-container merged-grid" [class.error]="hasAutomatchStatsError || hasManualMatchStatsError">
-          <div *ngIf="hasAutomatchStatsError || hasManualMatchStatsError" class="error-message">
-            <mat-icon>error_outline</mat-icon>
-            <span>Failed to load reconciliation statistics</span>
-          </div>
+          @if (hasAutomatchStatsError || hasManualMatchStatsError) {
+            <div class="error-message">
+              <mat-icon>error_outline</mat-icon>
+              <span>Failed to load reconciliation statistics</span>
+            </div>
+          }
           
-          <div *ngIf="!hasAutomatchStatsError && !hasManualMatchStatsError && mergedStatsData.length === 0 && !isLoadingAutomatchStats && !isLoadingManualMatchStats" class="empty-state">
-            <mat-icon>inbox</mat-icon>
-            <span>No reconciliation statistics available</span>
-          </div>
+          @if (!hasAutomatchStatsError && !hasManualMatchStatsError && mergedStatsData.length === 0 && !isLoadingAutomatchStats && !isLoadingManualMatchStats) {
+            <div class="empty-state">
+              <mat-icon>inbox</mat-icon>
+              <span>No reconciliation statistics available</span>
+            </div>
+          }
           
-          <ag-grid-angular
-            *ngIf="!hasAutomatchStatsError && !hasManualMatchStatsError"
-            #mergedGrid
-            [ngClass]="gridTheme"
-            [gridOptions]="mergedGridOptions"
-            [rowData]="mergedStatsData"
-            [columnDefs]="mergedColumnDefs"
-            (gridReady)="onMergedGridReady($event)"
-            style="width: 100%; height: 400px;">
-          </ag-grid-angular>
+          @if (!hasAutomatchStatsError && !hasManualMatchStatsError) {
+            <ag-grid-angular
+              #mergedGrid
+              [ngClass]="gridTheme"
+              [gridOptions]="mergedGridOptions"
+              [rowData]="mergedStatsData"
+              [columnDefs]="mergedColumnDefs"
+              (gridReady)="onMergedGridReady($event)"
+              style="width: 100%; height: 400px;">
+            </ag-grid-angular>
+          }
         </div>
       </div>
     </div>

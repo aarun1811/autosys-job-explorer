@@ -17,7 +17,9 @@
             {{ filterState.tlmInstance }}
           </mat-option>
         </mat-select>
-        <mat-icon matSuffix *ngIf="filterState.tlmInstanceLocked" class="lock-icon">lock</mat-icon>
+        @if (filterState.tlmInstanceLocked) {
+          <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+        }
       </mat-form-field>
     </div>
 
@@ -25,7 +27,9 @@
     <div class="filter-group">
       <label class="filter-label">
         Recon (Agent Code)
-        <mat-spinner *ngIf="isLoadingRecons" diameter="16" class="loading-spinner"></mat-spinner>
+        @if (isLoadingRecons) {
+          <mat-spinner diameter="16" class="loading-spinner"></mat-spinner>
+        }
       </label>
       <mat-form-field appearance="outline" class="filter-field">
         <mat-select 
@@ -34,14 +38,20 @@
           [disabled]="filterState.reconLocked || isLoadingRecons"
           (selectionChange)="onReconSelectionChange()"
           placeholder="Select recons">
-          <mat-option *ngFor="let recon of filterState.availableRecons" [value]="recon">
-            {{ recon }}
-          </mat-option>
+          @for (recon of filterState.availableRecons; track recon) {
+            <mat-option [value]="recon">
+              {{ recon }}
+            </mat-option>
+          }
         </mat-select>
-        <mat-icon matSuffix *ngIf="filterState.reconLocked" class="lock-icon">lock</mat-icon>
-        <!-- <mat-hint *ngIf="!filterState.reconLocked">
-          {{ getSelectedReconsText() }}
-        </mat-hint> -->
+        @if (filterState.reconLocked) {
+          <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+        }
+        <!-- @if (!filterState.reconLocked) {
+          <mat-hint>
+            {{ getSelectedReconsText() }}
+          </mat-hint>
+        } -->
       </mat-form-field>
     </div>
 
@@ -49,7 +59,9 @@
     <div class="filter-group">
       <label class="filter-label">
         Set ID
-        <mat-spinner *ngIf="isLoadingSetIds" diameter="16" class="loading-spinner"></mat-spinner>
+        @if (isLoadingSetIds) {
+          <mat-spinner diameter="16" class="loading-spinner"></mat-spinner>
+        }
       </label>
       <mat-form-field appearance="outline" class="filter-field">
         <mat-select 
@@ -58,14 +70,20 @@
           [disabled]="filterState.setIdLocked || isLoadingSetIds || filterState.availableSetIds.length === 0"
           (selectionChange)="onSetIdSelectionChange()"
           placeholder="Select set IDs">
-          <mat-option *ngFor="let setId of filterState.availableSetIds" [value]="setId">
-            {{ setId }}
-          </mat-option>
+          @for (setId of filterState.availableSetIds; track setId) {
+            <mat-option [value]="setId">
+              {{ setId }}
+            </mat-option>
+          }
         </mat-select>
-        <mat-icon matSuffix *ngIf="filterState.setIdLocked" class="lock-icon">lock</mat-icon>
-        <!-- <mat-hint *ngIf="!filterState.setIdLocked">
-          {{ getSelectedSetIdsText() }}
-        </mat-hint> -->
+        @if (filterState.setIdLocked) {
+          <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+        }
+        <!-- @if (!filterState.setIdLocked) {
+          <mat-hint>
+            {{ getSelectedSetIdsText() }}
+          </mat-hint>
+        } -->
       </mat-form-field>
     </div>
 
@@ -76,9 +94,11 @@
         <mat-select 
           [(value)]="filterState.dateRange"
           (selectionChange)="onDateRangeSelectionChange(filterState.dateRange)">
-          <mat-option *ngFor="let option of dateRangeOptions" [value]="option.value">
-            {{ option.label }}
-          </mat-option>
+          @for (option of dateRangeOptions; track option.value) {
+            <mat-option [value]="option.value">
+              {{ option.label }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
     </div>

@@ -3,10 +3,18 @@
   <!-- Status Bar -->
   <div class="table-status-bar">
     <div class="status-info">
-      <mat-icon *ngIf="isLoading" class="status-icon spinning">refresh</mat-icon>
-      <mat-icon *ngIf="hasError" class="status-icon error">error_outline</mat-icon>
-      <mat-icon *ngIf="!isLoading && !hasError && hasData" class="status-icon success">check_circle</mat-icon>
-      <mat-icon *ngIf="!isLoading && !hasError && !hasData" class="status-icon info">info</mat-icon>
+      @if (isLoading) {
+        <mat-icon class="status-icon spinning">refresh</mat-icon>
+      }
+      @if (hasError) {
+        <mat-icon class="status-icon error">error_outline</mat-icon>
+      }
+      @if (!isLoading && !hasError && hasData) {
+        <mat-icon class="status-icon success">check_circle</mat-icon>
+      }
+      @if (!isLoading && !hasError && !hasData) {
+        <mat-icon class="status-icon info">info</mat-icon>
+      }
       <span class="status-text">{{ statusMessage }}</span>
     </div>
     
@@ -36,12 +44,14 @@
   </div>
 
   <!-- Error Details -->
-  <div *ngIf="hasError" class="error-details">
-    <mat-icon class="error-icon">warning</mat-icon>
-    <span class="error-message">{{ errorMessage }}</span>
-    <button mat-button color="primary" (click)="refreshData()" class="retry-btn">
-      Retry
-    </button>
-  </div>
+  @if (hasError) {
+    <div class="error-details">
+      <mat-icon class="error-icon">warning</mat-icon>
+      <span class="error-message">{{ errorMessage }}</span>
+      <button mat-button color="primary" (click)="refreshData()" class="retry-btn">
+        Retry
+      </button>
+    </div>
+  }
 
 </div>

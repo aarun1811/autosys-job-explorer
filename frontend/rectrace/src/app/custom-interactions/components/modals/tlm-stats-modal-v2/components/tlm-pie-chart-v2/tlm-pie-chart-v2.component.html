@@ -3,7 +3,9 @@
     <div class="chart-title-section">
       <mat-icon class="chart-icon">donut_large</mat-icon>
       <h3 class="chart-title">Distribution Overview</h3>
-      <span *ngIf="hasData()" class="chart-total">({{ getTotalItems().toLocaleString() }} total items)</span>
+      @if (hasData()) {
+        <span class="chart-total">({{ getTotalItems().toLocaleString() }} total items)</span>
+      }
     </div>
     
     <div class="chart-actions">
@@ -28,31 +30,39 @@
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="isLoading" class="chart-loading">
-    <div class="loading-content">
-      <mat-spinner diameter="40"></mat-spinner>
-      <span class="loading-text">Loading chart data...</span>
+  @if (isLoading) {
+    <div class="chart-loading">
+      <div class="loading-content">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span class="loading-text">Loading chart data...</span>
+      </div>
     </div>
-  </div>
+  }
 
   <!-- Error State -->
-  <div *ngIf="hasError && !isLoading" class="chart-error">
-    <mat-icon class="error-icon">error_outline</mat-icon>
-    <span class="error-text">Failed to load chart data</span>
-  </div>
+  @if (hasError && !isLoading) {
+    <div class="chart-error">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <span class="error-text">Failed to load chart data</span>
+    </div>
+  }
 
   <!-- Empty State -->
-  <div *ngIf="!hasData() && !isLoading && !hasError" class="chart-empty">
-    <mat-icon class="empty-icon">donut_large</mat-icon>
-    <span class="empty-text">No data available for chart</span>
-    <span class="empty-description">Apply filters to view distribution</span>
-  </div>
+  @if (!hasData() && !isLoading && !hasError) {
+    <div class="chart-empty">
+      <mat-icon class="empty-icon">donut_large</mat-icon>
+      <span class="empty-text">No data available for chart</span>
+      <span class="empty-description">Apply filters to view distribution</span>
+    </div>
+  }
 
   <!-- AG Charts Pie Chart -->
-  <div *ngIf="hasData() && !isLoading && !hasError" class="chart-wrapper">
-    <ag-charts
-      [options]="chartOptions"
-      class="pie-chart">
-    </ag-charts>
-  </div>
+  @if (hasData() && !isLoading && !hasError) {
+    <div class="chart-wrapper">
+      <ag-charts
+        [options]="chartOptions"
+        class="pie-chart">
+      </ag-charts>
+    </div>
+  }
 </div>
