@@ -65,9 +65,9 @@ export enum DateRange {
   providedIn: 'root'
 })
 export class QuickRecStatsService {
-  private readonly baseUrl = environment.tlmStatsUrl + '/quickrec-stats';
+  private readonly baseUrl = environment.qrkStatsUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Get auto-match statistics

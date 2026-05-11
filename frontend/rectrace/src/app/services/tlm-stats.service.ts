@@ -61,9 +61,9 @@ export interface MergedStatsData {
   stmt_date: string;
   bran_code: string;
   corr_acc_no: string;
-  total_items?: number;
-  automatch_items?: number;
-  total_manual_match_count?: number;
+  total_items: number | undefined;
+  automatch_items: number | undefined;
+  total_manual_match_count: number | undefined;
 }
 
 @Injectable({
@@ -72,7 +72,7 @@ export interface MergedStatsData {
 export class TlmStatsService {
   private readonly baseUrl = environment.tlmStatsUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Fetch break statistics

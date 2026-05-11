@@ -96,16 +96,16 @@ export interface ExportRequestV4 {
 })
 export class SearchServiceV5 {
   private apiUrl = `${environment.apiUrl}/v4/search`;  // Using V4 endpoints
-  
-  constructor(private http: HttpClient) {}
-  
+
+  constructor(private http: HttpClient) { }
+
   performInitialSearch(keyword: string): Observable<InitialSearchResponseV4> {
     return this.http.get<InitialSearchResponseV4>(`${this.apiUrl}/initial`, {
       params: { keyword },
       headers: this.getHeaders()
     });
   }
-  
+
   fetchSSRMData(request: SSRMRequestV4): Observable<SSRMResponseV4> {
     const category = request.category || 'unknown';
     return this.http.post<SSRMResponseV4>(
@@ -114,32 +114,32 @@ export class SearchServiceV5 {
       { headers: this.getHeaders() }
     );
   }
-  
+
   getConfiguration(): Observable<SearchConfigurationV4> {
     return this.http.get<SearchConfigurationV4>(`${this.apiUrl}/config`, {
       headers: this.getHeaders()
     });
   }
-  
+
   exportData(category: string, request: ExportRequestV4): Observable<Blob> {
     return this.http.post(`${this.apiUrl}/export/${category}`, request, {
       responseType: 'blob',
       headers: this.getHeaders()
     });
   }
-  
+
   getSuggestions(query: string): Observable<string[]> {
     // Don't hit backend for very short prefixes (e.g., less than 2 chars)
-    if (!query || query.trim().length < 2) {
+    if (!query || query.trim().length < 1) {
       return of([]); // Return an observable of an empty array
     }
-    
+
     return this.http.get<string[]>(`${environment.apiUrl}/search/suggest`, {
       params: { prefix: query.trim() },
       headers: this.getHeaders()
     });
   }
-  
+
   private getHeaders(): HttpHeaders {
     // Get user ID from session or use default
     const userId = sessionStorage.getItem('userId') || 'user@citi.com';

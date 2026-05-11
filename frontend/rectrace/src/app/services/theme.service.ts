@@ -8,8 +8,8 @@ export type Theme = 'light' | 'dark';
 })
 export class ThemeService {
   private readonly THEME_KEY = 'rectrace-theme';
-  private readonly DEFAULT_THEME: Theme = 'dark'; 
-  
+  private readonly DEFAULT_THEME: Theme = 'dark';
+
   private currentTheme$ = new BehaviorSubject<Theme>(this.DEFAULT_THEME);
 
   constructor() {
@@ -19,10 +19,10 @@ export class ThemeService {
   private initializeTheme(): void {
     const savedTheme = this.getSavedTheme();
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || this.DEFAULT_THEME;  
-    
+    const initialTheme = savedTheme || this.DEFAULT_THEME;
+
     this.setTheme(initialTheme, false);
-    
+
     // Listen for system theme changes
     if (window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -44,7 +44,7 @@ export class ThemeService {
 
   private applyTheme(theme: Theme): void {
     const root = document.documentElement;
-    
+
     if (theme === 'dark') {
       root.classList.add('dark-theme');
       root.classList.remove('light-theme');
@@ -57,7 +57,7 @@ export class ThemeService {
   public setTheme(theme: Theme, save: boolean = true): void {
     this.applyTheme(theme);
     this.currentTheme$.next(theme);
-    
+
     if (save) {
       this.saveTheme(theme);
     }
