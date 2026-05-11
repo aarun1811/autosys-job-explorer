@@ -1,6 +1,6 @@
 package com.citi.gru.rectrace.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -10,30 +10,31 @@ import java.time.format.DateTimeFormatter;
 public class JobStatusInfo {
 
     /**
-     * Visual states for UI rendering - maps multiple Autosys statuses to color groups
+     * Visual states for UI rendering - maps multiple Autosys statuses to color
+     * groups
      */
     public enum VisualState {
         COMPLETED, // Green - SUCCESS
-        RUNNING,   // Blue - RUNNING, STARTING
-        FAILED,    // Red - FAILURE, TERMINATED
-        WAITING,   // Amber - YET_TO_RUN, QUE_WAIT, ACTIVATED, RESTART
-        INACTIVE   // Gray - ON_HOLD, ON_ICE, ON_NOEXEC, INACTIVE, PEND_MACH
+        RUNNING, // Blue - RUNNING, STARTING
+        FAILED, // Red - FAILURE, TERMINATED
+        WAITING, // Amber - YET_TO_RUN, QUE_WAIT, ACTIVATED, RESTART
+        INACTIVE // Gray - ON_HOLD, ON_ICE, ON_NOEXEC, INACTIVE, PEND_MACH
     }
 
     private String jobName;
     private Integer status;
     private String statusName;
-    private Long nextStartDateEpoch;
+    private Long nextStartEpoch;
     private String nextStartFormatted;
     private boolean isScheduledToday;
     private boolean isCurrentlyActive;
     private VisualState visualState;
 
-    private static final DateTimeFormatter DISPLAY_FORMAT = 
-            DateTimeFormatter.ofPattern("MMM dd, h:mm a");
-    
+    private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("MMM dd, h:mm a");
+
     // Private constructor - use builder or factory
-    private JobStatusInfo() {}
+    private JobStatusInfo() {
+    }
 
     /**
      * Factory method to create JobStatusInfo from database values
@@ -54,42 +55,58 @@ public class JobStatusInfo {
 
         builder.statusName(statusName)
                 .visualState(visualState)
-                .nextStartDateEpoch(nextStart)
+                .nextStartEpoch(nextStart)
                 .nextStartFormatted(formatNextStart(nextStart))
                 .isScheduledToday(scheduledToday)
                 .isCurrentlyActive(isActiveStatus(statusCode));
 
         return builder.build();
     }
-    
+
     /**
      * Maps Autosys numeric status code to human-readable name (Title Case)
      */
     private static String mapStatusCodeToName(Integer statusCode) {
-        if (statusCode == null) return "Unknown";
+        if (statusCode == null)
+            return "Unknown";
         switch (statusCode) {
-            case 1: return "Running";
-            case 2: return "Starting";
-            case 3: return "Activated";
-            case 4: return "Success";
-            case 5: return "Failure";
-            case 6: return "Terminated";
-            case 7: return "Restart";
-            case 8: return "Inactive";
-            case 9: return "On Hold";
-            case 10: return "On Ice";
-            case 11: return "On Noexec";
-            case 12: return "Que Wait";
-            case 13: return "Pend Machine";
-            default: return "Unknown";
+            case 1:
+                return "Running";
+            case 2:
+                return "Starting";
+            case 3:
+                return "Activated";
+            case 4:
+                return "Success";
+            case 5:
+                return "Failure";
+            case 6:
+                return "Terminated";
+            case 7:
+                return "Restart";
+            case 8:
+                return "Inactive";
+            case 9:
+                return "On Hold";
+            case 10:
+                return "On Ice";
+            case 11:
+                return "On Noexec";
+            case 12:
+                return "Queue Wait";
+            case 13:
+                return "Pend Machine";
+            default:
+                return "Unknown";
         }
     }
 
     /**
-     * aps Autosys status code to one of 5 visual states for UI coloring
+     * Maps Autosys status code to one of 5 visual states for UI coloring
      */
     private static VisualState mapStatusCodeToVisualState(Integer statusCode) {
-        if (statusCode == null) return VisualState.INACTIVE;
+        if (statusCode == null)
+            return VisualState.INACTIVE;
         switch (statusCode) {
             case 1: // Running
             case 2: // Starting
@@ -103,7 +120,7 @@ public class JobStatusInfo {
             case 7:
             case 12:
                 return VisualState.WAITING;
-            default: 
+            default:
                 return VisualState.INACTIVE;
         }
     }
@@ -112,7 +129,7 @@ public class JobStatusInfo {
      * Determine if job is scheduled for today based on next start date
      */
     private static boolean isScheduledForToday(Long nextStartEpoch) {
-        if (nextStartEpoch == null || nextStartEpoch <= 0) { 
+        if (nextStartEpoch == null || nextStartEpoch <= 0) {
             return false;
         }
         try {
@@ -124,7 +141,7 @@ public class JobStatusInfo {
             return false;
         }
     }
-    
+
     /**
      * Format next start date for display (e.g., "Mar 25, 10:30 AM")
      */
@@ -140,143 +157,143 @@ public class JobStatusInfo {
             return null;
         }
     }
-    
+
     /**
      * Determine if job is currently active (Running or Starting)
      */
     private static boolean isActiveStatus(Integer statusCode) {
         return statusCode != null && (statusCode == 1 || statusCode == 2);
     }
-    
+
     // Getters and setters
     public String getJobName() {
         return jobName;
     }
-    
+
     public void setJobName(String jobName) {
         this.jobName = jobName;
     }
-    
+
     public Integer getStatus() {
         return status;
     }
-    
+
     public void setStatus(Integer status) {
         this.status = status;
     }
-    
+
     public String getStatusName() {
         return statusName;
     }
-    
+
     public void setStatusName(String statusName) {
         this.statusName = statusName;
     }
-    
-    public Long getNextStartDateEpoch() {
-        return nextStartDateEpoch;
+
+    public Long getNextStartEpoch() {
+        return nextStartEpoch;
     }
-    
-    public void setNextStartDateEpoch(Long nextStartDateEpoch) {
-        this.nextStartDateEpoch = nextStartDateEpoch;
+
+    public void setNextStartEpoch(Long nextStartEpoch) {
+        this.nextStartEpoch = nextStartEpoch;
     }
-    
+
     public String getNextStartFormatted() {
         return nextStartFormatted;
     }
-    
+
     public void setNextStartFormatted(String nextStartFormatted) {
         this.nextStartFormatted = nextStartFormatted;
     }
-    
+
     public boolean isScheduledToday() {
         return isScheduledToday;
     }
-    
+
     public void setScheduledToday(boolean scheduledToday) {
         this.isScheduledToday = scheduledToday;
     }
-    
+
     public boolean isCurrentlyActive() {
         return isCurrentlyActive;
     }
-    
+
     public void setCurrentlyActive(boolean currentlyActive) {
         this.isCurrentlyActive = currentlyActive;
     }
-    
+
     public VisualState getVisualState() {
         return visualState;
     }
-    
+
     public void setVisualState(VisualState visualState) {
         this.visualState = visualState;
     }
-    
+
     // Builder pattern
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private JobStatusInfo jobStatusInfo;
-        
+
         private Builder() {
             this.jobStatusInfo = new JobStatusInfo();
         }
-        
+
         public Builder jobName(String jobName) {
             jobStatusInfo.jobName = jobName;
             return this;
         }
-        
+
         public Builder status(Integer status) {
             jobStatusInfo.status = status;
             return this;
         }
-        
+
         public Builder statusName(String statusName) {
             jobStatusInfo.statusName = statusName;
             return this;
         }
-        
-        public Builder nextStartDateEpoch(Long nextStartDateEpoch) {
-            jobStatusInfo.nextStartDateEpoch = nextStartDateEpoch;
+
+        public Builder nextStartEpoch(Long nextStartEpoch) {
+            jobStatusInfo.nextStartEpoch = nextStartEpoch;
             return this;
         }
-        
+
         public Builder nextStartFormatted(String nextStartFormatted) {
             jobStatusInfo.nextStartFormatted = nextStartFormatted;
             return this;
         }
-        
+
         public Builder isScheduledToday(boolean isScheduledToday) {
             jobStatusInfo.isScheduledToday = isScheduledToday;
             return this;
         }
-        
+
         public Builder isCurrentlyActive(boolean isCurrentlyActive) {
             jobStatusInfo.isCurrentlyActive = isCurrentlyActive;
             return this;
         }
-        
+
         public Builder visualState(VisualState visualState) {
             jobStatusInfo.visualState = visualState;
             return this;
         }
-        
+
         public JobStatusInfo build() {
             return jobStatusInfo;
         }
     }
-    
+
     @Override
     public String toString() {
         return "JobStatusInfo{" +
                 "jobName='" + jobName + '\'' +
                 ", status=" + status +
                 ", statusName='" + statusName + '\'' +
-                ", nextStartDateEpoch=" + nextStartDateEpoch +
+                ", nextStartDateEpoch=" + nextStartEpoch +
                 ", nextStartFormatted='" + nextStartFormatted + '\'' +
                 ", isScheduledToday=" + isScheduledToday +
                 ", isCurrentlyActive=" + isCurrentlyActive +

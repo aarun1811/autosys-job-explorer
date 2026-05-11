@@ -9,12 +9,12 @@ public class SearchColumnDefinition {
     private String field;
     private String headerName;
     private Boolean sortable = true; // Default to true as per AG-Grid defaultColDef
-    private String sort; 
-    private Boolean filter = true;   // Default to true
+    private String sort;
+    private Boolean filter = true; // Default to true
     private Boolean rowGroup = false; // Default to false
-    private Boolean hide = false;     // Default to false
+    private Boolean hide = false; // Default to false
     private String cellRenderer; // Name of the Angular component for rendering
-    private Map<String, String> cellRendererParams; // Parameters for the cell renderer
+    private Map<String, Object> cellRendererParams; // Parameters for the cell renderer
     private Integer width; // Width of the column
     private Boolean resizable = true; // Default to true
     private String pinned; // Default to false
@@ -78,11 +78,11 @@ public class SearchColumnDefinition {
         this.cellRenderer = cellRenderer;
     }
 
-    public Map<String, String> getCellRendererParams() {
+    public Map<String, Object> getCellRendererParams() {
         return cellRendererParams;
     }
 
-    public void setCellRendererParams(Map<String, String> cellRendererParams) {
+    public void setCellRendererParams(Map<String, Object> cellRendererParams) {
         this.cellRendererParams = cellRendererParams;
     }
 
@@ -113,7 +113,7 @@ public class SearchColumnDefinition {
     public Map<String, String> getCellStyle() {
         return cellStyle;
     }
-    
+
     public void setCellStyle(Map<String, String> cellStyle) {
         this.cellStyle = cellStyle;
     }
