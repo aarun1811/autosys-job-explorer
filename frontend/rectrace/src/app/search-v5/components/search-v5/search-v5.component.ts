@@ -4,13 +4,13 @@ import { takeUntil, debounceTime, distinctUntilChanged, switchMap, catchError } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { SearchServiceV5, CategoryResultV4 } from '../../../services/search-v5.service';
-import { ThemeService, Theme } from '../../../services/theme.service';
+import { ThemeService, Theme } from 'src/app/services/theme.service';
 import { UserInfo, UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-search-v5',
   templateUrl: './search-v5.component.html',
-  styleUrls: ['./search-v5.component.css']
+  styleUrls: ['./search-v5.component.scss']
 })
 export class SearchV5Component implements OnInit, OnDestroy {
   // Core search state
@@ -19,51 +19,51 @@ export class SearchV5Component implements OnInit, OnDestroy {
   selectedTab: number = 0;
   isLoading: boolean = false;
   errorMessage: string = '';
-  
+
   // Visual state for Google-inspired design
   hasSearched: boolean = false;
   isFocused: boolean = false;
   currentPlaceholder: string = 'files';
   tryButtonText: string = 'SBN_JOB_NAME';
   showNoResultsMessage: boolean = false;
-  
+
   // User state
   userLoginId: string = '';
   userInitials: string = '';
   isUserIdentified: boolean = false;
-  
+
   // Theme state
   currentTheme$: Observable<Theme>;
   isDarkMode: boolean = false;
-  logoPath: string = 'assets/logo.png';
-  
+  logoPath: string = 'assets/rectrace-dark.png';
+
   // Suggestions
   suggestions$: Observable<string[]> = of([]);
   private searchInput$ = new Subject<string>();
-  
+
   // Placeholder animation
   private placeholders = [
-    'job name', 
-    'set ID', 
-    'box name', 
+    'job name',
+    'set ID',
     'recon name',
-    'file name',
     'machine name',
+    'box name',
+    'file name',
     'run calendar',
     'exclude calendar',
     'sub account'
   ];
   private placeholderIndex = 0;
   private placeholderInterval: any;
-  
+
   // Sample searches for Try button - matches old implementation
-  private tryButtonTexts: {name: string, options: string[]}[] = [
+  private readonly tryButtonTexts: { name: string, options: string[] }[] = [
     {
       name: 'file name',
       options: ['reconour', 'gpdw', 'flexcube', 'fullsuite']
     },
     {
-      name: 'agent code', 
+      name: 'agent code',
       options: ['nyk.cash', 'sbn.cash', 'pus.pos', 'mib.st', 'spb.st']
     },
     {
@@ -87,10 +87,10 @@ export class SearchV5Component implements OnInit, OnDestroy {
       options: ['citicorp', 'inr', 'eur', 'gbp',],
     }
   ];
-  
+
   private destroy$ = new Subject<void>();
   private queryParamsSubscription: Subscription | null = null;
-  
+
   constructor(
     private searchService: SearchServiceV5,
     private route: ActivatedRoute,
@@ -100,7 +100,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
   ) {
     this.currentTheme$ = this.themeService.getTheme();
   }
-  
+
   ngOnInit(): void {
     // Initialize component
     this.startPlaceholderAnimation();
@@ -110,18 +110,18 @@ export class SearchV5Component implements OnInit, OnDestroy {
     this.initializeSuggestions();
     this.initializeTheme();
   }
-  
+
   private initializeTheme(): void {
     this.currentTheme$.pipe(takeUntil(this.destroy$)).subscribe(theme => {
       this.isDarkMode = theme === 'dark';
-      this.logoPath = this.isDarkMode ? 'assets/logo-dark.png' : 'assets/logo.png';
+      this.logoPath = this.isDarkMode ? 'assets/rectrace-dark.png' : 'assets/rectrace.png';
     });
   }
-  
+
   toggleTheme(): void {
     this.themeService.toggleTheme();
   }
-  
+
   private initializeSuggestions(): void {
     this.suggestions$ = this.searchInput$.pipe(
       debounceTime(300),
@@ -136,11 +136,11 @@ export class SearchV5Component implements OnInit, OnDestroy {
       })
     );
   }
-  
+
   private initializeQueryParamsSubscription(): void {
     this.queryParamsSubscription = this.route.queryParams.subscribe(params => {
       const queryFromUrl = params['q'];
-      
+
       // If there's a query in the URL and we haven't searched yet, perform the search
       if (queryFromUrl && !this.hasSearched) {
         this.searchTerm = queryFromUrl;
@@ -148,14 +148,14 @@ export class SearchV5Component implements OnInit, OnDestroy {
       }
     });
   }
-  
+
   private startPlaceholderAnimation(): void {
     this.placeholderInterval = setInterval(() => {
       this.placeholderIndex = (this.placeholderIndex + 1) % this.placeholders.length;
       this.currentPlaceholder = this.placeholders[this.placeholderIndex];
     }, 2000);
   }
-  
+
   private initializeUser(): void {
     // Get user from localStorage or headers
     const storedUser = localStorage.getItem('userLoginId');
@@ -178,7 +178,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
       );
     }
   }
-  
+
   private getUserInitials(loginId: string): string {
     const parts = loginId.split('.');
     if (parts.length >= 2) {
@@ -186,13 +186,13 @@ export class SearchV5Component implements OnInit, OnDestroy {
     }
     return loginId.substring(0, 2).toUpperCase();
   }
-  
+
   updateTryButtonText(): void {
     // Select a random category to display
     const randomItem = this.tryButtonTexts[Math.floor(Math.random() * this.tryButtonTexts.length)];
     this.tryButtonText = randomItem.name;
   }
-  
+
   onTryButtonClick(): void {
     // Find the category and select a random option from it
     const foundItem = this.tryButtonTexts.find(item => item.name === this.tryButtonText);
@@ -202,21 +202,21 @@ export class SearchV5Component implements OnInit, OnDestroy {
       this.performSearch();
     }
   }
-  
+
   onSearchFocus(): void {
     this.isFocused = true;
   }
-  
+
   onSearchBlur(): void {
     this.isFocused = false;
   }
-  
+
   onSearchIconClick(): void {
     if (this.searchTerm) {
       this.performSearch();
     }
   }
-  
+
   resetToHome(): void {
     this.searchTerm = '';
     this.searchResults = [];
@@ -228,7 +228,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
     // Clear URL parameters
     this.updateUrlWithState();
   }
-  
+
   selectTab(index: number): void {
     this.selectedTab = index;
     // Update URL with selected tab
@@ -236,46 +236,46 @@ export class SearchV5Component implements OnInit, OnDestroy {
       this.updateUrlWithState(this.searchTerm, this.searchResults[index].key);
     }
   }
-  
+
   private updateUrlWithState(query?: string, tabKey?: string): void {
     const params: any = {};
-    
+
     if (query) {
       params.q = query;
     }
-    
+
     if (tabKey) {
       params.tab = tabKey;
     }
-    
+
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: params,
       replaceUrl: true
     });
   }
-  
+
   performSearch(isDeepLink: boolean = false): void {
     if (!this.searchTerm || !this.searchTerm.trim()) {
       this.errorMessage = 'Please enter a search term';
       return;
     }
-    
+
     this.searchInput$.next('');
-    
+
     this.errorMessage = '';
     this.isLoading = true;
     this.searchResults = [];
     this.hasSearched = true;
     this.showNoResultsMessage = false;
-    
+
     // Only preserve the tab parameter for deeplink searches
     let tabToPreserve: string | undefined;
     if (isDeepLink) {
       tabToPreserve = this.route.snapshot.queryParams['tab'];
     }
     this.updateUrlWithState(this.searchTerm.trim(), tabToPreserve);
-    
+
     this.searchService.performInitialSearch(this.searchTerm.trim())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -284,9 +284,9 @@ export class SearchV5Component implements OnInit, OnDestroy {
           this.searchResults = Object.values(response.categoryResults)
             .filter(cat => cat.count > 0)
             .sort((a, b) => b.count - a.count); // Sort by count descending
-          
+
           this.isLoading = false;
-          
+
           // Check if there's a tab parameter in the URL and set it
           const tabFromUrl = this.route.snapshot.queryParams['tab'];
           if (tabFromUrl && this.searchResults.length > 0) {
@@ -299,7 +299,7 @@ export class SearchV5Component implements OnInit, OnDestroy {
           } else {
             this.selectedTab = 0; // Default to first tab
           }
-          
+
           if (this.searchResults.length === 0) {
             this.showNoResultsMessage = true;
           } else {
@@ -316,22 +316,22 @@ export class SearchV5Component implements OnInit, OnDestroy {
         }
       });
   }
-  
+
   onKeyPress(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       this.performSearch();
     }
   }
-  
+
   onSearchInput(): void {
     this.searchInput$.next(this.searchTerm);
   }
-  
+
   onSuggestionSelected(event: MatAutocompleteSelectedEvent): void {
     this.searchTerm = event.option.value;
     this.performSearch();
   }
-  
+
   clearSearch(): void {
     this.searchTerm = '';
     this.searchInput$.next('');
@@ -345,20 +345,20 @@ export class SearchV5Component implements OnInit, OnDestroy {
       }
     }, 0);
   }
-  
+
   getTabLabel(category: CategoryResultV4): string {
     const countText = category.hasMore ? `${category.count}+` : `${category.count}`;
     return `${category.label} (${countText})`;
   }
-  
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    
+
     if (this.placeholderInterval) {
       clearInterval(this.placeholderInterval);
     }
-    
+
     if (this.queryParamsSubscription) {
       this.queryParamsSubscription.unsubscribe();
     }

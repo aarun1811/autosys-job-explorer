@@ -785,17 +785,3 @@ mat-label {
 app-search-v5-grid[hidden] {
   display: none !important;
 }
-
-::ng-deep .mat-mdc-menu-content {
-  padding: 0px !important;
-  margin: 0px;
-}
-
-::ng-deep .mat-mdc-menu-content .menu-list>ul {
-  margin: 0px;
-  padding: 0px;
-}
-
-::ng-deep .launch-menu-container {
-  height: 16px !important;
-}

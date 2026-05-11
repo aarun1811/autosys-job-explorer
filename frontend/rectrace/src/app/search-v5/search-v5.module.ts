@@ -22,7 +22,6 @@ import { CustomInteractionsModule } from '../custom-interactions/custom-interact
 import { SearchV5RoutingModule } from './search-v5-routing.module';
 import { SearchV5Component } from './components/search-v5/search-v5.component';
 import { SearchV5GridComponent } from './components/search-v5-grid/search-v5-grid.component';
-import { LaunchMenuComponent } from '@rec-shared-lib';
 
 @NgModule({
   declarations: [
@@ -46,8 +45,7 @@ import { LaunchMenuComponent } from '@rec-shared-lib';
     // AG-Grid
     AgGridModule,
     // Custom modules
-    CustomInteractionsModule,
-    LaunchMenuComponent
+    CustomInteractionsModule
   ]
 })
 export class SearchV5Module { }
