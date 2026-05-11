@@ -4,4 +4,5 @@ export const environment = {
   tlmStatsUrl: 'http://localhost:8080/api/tlm-stats',
   agGridLicenseKey: 'License_Value',
   qrkStatsUrl: 'http://localhost:8080/api/qrk-stats',
+  diDashboardUrl: 'http://localhost:8080/api/di-dashboard',
 };
