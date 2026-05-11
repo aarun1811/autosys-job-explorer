@@ -50,8 +50,8 @@ public class DataSourceConfig {
 
     @Bean
     @Primary
-    public LocalContainerEntityMnagerFactoryBean entityManagerFactory() {
-        LocalContainerEntityMnagerFactoryBean em = new LocalContainerEntityMnagerFactoryBean();
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+        LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource());
         em.setPackagesToScan("com.citi.gru.rectrace"); // Scan for entities
 
@@ -63,7 +63,7 @@ public class DataSourceConfig {
         properties.setProperty("hibernate.show_sql", "true");
         properties.setProperty("hibernate.hbm2ddl.auto", "none");
         em.setJpaProperties(properties);
-        
+
         return em;
     }
 
