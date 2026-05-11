@@ -42,8 +42,8 @@ public class ElasticsearchSearchProviderV3 {
     private final SearchConfigServiceV3 searchConfigServiceV3;
 
     @Autowired
-    public ElasticsearchSearchProviderV3(RestHighLevelClient restHighLevelClient, 
-                                       SearchConfigServiceV3 searchConfigServiceV3) {
+    public ElasticsearchSearchProviderV3(RestHighLevelClient restHighLevelClient,
+            SearchConfigServiceV3 searchConfigServiceV3) {
         this.restHighLevelClient = restHighLevelClient;
         this.searchConfigServiceV3 = searchConfigServiceV3;
     }
@@ -63,63 +63,65 @@ public class ElasticsearchSearchProviderV3 {
         }
 
         logger.info("ES V3 Keyword Search: Retrieved ES config for category '{}': index={}, queryFields={}",
-        categoryKey, esConfig.getTargetIndex(), esConfig.getQueryFields() != null ? String.join(", ", esConfig.getQueryFields()) : "none");
-        
+                categoryKey, esConfig.getTargetIndex(),
+                esConfig.getQueryFields() != null ? String.join(", ", esConfig.getQueryFields()) : "none");
+
         // Get category definition for building result
         SearchCategoryDefinition categoryDefinition = searchConfigServiceV3.getCategoryDefinition(categoryKey);
         if (categoryDefinition == null) {
-        logger.warn("ES V3 Keyword Search: No category definition found for '{}'", categoryKey);
-        return null;
+            logger.warn("ES V3 Keyword Search: No category definition found for '{}'", categoryKey);
+            return null;
         }
-        
+
         try {
             // Build search source for keyword search
             SearchSourceBuilder sourceBuilder = buildKeywordSearchSourceBuilder(esConfig, searchTerm);
-            
+
             SearchRequest searchRequest = new SearchRequest(esConfig.getTargetIndex()).source(sourceBuilder);
             logger.debug("Executing ES V3 Keyword Search for category {}: Query DSL: {}", categoryKey, sourceBuilder);
-            
+
             SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
             logger.debug("ES V3 Keyword Search for category {}: ES Response - Total hits: {}, Max score: {}",
-                categoryKey, searchResponse.getHits().getTotalHits().value, searchResponse.getHits().getMaxScore());
-            
+                    categoryKey, searchResponse.getHits().getTotalHits().value, searchResponse.getHits().getMaxScore());
+
             List<Map<String, Object>> data = extractDataFromResponse(searchResponse);
             logger.info("ES V3 Keyword Search for category {}: Returned {} hits.", categoryKey, data.size());
             return buildResultDto(categoryDefinition, data);
-        
+
         } catch (Exception e) {
             logger.error("Error during ES V3 Keyword Search for category {}: {}", categoryKey, e.getMessage(), e);
             return null;
         }
     }
-        
+
     /**
-    * Build search source builder for keyword search only
-    */
-    private SearchSourceBuilder buildKeywordSearchSourceBuilder(ElasticsearchProviderConfig esConfig, String searchTerm) {
+     * Build search source builder for keyword search only
+     */
+    private SearchSourceBuilder buildKeywordSearchSourceBuilder(ElasticsearchProviderConfig esConfig,
+            String searchTerm) {
         SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        
+
         // Build query for keyword search
         QueryBuilder queryBuilder = buildKeywordQuery(esConfig, searchTerm);
         sourceBuilder.query(queryBuilder);
-        
+
         // Set size
         sourceBuilder.size(INITIAL_SEARCH_SIZE);
-        
+
         // Apply collapse if configured
         if (StringUtils.hasText(esConfig.getCollapseOnPrecomputedField())) {
-        CollapseBuilder collapseBuilder = new CollapseBuilder(esConfig.getCollapseOnPrecomputedField());
-        sourceBuilder.collapse(collapseBuilder);
+            CollapseBuilder collapseBuilder = new CollapseBuilder(esConfig.getCollapseOnPrecomputedField());
+            sourceBuilder.collapse(collapseBuilder);
         }
-        
+
         // Apply sorting
         if (esConfig.getDefaultSort() != null && StringUtils.hasText(esConfig.getDefaultSort().getField())) {
-        ElasticsearchProviderConfig.SortConfig sortConfig = esConfig.getDefaultSort();
-        SortOrder sortOrder = "desc".equalsIgnoreCase(sortConfig.getDirection()) ? SortOrder.DESC : SortOrder.ASC;
-        SortBuilder<?> sortBuilder = "_score".equalsIgnoreCase(sortConfig.getField()) ?
-                new ScoreSortBuilder().order(sortOrder) :
-                new FieldSortBuilder(sortConfig.getField()).order(sortOrder);
-        sourceBuilder.sort(sortBuilder);
+            ElasticsearchProviderConfig.SortConfig sortConfig = esConfig.getDefaultSort();
+            SortOrder sortOrder = "desc".equalsIgnoreCase(sortConfig.getDirection()) ? SortOrder.DESC : SortOrder.ASC;
+            SortBuilder<?> sortBuilder = "_score".equalsIgnoreCase(sortConfig.getField())
+                    ? new ScoreSortBuilder().order(sortOrder)
+                    : new FieldSortBuilder(sortConfig.getField()).order(sortOrder);
+            sourceBuilder.sort(sortBuilder);
         }
 
         // Fetch only essential fields for keyword search
@@ -177,11 +179,12 @@ public class ElasticsearchSearchProviderV3 {
 
         // Apply relevance boost if configured
         if (esConfig.getRelevanceBoost() != null) {
-            // Note: Boost is applied at the field level, so we need to handle it differently
+            // Note: Boost is applied at the field level, so we need to handle it
+            // differently
             // For now, we'll use the default boost of 1.0f
         }
 
-        return boolQuery;    
+        return boolQuery;
     }
 
     /**
@@ -202,7 +205,8 @@ public class ElasticsearchSearchProviderV3 {
     /**
      * Build result DTO from extracted data
      */
-    private SearchCategoryResult buildResultDto(SearchCategoryDefinition categoryDefinition, List<Map<String, Object>> data) {
+    private SearchCategoryResult buildResultDto(SearchCategoryDefinition categoryDefinition,
+            List<Map<String, Object>> data) {
         // Create SearchCategoryConfig from category definition
         SearchCategoryConfig config = new SearchCategoryConfig();
         config.setKey(categoryDefinition.getKey());
@@ -218,9 +222,10 @@ public class ElasticsearchSearchProviderV3 {
      * Escape special characters in Elasticsearch query string
      */
     private String escapeElasticsearchQueryString(String input) {
-        if (input == null) return "";
-        final String[] META_CHARS = {"\\", "+", "-", "!", "(", ")", ":", "^", "[", "]", "\"", "{", "}", "~"
-                , "|", "&", "/"};
+        if (input == null)
+            return "";
+        final String[] META_CHARS = { "\\", "+", "-", "!", "(", ")", ":", "^", "[", "]", "\"", "{", "}", "~", "|", "&",
+                "/" };
         String output = input;
         return output;
     }

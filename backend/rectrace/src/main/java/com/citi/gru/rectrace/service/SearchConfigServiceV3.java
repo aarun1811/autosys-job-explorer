@@ -54,12 +54,12 @@ public class SearchConfigServiceV3 {
 
             try (InputStream inputStream = resource.getInputStream()) {
                 SearchConfiguration configWrapper = objectMapper.readValue(inputStream, SearchConfiguration.class);
-                
+
                 if (configWrapper != null && configWrapper.getSearchCategories() != null) {
                     this.searchCategories = configWrapper.getSearchCategories();
                     validateCategories();
-                    logger.info("Successfully loaded and validated {} search categories.", 
-                        getValidSearchCategories().size());
+                    logger.info("Successfully loaded and validated {} search categories.",
+                            getValidSearchCategories().size());
                 } else {
                     logger.warn("Search configuration file {} is empty or invalid.", CONFIG_FILE);
                     this.searchCategories = Collections.emptyList();
@@ -71,159 +71,158 @@ public class SearchConfigServiceV3 {
         }
     }
 
-/**
- * Get ES configuration for keyword search only
- * Returns only essential fields needed for initial search
- */
-public ElasticsearchProviderConfig getKeywordSearchConfig(String categoryKey) {
-    if (!StringUtils.hasText(categoryKey)) {
-        logger.warn("Category key is null or empty");
-        return null;
-    }
+    /**
+     * Get ES configuration for keyword search only
+     * Returns only essential fields needed for initial search
+     */
+    public ElasticsearchProviderConfig getKeywordSearchConfig(String categoryKey) {
+        if (!StringUtils.hasText(categoryKey)) {
+            logger.warn("Category key is null or empty");
+            return null;
+        }
 
-    Optional<SearchCategoryDefinition> category = searchCategories.stream()
-            .filter(cat -> categoryKey.equals(cat.getKey()) && cat.isValid())
-            .findFirst();
+        Optional<SearchCategoryDefinition> category = searchCategories.stream()
+                .filter(cat -> categoryKey.equals(cat.getKey()) && cat.isValid())
+                .findFirst();
 
-    if (!category.isPresent()) {
-        logger.warn("Category '{}' not found or not valid", categoryKey);
-        return null;
-    }
+        if (!category.isPresent()) {
+            logger.warn("Category '{}' not found or not valid", categoryKey);
+            return null;
+        }
 
-    SearchCategoryDefinition categoryDef = category.get();
+        SearchCategoryDefinition categoryDef = category.get();
 
-    // Check if it's configured for ES
-    if (!"elasticsearch".equalsIgnoreCase(categoryDef.getSearchProviderType())) {
-        logger.warn("Category '{}' is not configured for Elasticsearch", categoryKey);
-        return null;
-    }
+        // Check if it's configured for ES
+        if (!"elasticsearch".equalsIgnoreCase(categoryDef.getSearchProviderType())) {
+            logger.warn("Category '{}' is not configured for Elasticsearch", categoryKey);
+            return null;
+        }
 
-    if (!(categoryDef.getProviderConfig() instanceof ElasticsearchProviderConfig)) {
-        logger.warn("Category '{}' does not have valid Elasticsearch configuration", categoryKey);
-        return null;
-    }
+        if (!(categoryDef.getProviderConfig() instanceof ElasticsearchProviderConfig)) {
+            logger.warn("Category '{}' does not have valid Elasticsearch configuration", categoryKey);
+            return null;
+        }
 
-    ElasticsearchProviderConfig esConfig = (ElasticsearchProviderConfig) categoryDef.getProviderConfig();
-
-    // Validate essential fields
-    if (!StringUtils.hasText(esConfig.getTargetIndex())) {
-        logger.warn("Category '{}' missing targetIndex in ES config", categoryKey);
-        return null;
-    }
-
-    if (CollectionUtils.isEmpty(esConfig.getQueryFields())) {
-        logger.warn("Category '{}' missing queryFields in ES config", categoryKey);
-        return null;
-    }
-
-    logger.debug("Retrieved ES config for category '{}': index={}, queryFields={}",
-            categoryKey, esConfig.getTargetIndex(), esConfig.getQueryFields());
-
-    return esConfig;
-}
-
-/**
- * Get Oracle configuration for group expansion
- */
-public OracleProviderConfig getGroupExpansionConfig(String categoryKey) {
-    if (!StringUtils.hasText(categoryKey)) {
-        logger.warn("Category key is null or empty");
-        return null;
-    }
-
-    Optional<SearchCategoryDefinition> category = searchCategories.stream()
-            .filter(cat -> categoryKey.equals(cat.getKey()) && cat.isValid())
-            .findFirst();
-
-    if (!category.isPresent()) {
-        logger.warn("Category '{}' not found or not valid", categoryKey);
-        return null;
-    }
-
-    SearchCategoryDefinition categoryDef = category.get();
-
-    // First, check if there's a dedicated oracleConfig field
-    if (categoryDef.getOracleConfig() != null) {
-        OracleProviderConfig oracleConfig = categoryDef.getOracleConfig();
+        ElasticsearchProviderConfig esConfig = (ElasticsearchProviderConfig) categoryDef.getProviderConfig();
 
         // Validate essential fields
-        if (!StringUtils.hasText(oracleConfig.getQuery())) {
-            logger.warn("Category '{}' missing query in Oracle config", categoryKey);
+        if (!StringUtils.hasText(esConfig.getTargetIndex())) {
+            logger.warn("Category '{}' missing targetIndex in ES config", categoryKey);
             return null;
         }
 
-        logger.debug("Retrieved Oracle config for category '{}': query={} ", categoryKey, oracleConfig.getQuery());
-        return oracleConfig;
-    }
-
-
-
-    // For now, we'll use the existing Oracle config if available
-    // In the future, we can add specific oracleConfig field
-    if (categoryDef.getProviderConfig() instanceof OracleProviderConfig) {
-        OracleProviderConfig oracleConfig = (OracleProviderConfig) categoryDef.getProviderConfig();
-
-        // Validate essential fields
-        if (!StringUtils.hasText(oracleConfig.getQuery())) {
-            logger.warn("Category '{}' missing query in Oracle config", categoryKey);
+        if (CollectionUtils.isEmpty(esConfig.getQueryFields())) {
+            logger.warn("Category '{}' missing queryFields in ES config", categoryKey);
             return null;
         }
 
-        if (!StringUtils.hasText(oracleConfig.getParameterName())) {
-            logger.warn("Category '{}' missing parameterName in Oracle config", categoryKey);
+        logger.debug("Retrieved ES config for category '{}': index={}, queryFields={}",
+                categoryKey, esConfig.getTargetIndex(), esConfig.getQueryFields());
+
+        return esConfig;
+    }
+
+    /**
+     * Get Oracle configuration for group expansion
+     */
+    public OracleProviderConfig getGroupExpansionConfig(String categoryKey) {
+        if (!StringUtils.hasText(categoryKey)) {
+            logger.warn("Category key is null or empty");
             return null;
         }
 
-        logger.debug("Retrieved Oracle config for category '{}': query={}, parameterName={}",
-                categoryKey, oracleConfig.getQuery(), oracleConfig.getParameterName());
+        Optional<SearchCategoryDefinition> category = searchCategories.stream()
+                .filter(cat -> categoryKey.equals(cat.getKey()) && cat.isValid())
+                .findFirst();
 
-        return oracleConfig;
+        if (!category.isPresent()) {
+            logger.warn("Category '{}' not found or not valid", categoryKey);
+            return null;
+        }
+
+        SearchCategoryDefinition categoryDef = category.get();
+
+        // First, check if there's a dedicated oracleConfig field
+        if (categoryDef.getOracleConfig() != null) {
+            OracleProviderConfig oracleConfig = categoryDef.getOracleConfig();
+
+            // Validate essential fields
+            if (!StringUtils.hasText(oracleConfig.getQuery())) {
+                logger.warn("Category '{}' missing query in Oracle config", categoryKey);
+                return null;
+            }
+
+            logger.debug("Retrieved Oracle config for category '{}': query={} ", categoryKey, oracleConfig.getQuery());
+            return oracleConfig;
+        }
+
+        // For now, we'll use the existing Oracle config if available
+        // In the future, we can add specific oracleConfig field
+        if (categoryDef.getProviderConfig() instanceof OracleProviderConfig) {
+            OracleProviderConfig oracleConfig = (OracleProviderConfig) categoryDef.getProviderConfig();
+
+            // Validate essential fields
+            if (!StringUtils.hasText(oracleConfig.getQuery())) {
+                logger.warn("Category '{}' missing query in Oracle config", categoryKey);
+                return null;
+            }
+
+            if (!StringUtils.hasText(oracleConfig.getParameterName())) {
+                logger.warn("Category '{}' missing parameterName in Oracle config", categoryKey);
+                return null;
+            }
+
+            logger.debug("Retrieved Oracle config for category '{}': query={}, parameterName={}",
+                    categoryKey, oracleConfig.getQuery(), oracleConfig.getParameterName());
+
+            return oracleConfig;
+        }
+
+        // If no Oracle config exists, we'll need to create a default one based on the
+        // category
+        logger.info("No Oracle config found for category '{}', will create default config", categoryKey);
+        return createDefaultOracleConfig(categoryDef);
     }
 
-    // If no Oracle config exists, we'll need to create a default one based on the category
-    logger.info("No Oracle config found for category '{}', will create default config", categoryKey);
-    return createDefaultOracleConfig(categoryDef);
-}
+    /**
+     * Create default Oracle config based on category definition
+     */
+    private OracleProviderConfig createDefaultOracleConfig(SearchCategoryDefinition categoryDef) {
+        OracleProviderConfig defaultConfig = new OracleProviderConfig();
 
-/**
- * Create default Oracle config based on category definition
- */
-private OracleProviderConfig createDefaultOracleConfig(SearchCategoryDefinition categoryDef) {
-    OracleProviderConfig defaultConfig = new OracleProviderConfig();
+        // Get the first column as the group column
+        if (!CollectionUtils.isEmpty(categoryDef.getColumns())) {
+            String groupColumn = categoryDef.getColumns().get(0).getField();
 
-    // Get the first column as the group column
-    if (!CollectionUtils.isEmpty(categoryDef.getColumns())) {
-        String groupColumn = categoryDef.getColumns().get(0).getField();
+            // Create a simple query for group expansion
+            String query = String.format("SELECT * FROM autosys_jobs WHERE %s = :groupKey", groupColumn);
+            defaultConfig.setQuery(query);
+            defaultConfig.setParameterName("groupKey");
 
-        // Create a simple query for group expansion
-        String query = String.format("SELECT * FROM autosys_jobs WHERE %s = :groupKey", groupColumn);
-        defaultConfig.setQuery(query);
-        defaultConfig.setParameterName("groupKey");
+            logger.debug("Created default Oracle config for category '{}': query={}",
+                    categoryDef.getKey(), query);
 
-        logger.debug("Created default Oracle config for category '{}': query={}",
-                categoryDef.getKey(), query);
+            return defaultConfig;
+        }
 
-        return defaultConfig;
-    }
-
-    logger.warn("Cannot create default Oracle config for category '{}': no columns defined",
-            categoryDef.getKey());
-    return null;
-}
-
-/**
- * Get category definition by key
- */
-public SearchCategoryDefinition getCategoryDefinition(String categoryKey) {
-    if (!StringUtils.hasText(categoryKey)) {
+        logger.warn("Cannot create default Oracle config for category '{}': no columns defined",
+                categoryDef.getKey());
         return null;
     }
 
-    return searchCategories.stream()
-            .filter(cat -> categoryKey.equals(cat.getKey()) && cat.isValid())
-            .findFirst()
-            .orElse(null);
-}
+    /**
+     * Get category definition by key
+     */
+    public SearchCategoryDefinition getCategoryDefinition(String categoryKey) {
+        if (!StringUtils.hasText(categoryKey)) {
+            return null;
+        }
+
+        return searchCategories.stream()
+                .filter(cat -> categoryKey.equals(cat.getKey()) && cat.isValid())
+                .findFirst()
+                .orElse(null);
+    }
 
     /**
      * Returns the list of search category definitions that passed validation.
@@ -241,7 +240,8 @@ public SearchCategoryDefinition getCategoryDefinition(String categoryKey) {
      * Validate the loaded search category definitions.
      */
     private void validateCategories() {
-        if (CollectionUtils.isEmpty(this.searchCategories)) return;
+        if (CollectionUtils.isEmpty(this.searchCategories))
+            return;
 
         for (SearchCategoryDefinition category : this.searchCategories) {
             boolean categoryValid = true;

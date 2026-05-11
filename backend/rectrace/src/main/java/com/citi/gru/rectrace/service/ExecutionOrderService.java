@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobDetailsDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobNodeDTO;
-import com.citi.gru.rectrace.service.JobStatusService;
+import com.citi.gru.rectrace.dto.JobStatusInfo;
 
 @Service
 public class ExecutionOrderService {
@@ -36,10 +36,10 @@ public class ExecutionOrderService {
     @Autowired
     public ExecutionOrderService(@Autowired(required = false) JobStatusService jobStatusService) {
         this.jobStatusService = jobStatusService;
-        if (jobStatusService == null) {
-            logger.info("JobStatusService is not available");
+        if (jobStatusService != null) {
+            logger.info("ExecutionOrderService initiated with JobStatusService - live status enabled");
         } else {
-            logger.info("JobStatusService is available");
+            logger.info("ExecutionOrderService initiated without JobStatusService - live status disabled");
         }
     }
 
@@ -47,12 +47,12 @@ public class ExecutionOrderService {
         ExecutionOrderDTO result = new ExecutionOrderDTO();
 
         String sequenceSql = "SELECT "
-                                + "ts.job_name, "
-                                + "ts.load_job, "
-                                + "ts.exec_order "
-                                + "FROM AUTOSYS_TLM_RECON_SEQUENCES ts "
-                                + "WHERE ts.load_job = :loadJobName "
-                                + "ORDER BY ts.exec_order";
+                + "ts.job_name, "
+                + "ts.load_job, "
+                + "ts.exec_order "
+                + "FROM AUTOSYS_TLM_RECON_SEQUENCES ts "
+                + "WHERE ts.load_job = :loadJobName "
+                + "ORDER BY ts.exec_order";
 
         Query query = em.createNativeQuery(sequenceSql);
         query.setParameter("loadJobName", loadJobName);
@@ -77,17 +77,17 @@ public class ExecutionOrderService {
         result.setExecutionSequence(sequence);
 
         String jobDetailsSql = "SELECT "
-                                + "ad.insert_job, "
-                                + "ad.job_type, "
-                                + "ad.machine, "
-                                + "ad2.run_calendar, "
-                                + "ad2.exclude_calendar, "
-                                + "ad.box_name, "
-                                + "ad.command, "
-                                + "ad.description "
-                                + "FROM AUTOSYS_ALL_JOBS_DATA ad "
-                                + "LEFT JOIN AUTOSYS_ALL_JOBS_DATA ad2 ON ad2.insert_job = ad.box_name "
-                                + "WHERE ad.insert_job IN :jobNames";
+                + "ad.insert_job, "
+                + "ad.job_type, "
+                + "ad.machine, "
+                + "ad2.run_calendar, "
+                + "ad2.exclude_calendar, "
+                + "ad.box_name, "
+                + "ad.command, "
+                + "ad.description "
+                + "FROM AUTOSYS_ALL_JOBS_DATA ad "
+                + "LEFT JOIN AUTOSYS_ALL_JOBS_DATA ad2 ON ad2.insert_job = ad.box_name "
+                + "WHERE ad.insert_job IN :jobNames";
 
         List<String> jobNames = new ArrayList<>();
         for (JobNodeDTO node : sequence) {
@@ -109,8 +109,8 @@ public class ExecutionOrderService {
             details.setRunCalendar((String) row[3]);
             details.setExcludeCalendar((String) row[4]);
             details.setBoxName((String) row[5]);
-//            details.setCommand(clobToString((Clob) row[6]));
-//            details.setDescription(clobToString((Clob) row[7]));
+            // details.setCommand(clobToString((Clob) row[6]));
+            // details.setDescription(clobToString((Clob) row[7]));
             details.setCommand("");
             details.setDescription("");
 
@@ -118,30 +118,31 @@ public class ExecutionOrderService {
         }
         result.setJobDetails(jobDetails);
 
-        // Fetch live job statusses from Autosys database
+        // Fetch live job statuses from Autosys database
         if (jobStatusService != null) {
             try {
-                logger.debug("Fetching live job statusses for {} jobs", jobNames.size());
-                Map<String, JobStatusService.JobStatusDTO> jobStatusses = jobStatusService.getJobStatus(jobNames);
-                result.setJobStatusses(jobStatusses);
+                logger.debug("Fetching live job statuses for {} jobs", jobNames.size());
+                Map<String, JobStatusInfo> jobStatuses = jobStatusService.getBatchJobStatus(jobNames);
+                result.setJobStatuses(jobStatuses);
                 result.setStatusAvailable(true);
-                logger.debug("Successfully fetched live job statusses for {} jobs", jobNames.size());
+                logger.debug("Successfully fetched live job statuses for {} jobs", jobNames.size());
             } catch (Exception e) {
-                logger.error("Failed to fetch live job statusses", e);
+                logger.error("Failed to fetch live job statuses", e);
                 result.setStatusAvailable(false);
-            }    
+            }
         } else {
             logger.warn("JobStatusService is not available, skipping live job statusses fetch");
             result.setStatusAvailable(false);
         }
-        
+
         return result;
     }
 
     private String clobToString(Clob clob) {
-        if (clob == null) return "";
+        if (clob == null)
+            return "";
         try (Reader reader = clob.getCharacterStream();
-             StringWriter writer = new StringWriter()) {
+                StringWriter writer = new StringWriter()) {
             char[] buffer = new char[2048];
             int bytesRead;
             while ((bytesRead = reader.read(buffer)) != -1) {
