@@ -1,22 +1,29 @@
-<div class="summary-container" *ngIf="summary">
+@if (summary) {
+<div class="summary-container">
   <div class="summary-grid">
-    <div *ngFor="let card of getSummaryCards()" class="summary-card">
-      <h4 class="card-title">{{ card.title }}</h4>
-      <div class="stats-grid">
-        <div *ngFor="let item of card.items" class="stat-item">
-          <div class="stat-header">
-            <mat-icon [color]="item.color || ''">{{ item.icon }}</mat-icon>
-            <span class="stat-label">{{ item.label }}</span>
-          </div>
-          <div class="stat-value">
-            <span class="main-value">{{ formatNumber(item.value) }}</span>
-            <span *ngIf="item.percentage !== undefined" class="percentage-value">
-              ({{ formatPercentage(item.percentage) }})
-            </span>
-          </div>
+    @for (card of getSummaryCards(); track card.title) {
+      <div class="summary-card">
+        <h4 class="card-title">{{ card.title }}</h4>
+        <div class="stats-grid">
+          @for (item of card.items; track item.label) {
+            <div class="stat-item">
+              <div class="stat-header">
+                <mat-icon [color]="item.color || ''">{{ item.icon }}</mat-icon>
+                <span class="stat-label">{{ item.label }}</span>
+              </div>
+              <div class="stat-value">
+                <span class="main-value">{{ formatNumber(item.value) }}</span>
+                @if (item.percentage !== undefined) {
+                  <span class="percentage-value">
+                    ({{ formatPercentage(item.percentage) }})
+                  </span>
+                }
+              </div>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
   </div>
   
   <div class="summary-totals">
@@ -34,3 +41,4 @@
     </div>
   </div>
 </div>
+}

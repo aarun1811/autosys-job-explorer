@@ -5,14 +5,15 @@
       <div class="date-range-section">
         <label class="filter-label">Date Range</label>
         <div class="date-range-buttons">
-          <button 
-            *ngFor="let option of dateRangeOptions"
-            mat-raised-button
-            [color]="isDateRangeSelected(option.value) ? 'primary' : ''"
-            (click)="onDateRangeSelect(option.value)"
-            class="date-button">
-            {{ option.label }}
-          </button>
+          @for (option of dateRangeOptions; track option.value) {
+            <button 
+              mat-raised-button
+              [color]="isDateRangeSelected(option.value) ? 'primary' : ''"
+              (click)="onDateRangeSelect(option.value)"
+              class="date-button">
+              {{ option.label }}
+            </button>
+          }
         </div>
       </div>
       

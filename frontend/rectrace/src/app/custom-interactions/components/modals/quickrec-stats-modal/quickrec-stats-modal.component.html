@@ -18,42 +18,50 @@
       </app-quickrec-filters>
       
       <!-- Loading Indicator -->
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Loading QuickRec statistics...</p>
-      </div>
+      @if (loading) {
+        <div class="loading-container">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Loading QuickRec statistics...</p>
+        </div>
+      }
       
       <!-- Error Message -->
-      <div *ngIf="error && !loading" class="error-container">
-        <mat-icon color="warn">error</mat-icon>
-        <p>{{ error }}</p>
-      </div>
+      @if (error && !loading) {
+        <div class="error-container">
+          <mat-icon color="warn">error</mat-icon>
+          <p>{{ error }}</p>
+        </div>
+      }
       
       <!-- Dashboard Summary -->
-      <div *ngIf="!loading && !error && dashboardSummary" class="dashboard-summary">
-        <app-quickrec-summary [summary]="dashboardSummary"></app-quickrec-summary>
-      </div>
+      @if (!loading && !error && dashboardSummary) {
+        <div class="dashboard-summary">
+          <app-quickrec-summary [summary]="dashboardSummary"></app-quickrec-summary>
+        </div>
+      }
       
       <!-- Stats Tables -->
-      <div *ngIf="!loading && !error" class="stats-container">
-        <!-- Auto-Match Stats -->
-        <div class="stats-section">
-          <h3>Auto-Match Statistics</h3>
-          <app-quickrec-automatch-table 
-            [data]="autoMatchStats"
-            [loading]="loading">
-          </app-quickrec-automatch-table>
+      @if (!loading && !error) {
+        <div class="stats-container">
+          <!-- Auto-Match Stats -->
+          <div class="stats-section">
+            <h3>Auto-Match Statistics</h3>
+            <app-quickrec-automatch-table 
+              [data]="autoMatchStats"
+              [loading]="loading">
+            </app-quickrec-automatch-table>
+          </div>
+          
+          <!-- Manual Match Stats -->
+          <div class="stats-section">
+            <h3>Manual Match Statistics</h3>
+            <app-quickrec-manual-table 
+              [data]="manualMatchStats"
+              [loading]="loading">
+            </app-quickrec-manual-table>
+          </div>
         </div>
-        
-        <!-- Manual Match Stats -->
-        <div class="stats-section">
-          <h3>Manual Match Statistics</h3>
-          <app-quickrec-manual-table 
-            [data]="manualMatchStats"
-            [loading]="loading">
-          </app-quickrec-manual-table>
-        </div>
-      </div>
+      }
     </div>
   </mat-dialog-content>
 </div>
