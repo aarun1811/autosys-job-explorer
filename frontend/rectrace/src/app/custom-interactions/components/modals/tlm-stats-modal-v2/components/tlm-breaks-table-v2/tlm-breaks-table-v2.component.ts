@@ -2,46 +2,46 @@ import { Component, Input, OnInit, OnDestroy, ViewChild, OnChanges, SimpleChange
 import { Subject } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { AgGridAngular } from 'ag-grid-angular';
-import { 
-  ColDef, 
-  GridOptions, 
+import {
+  ColDef,
+  GridOptions,
   GridApi
 } from 'ag-grid-community';
 
-import { 
-  TlmStatsV2Service, 
-  BreakStatsV2, 
-  TlmStatsRequest, 
-  DateRange 
+import {
+  TlmStatsV2Service,
+  BreakStatsV2,
+  TlmStatsRequest,
+  DateRange
 } from '../../../../../../services/tlm-stats-v2.service';
 import { FilterState } from '../../tlm-stats-modal-v2.component';
 
 @Component({
   selector: 'app-tlm-breaks-table-v2',
   templateUrl: './tlm-breaks-table-v2.component.html',
-  styleUrls: ['./tlm-breaks-table-v2.component.css']
+  styleUrls: ['./tlm-breaks-table-v2.component.scss']
 })
 export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
-  
+
   @Input() filterState!: FilterState;
   @Input() isDarkTheme: boolean = false;
-  
+
   @ViewChild('agGrid') agGrid!: AgGridAngular;
-  
+
   private destroy$ = new Subject<void>();
-  
+
   // Grid configuration
   gridApi!: GridApi;
   gridOptions: GridOptions;
   columnDefs: ColDef[];
   gridTheme: string = 'ag-theme-alpine';
-  
+
   // Loading state
   isLoading: boolean = false;
   hasError: boolean = false;
   errorMessage: string = '';
   totalRows: number = 0;
-  
+
   // Status message
   get statusMessage(): string {
     if (this.isLoading) {
@@ -55,7 +55,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
     }
     return `${this.totalRows} record${this.totalRows === 1 ? '' : 's'} found`;
   }
-  
+
   // Dynamic height calculation
   private readonly ROW_HEIGHT = 36; // AG-Grid row height
   private readonly HEADER_HEIGHT = 40; // AG-Grid header height
@@ -73,7 +73,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
         sortable: true,
         filter: 'agNumberColumnFilter',
         cellClass: 'text-right',
-        valueFormatter: params => params.value !== null && params.value !== undefined 
+        valueFormatter: params => params.value !== null && params.value !== undefined
           ? params.value.toLocaleString() : '0'
       },
       {
@@ -150,7 +150,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
     if (changes['isDarkTheme']) {
       this.updateGridTheme();
     }
-    
+
     if (changes['filterState'] && this.gridApi) {
       this.refreshData();
     }
@@ -166,11 +166,11 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
     if (!this.filterState?.tlmInstance) {
       return;
     }
-    
+
     this.isLoading = true;
     this.hasError = false;
     this.errorMessage = '';
-    
+
     const request: TlmStatsRequest = this.tlmStatsV2Service.createTlmStatsRequest({
       tlmInstance: this.filterState.tlmInstance,
       agentCodes: this.filterState.selectedRecons.length > 0 ? this.filterState.selectedRecons : undefined,
@@ -178,7 +178,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
       dateRange: this.filterState.dateRange,
       entryPoint: this.filterState.entryPoint
     });
-    
+
     this.tlmStatsV2Service.getBreaksTableData(request)
       .pipe(
         takeUntil(this.destroy$),
@@ -235,7 +235,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
       this.gridApi.getColumns()?.forEach((column: any) => {
         allColumnIds.push(column.getId());
       });
-      
+
       if (allColumnIds.length > 0) {
         this.gridApi.autoSizeColumns(allColumnIds);
       }
@@ -246,7 +246,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
     // Calculate height based on actual row count
     let rowsToShow = Math.min(Math.max(this.totalRows || this.MIN_ROWS, this.MIN_ROWS), this.MAX_ROWS);
     const calculatedHeight = this.HEADER_HEIGHT + (rowsToShow * this.ROW_HEIGHT);
-    
+
     const gridElement = document.querySelector('.breaks-grid-container');
     if (gridElement) {
       (gridElement as HTMLElement).style.height = `${calculatedHeight}px`;
@@ -258,7 +258,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
     // Calculate height based on actual row count
     let rowsToShow = this.totalRows || this.MIN_ROWS;
     rowsToShow = Math.min(Math.max(rowsToShow, this.MIN_ROWS), this.MAX_ROWS);
-    
+
     const calculatedHeight = this.HEADER_HEIGHT + (rowsToShow * this.ROW_HEIGHT);
     return `${calculatedHeight}px`;
   }
@@ -282,7 +282,7 @@ export class TlmBreaksTableV2Component implements OnInit, OnDestroy, OnChanges {
           return params.value;
         }
       };
-      
+
       this.gridApi.exportDataAsExcel(params);
     }
   }

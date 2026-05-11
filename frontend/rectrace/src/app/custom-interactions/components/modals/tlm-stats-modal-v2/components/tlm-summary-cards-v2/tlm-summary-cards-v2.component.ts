@@ -4,10 +4,10 @@ import { DashboardSummary } from '../../../../../../services/tlm-stats-v2.servic
 @Component({
   selector: 'app-tlm-summary-cards-v2',
   templateUrl: './tlm-summary-cards-v2.component.html',
-  styleUrls: ['./tlm-summary-cards-v2.component.css']
+  styleUrls: ['./tlm-summary-cards-v2.component.scss']
 })
 export class TlmSummaryCardsV2Component implements OnInit {
-  
+
   @Input() summary: DashboardSummary | null = null;
   @Input() isLoading: boolean = false;
   @Input() hasError: boolean = false;

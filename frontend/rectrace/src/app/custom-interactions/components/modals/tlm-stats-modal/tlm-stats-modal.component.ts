@@ -25,7 +25,7 @@ export interface TlmStatsModalData {
 @Component({
   selector: 'app-tlm-stats-modal',
   templateUrl: './tlm-stats-modal.component.html',
-  styleUrls: ['./tlm-stats-modal.component.css']
+  styleUrls: ['./tlm-stats-modal.component.scss']
 })
 export class TlmStatsModalComponent implements OnInit, OnDestroy {
   @ViewChild('mergedGrid') mergedGrid!: AgGridAngular;
@@ -52,42 +52,42 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
   // Grid configurations
   mergedGridOptions: GridOptions;
   breaksGridOptions: GridOptions;
-  
+
   mergedGridApi!: GridApi;
   breaksGridApi!: GridApi;
-  
+
   // Theme management
   gridTheme: string = 'ag-theme-alpine';
   private destroy$ = new Subject<void>();
 
   // Column definitions for merged table
   mergedColumnDefs: ColDef[] = [
-    { 
-      field: 'tlm_instance', 
+    {
+      field: 'tlm_instance',
       headerName: 'TLM Instance',
       width: 120,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'agent_code', 
+    {
+      field: 'agent_code',
       headerName: 'Agent Code',
       width: 120,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'setid', 
+    {
+      field: 'setid',
       headerName: 'Set ID',
       width: 250,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'stmt_date', 
+    {
+      field: 'stmt_date',
       headerName: 'Statement Date',
       width: 130,
       resizable: true,
@@ -95,24 +95,24 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       filter: true,
       valueFormatter: params => this.formatDate(params.value)
     },
-    { 
-      field: 'bran_code', 
+    {
+      field: 'bran_code',
       headerName: 'Branch Code',
       width: 110,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'corr_acc_no', 
+    {
+      field: 'corr_acc_no',
       headerName: 'Corr Account',
       width: 150,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'total_items', 
+    {
+      field: 'total_items',
       headerName: 'Total Items',
       width: 110,
       resizable: true,
@@ -121,8 +121,8 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       cellClass: 'text-right',
       valueFormatter: params => params.value !== undefined ? params.value.toLocaleString() : ''
     },
-    { 
-      field: 'automatch_items', 
+    {
+      field: 'automatch_items',
       headerName: 'Automatch Items',
       width: 140,
       resizable: true,
@@ -131,8 +131,8 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       cellClass: 'text-right',
       valueFormatter: params => params.value !== undefined ? params.value.toLocaleString() : ''
     },
-    { 
-      field: 'total_manual_match_count', 
+    {
+      field: 'total_manual_match_count',
       headerName: 'Manual Match Count',
       width: 160,
       resizable: true,
@@ -145,8 +145,8 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
 
   // Column definitions for breaks table
   breaksColumnDefs: ColDef[] = [
-    { 
-      field: 'breaks_count', 
+    {
+      field: 'breaks_count',
       headerName: 'Breaks Count',
       width: 120,
       resizable: true,
@@ -155,24 +155,24 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       cellClass: 'text-right',
       valueFormatter: params => params.value ? params.value.toLocaleString() : '0'
     },
-    { 
-      field: 'agent_code', 
+    {
+      field: 'agent_code',
       headerName: 'Agent Code',
       width: 120,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'local_acc_no', 
+    {
+      field: 'local_acc_no',
       headerName: 'Local Account No',
       width: 300,
       resizable: true,
       sortable: true,
       filter: true
     },
-    { 
-      field: 'stmt_date', 
+    {
+      field: 'stmt_date',
       headerName: 'Statement Date',
       width: 130,
       resizable: true,
@@ -180,8 +180,8 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       filter: true,
       valueFormatter: params => this.formatDate(params.value)
     },
-    { 
-      field: 'bran_code', 
+    {
+      field: 'bran_code',
       headerName: 'Branch Code',
       width: 120,
       resizable: true,
@@ -260,23 +260,23 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
 
   private loadStatsForSetId(): void {
     const tlmInstance = this.data.tlm_instance || this.data.rowData?.tlm_instance;
-    
+
     // Load break stats
     this.loadBreakStats(tlmInstance, this.data.value, undefined);
-    
+
     // Load automatch and manual match stats
     this.loadMergedStats(tlmInstance, this.data.value, undefined);
   }
 
   private loadStatsForRecon(): void {
     const tlmInstance = this.data.tlm_instance || this.data.rowData?.tlm_instance;
-    
+
     // Load break stats
     this.loadBreakStats(tlmInstance, undefined, this.data.value);
-    
+
     // Load automatch and manual match stats
     this.loadMergedStats(tlmInstance, undefined, this.data.value);
-    
+
     // Also load set IDs for the sidebar
     this.loadSetIdList(tlmInstance, this.data.value);
   }
@@ -313,7 +313,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
   private loadMergedStats(tlmInstance: string, localAccNo?: string, agentCode?: string): void {
     this.isLoadingAutomatchStats = true;
     this.isLoadingManualMatchStats = true;
-    
+
     const params: any = { tlm_instance: tlmInstance };
     if (localAccNo) params.local_acc_no = localAccNo;
     if (agentCode) params.agent_code = agentCode;
@@ -377,7 +377,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
     manualData.forEach(item => {
       const key = `${item.tlm_instance}_${item.agent_code}_${item.setid}_${item.stmt_date}_${item.bran_code}_${item.corr_acc_no}`;
       const existing = mergedMap.get(key);
-      
+
       if (existing) {
         existing.total_manual_match_count = item.total_manual_match_count;
       } else {
@@ -396,7 +396,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
     });
 
     this.mergedStatsData = Array.from(mergedMap.values());
-    
+
     if (this.mergedGridApi) {
       this.mergedGridApi.setGridOption('rowData', this.mergedStatsData);
       // Auto-size columns after data loads
@@ -440,7 +440,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
   onSetIdSelected(setId: string): void {
     this.selectedSetId = setId;
     const tlmInstance = this.data.tlm_instance || this.data.rowData?.tlm_instance;
-    
+
     // Reload stats for selected set ID
     this.loadBreakStats(tlmInstance, setId, undefined);
     this.loadMergedStats(tlmInstance, setId, undefined);
@@ -491,7 +491,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
 
   onMergedGridReady(params: any): void {
     this.mergedGridApi = params.api;
-    
+
     if (this.mergedStatsData.length > 0) {
       this.mergedGridApi.setGridOption('rowData', this.mergedStatsData);
       // Auto-size on initial data
@@ -503,7 +503,7 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
 
   onBreaksGridReady(params: any): void {
     this.breaksGridApi = params.api;
-    
+
     if (this.breakStatsData.length > 0) {
       this.breaksGridApi.setGridOption('rowData', this.breakStatsData);
       // Auto-size on initial data
@@ -512,33 +512,33 @@ export class TlmStatsModalComponent implements OnInit, OnDestroy {
       }, 100);
     }
   }
-  
+
   private autoSizeMergedGrid(): void {
     if (this.mergedGridApi) {
       const allColumnIds: string[] = [];
       this.mergedGridApi.getColumns()?.forEach((column: any) => {
         allColumnIds.push(column.getId());
       });
-      
+
       if (allColumnIds.length > 0) {
         this.mergedGridApi.autoSizeColumns(allColumnIds);
       }
     }
   }
-  
+
   private autoSizeBreaksGrid(): void {
     if (this.breaksGridApi) {
       const allColumnIds: string[] = [];
       this.breaksGridApi.getColumns()?.forEach((column: any) => {
         allColumnIds.push(column.getId());
       });
-      
+
       if (allColumnIds.length > 0) {
         this.breaksGridApi.autoSizeColumns(allColumnIds);
       }
     }
   }
-  
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

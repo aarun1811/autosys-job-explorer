@@ -30,10 +30,10 @@ export interface FilterState {
 @Component({
   selector: 'app-tlm-stats-modal-v2',
   templateUrl: './tlm-stats-modal-v2.component.html',
-  styleUrls: ['./tlm-stats-modal-v2.component.css']
+  styleUrls: ['./tlm-stats-modal-v2.component.scss']
 })
 export class TlmStatsModalV2Component implements OnInit, OnDestroy {
-  
+
   // Theme management
   isDarkTheme: boolean = false;
   private destroy$ = new Subject<void>();
@@ -88,14 +88,14 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
 
     // Initialize filter state based on entry point
     this.initializeFilterState();
-    
+
     // Load initial data
     this.loadInitialData();
   }
 
   private initializeFilterState(): void {
     const tlmInstance = this.data.tlm_instance || this.data.rowData?.tlm_instance;
-    
+
     this.filterState = {
       ...this.filterState,
       tlmInstance: tlmInstance,
@@ -116,7 +116,7 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
         this.filterState.availableRecons = reconValue ? [reconValue] : [];
         this.filterState.availableSetIds = [this.data.value];
         break;
-        
+
       case 'recon':
         // From recon: tlm_instance & recon locked, set_id multi-select enabled
         this.filterState.tlmInstanceLocked = true;
@@ -126,7 +126,7 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
         // Populate available recons with the locked value
         this.filterState.availableRecons = [this.data.value];
         break;
-        
+
       case 'tlm_instance':
         // From tlm_instance: only tlm locked, recon & set_id cascade filters
         this.filterState.tlmInstanceLocked = true;
@@ -139,12 +139,12 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
   private loadInitialData(): void {
     // Load all data initially
     this.loadAllData();
-    
+
     // Load filter options if needed
     if (!this.filterState.reconLocked) {
       this.loadAvailableRecons();
     }
-    
+
     if (!this.filterState.setIdLocked && this.filterState.selectedRecons.length > 0) {
       this.loadAvailableSetIds();
     }
@@ -231,23 +231,23 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
   // Event handlers
   onReconSelectionChange(selectedRecons: string[]): void {
     this.filterState.selectedRecons = selectedRecons;
-    
+
     // Clear and reload set IDs when recon selection changes
     this.filterState.selectedSetIds = [];
     this.loadAvailableSetIds();
-    
+
     // Don't reload data here - wait for Apply button
   }
 
   onSetIdSelectionChange(selectedSetIds: string[]): void {
     this.filterState.selectedSetIds = selectedSetIds;
-    
+
     // Don't reload data here - wait for Apply button
   }
 
   onDateRangeChange(dateRange: DateRange): void {
     this.filterState.dateRange = dateRange;
-    
+
     // Don't reload data here - wait for Apply button
   }
 
@@ -260,10 +260,10 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
       this.filterState.selectedSetIds = [];
       this.filterState.availableSetIds = [];
     }
-    
+
     // Reset date range
     this.filterState.dateRange = DateRange.ONE_DAY;
-    
+
     // Automatically apply after clearing to show updated results
     this.loadAllData();
   }
@@ -272,11 +272,11 @@ export class TlmStatsModalV2Component implements OnInit, OnDestroy {
     // Reload all data with current filters
     this.loadAllData();
   }
-  
+
   private loadAllData(): void {
     // Load dashboard summary
     this.loadDashboardSummary();
-    
+
     // Trigger refresh for tables by updating the filter state
     // The tables watch filterState changes via ngOnChanges
     // We need to create a new object reference to trigger change detection

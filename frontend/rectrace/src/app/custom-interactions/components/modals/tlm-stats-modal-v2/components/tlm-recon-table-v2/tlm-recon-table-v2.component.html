@@ -1,29 +1,25 @@
 <div class="table-wrapper">
-  
+
   <!-- Status Bar -->
   <div class="table-status-bar">
     <div class="status-info">
       @if (isLoading) {
-        <mat-icon class="status-icon spinning">refresh</mat-icon>
+      <mat-icon class="status-icon spinning">refresh</mat-icon>
       }
       @if (hasError) {
-        <mat-icon class="status-icon error">error_outline</mat-icon>
+      <mat-icon class="status-icon error">error_outline</mat-icon>
       }
-      @if (!isLoading && !hasError && hasData) {
-        <mat-icon class="status-icon success">check_circle</mat-icon>
+      @if (!isLoading && !hasError && hasData()) {
+      <mat-icon class="status-icon success">check_circle</mat-icon>
       }
-      @if (!isLoading && !hasError && !hasData) {
-        <mat-icon class="status-icon info">info</mat-icon>
+      @if (!isLoading && !hasError && !hasData()) {
+      <mat-icon class="status-icon info">info</mat-icon>
       }
       <span class="status-text">{{ statusMessage }}</span>
     </div>
-    
+
     <div class="table-actions">
-      <button 
-        mat-stroked-button 
-        class="refresh-btn"
-        (click)="refreshData()"
-        [disabled]="isLoading">
+      <button mat-stroked-button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
         <mat-icon>refresh</mat-icon>
         Refresh
       </button>
@@ -32,26 +28,20 @@
 
   <!-- AG-Grid Table -->
   <div class="grid-container">
-    <ag-grid-angular
-      #agGrid
-      [ngClass]="gridTheme"
-      [gridOptions]="gridOptions"
-      [columnDefs]="columnDefs"
-      (gridReady)="onGridReady($event)"
-      [style.width.%]="100"
-      [style.height]="getTableHeight()">
+    <ag-grid-angular #agGrid [ngClass]="gridTheme" [gridOptions]="gridOptions" [columnDefs]="columnDefs"
+      (gridReady)="onGridReady($event)" [style.width.%]="100" [style.height]="getTableHeight()">
     </ag-grid-angular>
   </div>
 
   <!-- Error Details -->
   @if (hasError) {
-    <div class="error-details">
-      <mat-icon class="error-icon">warning</mat-icon>
-      <span class="error-message">{{ errorMessage }}</span>
-      <button mat-button color="primary" (click)="refreshData()" class="retry-btn">
-        Retry
-      </button>
-    </div>
+  <div class="error-details">
+    <mat-icon class="error-icon">warning</mat-icon>
+    <span class="error-message">{{ errorMessage }}</span>
+    <button mat-button color="primary" (click)="refreshData()" class="retry-btn">
+      Retry
+    </button>
+  </div>
   }
 
 </div>

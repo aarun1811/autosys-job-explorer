@@ -5,14 +5,14 @@ import { FilterState } from '../../tlm-stats-modal-v2.component';
 @Component({
   selector: 'app-tlm-filters-v2',
   templateUrl: './tlm-filters-v2.component.html',
-  styleUrls: ['./tlm-filters-v2.component.css']
+  styleUrls: ['./tlm-filters-v2.component.scss']
 })
 export class TlmFiltersV2Component implements OnInit {
-  
+
   @Input() filterState!: FilterState;
   @Input() isLoadingRecons: boolean = false;
   @Input() isLoadingSetIds: boolean = false;
-  
+
   @Output() reconSelectionChange = new EventEmitter<string[]>();
   @Output() setIdSelectionChange = new EventEmitter<string[]>();
   @Output() dateRangeChange = new EventEmitter<DateRange>();
@@ -21,7 +21,7 @@ export class TlmFiltersV2Component implements OnInit {
 
   // Constants
   DateRange = DateRange;
-  
+
   // Date range options
   dateRangeOptions = [
     { value: DateRange.ONE_DAY, label: 'Last 1 Day', description: 'Last business day' },
@@ -72,7 +72,7 @@ export class TlmFiltersV2Component implements OnInit {
 
   canClearFilters(): boolean {
     return (!this.filterState.reconLocked && this.filterState.selectedRecons.length > 0) ||
-           (!this.filterState.setIdLocked && this.filterState.selectedSetIds.length > 0) ||
-           this.filterState.dateRange !== DateRange.ONE_DAY;
+      (!this.filterState.setIdLocked && this.filterState.selectedSetIds.length > 0) ||
+      this.filterState.dateRange !== DateRange.ONE_DAY;
   }
 }

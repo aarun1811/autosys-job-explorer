@@ -4,10 +4,10 @@ import { DashboardSummary } from '../../../../../../services/tlm-stats-v2.servic
 @Component({
   selector: 'app-tlm-pie-chart-v2',
   templateUrl: './tlm-pie-chart-v2.component.html',
-  styleUrls: ['./tlm-pie-chart-v2.component.css']
+  styleUrls: ['./tlm-pie-chart-v2.component.scss']
 })
 export class TlmPieChartV2Component implements OnInit, OnChanges {
-  
+
   @Input() summary: DashboardSummary | null = null;
   @Input() isLoading: boolean = false;
   @Input() hasError: boolean = false;
@@ -35,7 +35,7 @@ export class TlmPieChartV2Component implements OnInit, OnChanges {
     }
 
     // Define a mapping of categories to their fixed colors.
-    const categoryColors = {
+    const categoryColors: { [key: string]: string } = {
       'Breaks': '#fbbc04',
       'Automatch': '#34a853',
       'Manual Match': '#8e24aa'
