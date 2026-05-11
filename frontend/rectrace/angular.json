@@ -26,26 +26,14 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              {
-                "glob": "**/*",
-                "input": "shared-lib/dist/rec-shared-lib/src/assets",
-                "output": "assets/rec-shared-lib"
-              }
+              "src/assets"
             ],
             "styles": [
               "node_modules/ag-grid-enterprise/styles/ag-grid.css",
               "node_modules/ag-grid-enterprise/styles/ag-theme-alpine.css",
               "src/styles.css",
-              "@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "shared-lib/dist/rec-shared-lib/src/assets/styles.scss",
-              "shared-lib/dist/rec-shared-lib/src/assets/_themes.scss"
+              "@angular/material/prebuilt-themes/deeppurple-amber.css"
             ],
-            "stylePreprocessorOptions": {
-              "includePaths": [
-                "shared-lib/dist/rec-shared-lib/src/assets"
-              ]
-            },
             "scripts": []
           },
           "configurations": {
@@ -154,42 +142,9 @@
             ],
             "styles": [
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "src/styles.css"
+              "src/styles.scss"
             ],
             "scripts": []
-          }
-        }
-      }
-    },
-    "rec-shared-lib": {
-      "projectType": "library",
-      "root": "shared-lib/projects/rec-shared-lib",
-      "sourceRoot": "shared-lib/projects/rec-shared-lib/src",
-      "prefix": "lib",
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
-          "options": {
-            "project": "shared-lib/projects/rec-shared-lib/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "shared-lib/projects/rec-shared-lib/tsconfig.lib.prod.json"
-            },
-            "development": {
-              "tsConfig": "shared-lib/projects/rec-shared-lib/tsconfig.lib.json"
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "tsConfig": "shared-lib/projects/rec-shared-lib/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
           }
         }
       }
