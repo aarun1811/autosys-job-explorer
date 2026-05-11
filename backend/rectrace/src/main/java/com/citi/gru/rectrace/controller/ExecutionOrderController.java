@@ -10,7 +10,7 @@ import com.citi.gru.rectrace.service.ExecutionOrderService;
 @RestController
 @RequestMapping("/api/execution-order")
 public class ExecutionOrderController {
-    
+
     private final ExecutionOrderService executionOrderService;
 
     public ExecutionOrderController(ExecutionOrderService executionOrderService) {
@@ -21,4 +21,4 @@ public class ExecutionOrderController {
     public ExecutionOrderDTO getExecutionOrder(@PathVariable String loadJobName) {
         return executionOrderService.getExecutionOrder(loadJobName);
     }
-} 
+}
