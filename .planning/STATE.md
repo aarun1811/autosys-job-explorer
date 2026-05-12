@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: "Phase 01 execution complete (7/8 waves landed, W4 retired-merged into W1). gsd-verifier PENDING-USER: 9/9 must-haves auto-verified PASS; 3 UI smoke items (execution-order graph, TLM-stats modal, QuickRec modal) deferred to manual user verification per Phase 00.1 P07 pattern. Plan amended twice in-flight to merge HLRC-using files (Wave 4 + Wave 3 V3 trio + SearchController V3 strip) into the Wave 1 anchor commit; bisectability preserved."
-last_updated: "2026-05-12T22:30:00.000Z"
+status: ready_for_next_phase
+stopped_at: "Phase 01 CLOSED 2026-05-12 (PASS). 9/9 auto must-haves verified; 3 Angular UI smoke items user-accepted as deferred (will be re-validated under React rollout in Phases 2-4 instead of investing in Angular smoke). Boot 3.5.14 + Java 21 + jakarta + ES Java API Client + SecurityFilterChain + BOOT-08 cleanup all landed. Next: Phase 2 React Foundation."
+last_updated: "2026-05-12T22:45:00.000Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
@@ -21,20 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12)
 
 **Core value:** Users can quickly find Autosys jobs and understand their dependencies and TLM statistics through a unified, performant, design-consistent UI.
-**Current focus:** Phase 01 — Backend Platform Upgrade (executed; PENDING user UI smoke sign-off)
+**Current focus:** Phase 02 — React Foundation (next; not yet specced)
 
 ## Current Position
 
-Phase: 01 (Backend Platform Upgrade) — EXECUTION COMPLETE, gsd-verifier PENDING-USER
-Plan: 8 waves authored; 7 wave-anchor commits landed (W4 retired-merged into W1 during execution). All 9/9 must-haves auto-verified PASS by gsd-verifier (commit e84e6e7).
-Status: Both modules build and boot on **Spring Boot 3.5.14 + Java 21**. Jakarta sweep complete (sql + net.ssl JDK packages preserved). ES Java API Client migration done (SuggestionService + ElasticsearchServiceV4 on `co.elastic.clients.elasticsearch.ElasticsearchClient`). V3 search trio + V3 endpoints + frontend search.service deleted. SecurityFilterChain permit-all bean per module. BOOT-08 cleanup quartet done (SLF4J + show_sql off + explicit HikariCP + AppConstants populated). Phase 0.1 KNOWN GAPS closed via conditional scriptExecutor wraps. ROADMAP.md updated to reflect 3.5.14/Java 21.
+Phase: 01 (Backend Platform Upgrade) — **CLOSED PASS** (user-accepted closure 2026-05-12).
+Plan: 8 waves authored; 7 wave-anchor commits landed (W4 retired-merged into W1 during execution). gsd-verifier verdict PASS at commit `097af9c`. The 3 Angular UI smoke items (UI-a/b/c) were accepted deferred — they will be re-exercised under the React rollout in Phases 2-4 rather than against the legacy Angular app.
 
-**3 UI smoke items DEFERRED-TO-USER** (recipes in `.planning/phases/01-backend-platform-upgrade/01-SMOKE-CHECKLIST.md` lines 227-273):
-- UI-a: execution-order graph renders multi-node
-- UI-b: TLM-stats modal opens with charts
-- UI-c: QuickRec modal opens with data
+**Phase 01 deliverables landed:**
+- Boot **3.5.14** + Java **21** in both modules (lockstep)
+- jakarta-EE sweep complete (`javax.sql`/`javax.net.ssl` JDK packages correctly preserved)
+- ES Java API Client (`co.elastic.clients.elasticsearch.ElasticsearchClient`) on the live ES paths
+- V3 search trio + V3 endpoints + frontend `search.service.*` deleted
+- `SecurityFilterChain` permit-all per module (auth deferred to Phase 9)
+- BOOT-08 cleanup quartet: SLF4J + show_sql off + explicit HikariCP (4 named pools) + AppConstants populated
+- Phase 0.1 KNOWN GAPS closed via conditional `scriptExecutor.executeScript` wraps
+- ROADMAP.md updated to reflect 3.5.14/Java 21
 
-Once user signs off on UI-a/b/c, Phase 01 is ready for `/gsd-complete-phase 1`.
+**Next:** Phase 02 — React Foundation. Requirements: REACT-01..REACT-08. Depends on Phase 01 (now satisfied). Entry point: `/gsd-spec-phase 2` (clarify scope) or `/gsd-discuss-phase 2` (gather context for planning).
 
 Last activity: 2026-05-12
 

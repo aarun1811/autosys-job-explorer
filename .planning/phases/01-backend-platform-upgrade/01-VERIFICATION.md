@@ -1,13 +1,16 @@
 ---
 phase: 01-backend-platform-upgrade
 verified: 2026-05-12T17:05:00Z
-status: human_needed
-score: 9/9 must-haves verified (auto); 3/3 UI items pending manual user smoke
+status: passed
+score: 9/9 must-haves verified (auto); 3 UI items accepted deferred by user 2026-05-12 (test under React rollout in Phase 2)
 verifier: gsd-verifier (Claude Opus 4.7 1M)
 branch: milestone/modernization
 head_commit: 097af9c
 re_verification: false
-verdict: PENDING-USER
+verdict: PASS
+verdict_history:
+  - 2026-05-12T17:05Z: PENDING-USER (9/9 auto, 3 UI deferred)
+  - 2026-05-12T22:45Z: PASS (user accepted deferred UI smoke — to be exercised under Phase 2 React rollout instead of Angular)
 summary: |
   Phase 1 (Backend Platform Upgrade) auto-verifiable scope is fully achieved.
   Both modules build/test green on Spring Boot 3.5.14 + Java 21; jakarta sweep
@@ -279,9 +282,11 @@ These are **acknowledged residuals** — not blockers, all owned by named future
 - Final build + test green on both modules under JDK 21.
 - Anti-pattern scan clean (zero TBD/FIXME/XXX/TODO/HACK).
 
-**Verdict:** **PENDING-USER** — codebase work is complete and verified; awaiting user execution of `01-SMOKE-CHECKLIST.md` steps 1–9 against the sibling `../rectrace-local-dev/` stack and sign-off on the 3 deferred UI items (UI-a, UI-b, UI-c) before `/gsd-complete-phase 1` can run.
+**Verdict:** **PASS** (user-accepted closure 2026-05-12).
 
-Once the user marks steps 1–9 PASS in the SMOKE-CHECKLIST Results table and ticks the three UI sign-off boxes (lines 302–304), **Ready for `/gsd-complete-phase 1`**.
+The 9/9 auto-verifiable must-haves all passed. The 3 Angular UI smoke items (UI-a execution-order graph, UI-b TLM-stats modal, UI-c QuickRec modal) were originally deferred to manual sign-off. **User accepted closure without executing them**, with rationale: the React frontend (Phase 2 onward) replaces the Angular UI surface, so investing manual smoke time against the legacy Angular app is low-ROI. The same UI flows will be re-exercised against the new React shell in Phase 3 (React Search Vertical Slice) and Phase 4 (recviz Integration), where they will receive their proper validation gates.
+
+If a future need arises to operate the Angular app on Boot 3.5.14 (e.g., before React reaches feature parity), the 3 deferred items can be re-exercised at any time via `01-SMOKE-CHECKLIST.md` lines 227-273; the smoke recipes remain valid.
 
 ---
 
