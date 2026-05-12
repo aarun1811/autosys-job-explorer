@@ -30,6 +30,7 @@ Users can quickly find Autosys jobs and understand their dependencies and TLM st
 
 <!-- Listed in user-stated priority order. -->
 
+- [ ] **BOOT-UPGRADE**: Upgrade `backend/rectrace` and `rectrace-tlm-stats` from Spring Boot 2.7.16 to Spring Boot 3.2.x (LTS-style), bump Java target to 17 (or 21 if VM supports), migrate `javax.*` → `jakarta.*`, migrate Spring Security config to `SecurityFilterChain`, refresh dependency pins (Micrometer, logstash-logback-encoder, ES client, Quartz/ShedLock), opportunistic cleanup of low-hanging tech-debt items along the way. All new code in subsequent phases targets 3.x.
 - [ ] **REACT-MIGRATION**: Stand up a net-new React frontend project mirroring recviz's design language and patterns; port only the latest search flow and latest custom renderers from the Angular app. Existing Angular app stays running until the React app is ready.
 - [ ] **RECVIZ-INTEGRATION**: Embed recviz inside the new React app via iframe/micro-frontend; configurable per-tab and inside modals (alongside AG-Grid as a renderer option).
 - [ ] **SEARCH-BUG-HYPHEN**: Fix special-character search bug — hyphen (`-`) in search terms returns wrong results, likely an Elasticsearch analyzer/tokenizer or indexing issue.
@@ -43,8 +44,8 @@ Users can quickly find Autosys jobs and understand their dependencies and TLM st
 ### Out of Scope
 
 - **Rewrite of existing Angular app** — A new React project is built alongside; the Angular app is not refactored beyond what's needed to keep it running.
-- **Backend (Spring Boot) rewrite or restructure** — Only additive features land in the existing backend. No framework upgrades, package re-layout, or service splits unless required by a specific item.
-- **TLM-stats service migration / rewrite** — Stays as-is structurally; receives observability changes only.
+- **Backend (Spring Boot) rewrite or restructure** — Only additive features and a framework version upgrade (BOOT-UPGRADE); no package re-layout, no service splits.
+- **TLM-stats service migration / rewrite** — Stays as-is structurally; receives the Boot upgrade and observability changes only.
 - **End-user-facing SQL console** — Arbitrary SELECT queries are authored by devs/admins in config; users do not write or paste SQL.
 - **Modifications to recviz** — recviz is a separate app at `/Users/aarun/Workspace/Projects/recviz`; we only integrate with it. No PRs into recviz.
 - **Mobile UI** — Internal desktop browser experience only.
@@ -60,7 +61,7 @@ Users can quickly find Autosys jobs and understand their dependencies and TLM st
 
 ## Constraints
 
-- **Tech stack — backend**: Spring Boot 2.7.16 stays. No framework upgrade in this milestone.
+- **Tech stack — backend**: Spring Boot 3.2.x (LTS-style), Java 17 (or 21 if VM supports). Upgrade lands as BOOT-UPGRADE phase; all subsequent backend work targets 3.x.
 - **Tech stack — new frontend**: React, with **shadcn** as the design system, mirroring recviz's design language and structural patterns.
 - **Integration — recviz**: Embedded as iframe / micro-frontend. We do not modify recviz.
 - **Deployment**: Citi VM servers (Linux). Single bash script is the operations surface.
@@ -74,7 +75,8 @@ Users can quickly find Autosys jobs and understand their dependencies and TLM st
 | Build new React app rather than rewrite Angular | Migration is strategically mandated; building net-new keeps the existing Angular app shippable during transition | — Pending |
 | Port only latest search flow + renderers to React | Avoid dragging legacy v1/v2 code paths into the new app | — Pending |
 | recviz integrated via iframe / micro-frontend | recviz is a separate Python-backed app; URL embedding is the lowest-friction integration | — Pending |
-| Spring Boot backend stays as-is structurally | Migration scope kept manageable; new features layer on additively | — Pending |
+| Spring Boot backend stays structurally same but upgrades 2.7 → 3.2 (LTS-style) | Mainstream EOL on 2.7; net-new code (loader, SQL service, observability, security) lands on 3.x to avoid double-rework; Spring Security 6 + Micrometer Tracing simplify downstream phases | — Pending |
+| Java upgrade to 17 (or 21 if VM supports) | Required by Spring Boot 3.x; aligns with current LTS | — Pending |
 | Direct Oracle queries: `SELECT`-only, dev/admin authored in config | Adds flexibility without exposing SQL to end users; safer surface | — Pending |
 | ES loader has its own multi-job scheduler | Configuration-driven Oracle→ES ingest with periodic runs; avoids external scheduler dependency | — Pending |
 | One bash script as the unified ops surface | User preference; works identically on laptop and Citi VM | — Pending |

@@ -12,7 +12,19 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [ ] **FOUND-01**: Remove `maven.test.skip=true` from `backend/rectrace/pom.xml` and `rectrace-tlm-stats/pom.xml`; switch to explicit `-DskipTests` for manual override only.
 - [ ] **FOUND-02**: Add CI gate that fails on `mvn test` failure for both backend modules.
 - [ ] **FOUND-03**: Bootstrap minimum test scaffolding — at least one passing Spring context-load test per Maven module.
-- [ ] **FOUND-04**: Commit a React↔Angular **parity matrix** mapping every `cellRenderer` × every search category × every grid behavior to `port | drop | replace-with-recviz`. Lives at `.planning/parity-matrix.md` and gates Phase 2.
+- [ ] **FOUND-04**: Commit a React↔Angular **parity matrix** mapping every `cellRenderer` × every search category × every grid behavior to `port | drop | replace-with-recviz`. Lives at `.planning/parity-matrix.md` and gates the React phase.
+
+### Backend platform upgrade (Spring Boot 2.7 → 3.2 + Java + cleanup)
+
+- [ ] **BOOT-01**: Bump Java target to 17 (or 21 if Citi VM supports it) in both `pom.xml` files and CI; confirm `mvn -version` matches on dev laptop and target VM.
+- [ ] **BOOT-02**: Migrate `backend/rectrace` and `rectrace-tlm-stats` to Spring Boot 3.2.x — parent POM + BOM version + starter alignment.
+- [ ] **BOOT-03**: Global `javax.*` → `jakarta.*` namespace migration (servlet, persistence, validation, annotation, ws, transaction).
+- [ ] **BOOT-04**: Spring Security migration — replace deprecated `WebSecurityConfigurerAdapter` with `SecurityFilterChain` bean configuration; port the existing `x-citiportal-loginid` filter to the new model (final auth mechanism still locked in Phase 9 / SEC).
+- [ ] **BOOT-05**: Spring Data JPA 3 / Hibernate 6 — fix breaking changes (entity manager, repository signatures, named-parameter binding).
+- [ ] **BOOT-06**: Elasticsearch client upgrade aligned with Boot 3.2 BOM — existing search code (v3/v4) and bulk indexing path both verified end-to-end.
+- [ ] **BOOT-07**: Dependency-pin refresh — Micrometer 1.12+, `logstash-logback-encoder` 8.x (Logback 1.4+), Quartz / ShedLock / JSqlParser versions resolved against Boot 3.2 BOM.
+- [ ] **BOOT-08**: Opportunistic cleanup — replace `printStackTrace` with structured logging, remove `show_sql=true`, prune dead code, remove deprecated API usage, address `CONCERNS.md` LOW/MEDIUM items that are cheap under the upgrade.
+- [ ] **BOOT-09**: All existing tests (now un-skipped per FOUND-01) pass on 3.2; manual end-to-end smoke confirms search, execution order, TLM stats still work.
 
 ### React Foundation (scaffolding + cross-cutting filter)
 
@@ -22,7 +34,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [ ] **REACT-04**: Single canonical design-tokens file (`tokens.css` + `theme.ts`) aligned with recviz; ESLint rule rejects hex codes in components.
 - [ ] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
 - [ ] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
-- [ ] **REACT-07**: `CorrelationIdFilter` in backend writing `traceId` to MDC; React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
+- [ ] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
 - [ ] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, angular components registered; React added once `npm run dev` boots.
 
 ### React Vertical Slice — Search
@@ -70,14 +82,14 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### Observability sweep
 
-- [ ] **OBS-01**: `logstash-logback-encoder 7.4` configured in `logback-spring.xml` (NEVER `logback.xml`) for `backend/rectrace` and `rectrace-tlm-stats`; JSON logs with `traceId`, `userId`, `path`, `method`, `status`, `durationMs`.
+- [ ] **OBS-01**: `logstash-logback-encoder` (8.x post-BOOT-UPGRADE) configured in `logback-spring.xml` (NEVER `logback.xml`) for `backend/rectrace` and `rectrace-tlm-stats`; JSON logs with `traceId`, `userId`, `path`, `method`, `status`, `durationMs`.
 - [ ] **OBS-02**: Custom `HealthIndicator` beans — Oracle reachability, ES reachability, loader-run-age, search-config validity — exposed via `/actuator/health`.
 - [ ] **OBS-03**: Actuator endpoints locked down: `management.endpoints.web.exposure.include` is an explicit list (no wildcards); `show-details=when-authorized` or `never`.
 - [ ] **OBS-04**: `@Timed`/AOP slow-query logger around `JdbcTemplate` and ES calls; threshold-driven log line emitted.
 - [ ] **OBS-05**: Prometheus metrics via `micrometer-registry-prometheus` at `/actuator/prometheus`.
 - [ ] **OBS-06**: Correlation ID propagated through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations (`ScriptExecutor`).
 - [ ] **OBS-07**: Log aggregator forwarder wired (target — Splunk / ELK / Loki / OTel collector — locked during phase planning).
-- [ ] **OBS-08**: Micrometer 1.9.x pinned by Boot 2.7 BOM; CI guard rejects an override.
+- [ ] **OBS-08**: Micrometer (1.12+ post-BOOT-UPGRADE) pinned by the Boot BOM; CI guard rejects an override. Micrometer Tracing (Boot 3 native) replaces the hand-rolled correlation ID filter.
 
 ### Hyphen / special-char search bug fix
 
@@ -132,8 +144,7 @@ Acknowledged but deferred to a later milestone.
 
 | Feature | Reason |
 |---------|--------|
-| Spring Boot 2.7 → 3.x upgrade | Scope explosion; Boot 2.7 stays per PROJECT.md constraint |
-| Backend rewrite or service split | Additive features only; no structural backend changes |
+| Backend rewrite or service split | Additive features only; no structural backend changes (the Boot upgrade is a version bump, not a structural rewrite) |
 | TLM-stats service rewrite | Receives observability work only; stays as-is structurally |
 | End-user SQL console | Anti-feature; queries are dev/admin-authored in config |
 | Natural-language / LLM query | Anti-feature for an internal data tool |
@@ -152,6 +163,7 @@ Filled during roadmap creation. Each requirement maps to exactly one phase.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FOUND-01..04 | TBD | Pending |
+| BOOT-01..09 | TBD | Pending |
 | REACT-01..08 | TBD | Pending |
 | SEARCH-01..07 | TBD | Pending |
 | RECVIZ-01..07 | TBD | Pending |
@@ -164,9 +176,9 @@ Filled during roadmap creation. Each requirement maps to exactly one phase.
 | SEC-01..08 | TBD | Pending |
 
 **Coverage (pre-roadmap):**
-- v1 requirements: 58 total (across 11 categories)
+- v1 requirements: 67 total (across 12 categories)
 - Mapped to phases: 0 (filled by roadmapper)
-- Unmapped: 58 (expected at this stage)
+- Unmapped: 67 (expected at this stage)
 
 ---
 *Requirements defined: 2026-05-12*
