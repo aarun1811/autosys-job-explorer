@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: "Phase 01 CLOSED 2026-05-12 (PASS). 9/9 auto must-haves verified; 3 Angular UI smoke items user-accepted as deferred (will be re-validated under React rollout in Phases 2-4 instead of investing in Angular smoke). Boot 3.5.14 + Java 21 + jakarta + ES Java API Client + SecurityFilterChain + BOOT-08 cleanup all landed. Next: Phase 2 React Foundation."
-last_updated: "2026-05-12T22:45:00.000Z"
+stopped_at: Phase 2 context gathered (4 areas, 18 decisions). Ready for /gsd-plan-phase 2.
+last_updated: "2026-05-12T18:44:34.178Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
   percent: 100
 ---
 
@@ -29,6 +29,7 @@ Phase: 01 (Backend Platform Upgrade) — **CLOSED PASS** (user-accepted closure 
 Plan: 8 waves authored; 7 wave-anchor commits landed (W4 retired-merged into W1 during execution). gsd-verifier verdict PASS at commit `097af9c`. The 3 Angular UI smoke items (UI-a/b/c) were accepted deferred — they will be re-exercised under the React rollout in Phases 2-4 rather than against the legacy Angular app.
 
 **Phase 01 deliverables landed:**
+
 - Boot **3.5.14** + Java **21** in both modules (lockstep)
 - jakarta-EE sweep complete (`javax.sql`/`javax.net.ssl` JDK packages correctly preserved)
 - ES Java API Client (`co.elastic.clients.elasticsearch.ElasticsearchClient`) on the live ES paths
@@ -125,9 +126,11 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | Planning state | REQUIREMENTS.md missing LOCAL-DEV-01..06 entries (referenced by ROADMAP Phase 00.1 + every 00.1-*-PLAN.md) — see `.planning/phases/00.1-local-dev-seed-bootstrap/deferred-items.md` | Open | Plan 00.1-01 (2026-05-12) |
+| Design tokens | Add chart/series/ramp tokens to `frontend-react/src/index.css` "Rectrace extensions" overlay block — surfaces when first chart/data-viz component is planned (see Phase 2 CONTEXT.md D-2.7). Reference recviz `src/index.css` `--series-1..8`, `--ramp-low/high`, `--chart-positive/negative/warning`. Phase 8 DESIGN-01 audits the lot. | Open | Phase 2 discuss (2026-05-13) |
+| Docs hygiene | ROADMAP.md (Phase 2 SC#5, Phase 3 SC#1) + REQUIREMENTS.md (REACT-08, SEARCH-07) need edits: drop `/v6/` references (superseded by Phase 2 D-2.4); drop "angular" from ops-script component lists (superseded by Phase 2 D-2.15). Either fold into Phase 2 plan-phase or capture separately. | Open | Phase 2 discuss (2026-05-13) |
 
 ## Session Continuity
 
-Last session: 2026-05-12T14:52:24.096Z
-Stopped at: Phase 00.1 verification PASSED; 2 KNOWN GAPS surfaced for Phase 1 BOOT-08; 3 UI smoke items deferred to manual user verification
-Resume file: .planning/phases/00.1-local-dev-seed-bootstrap/00.1-VERIFICATION.md
+Last session: 2026-05-12T18:44:34.166Z
+Stopped at: Phase 2 context gathered (4 areas, 18 decisions). Ready for /gsd-plan-phase 2.
+Resume file: .planning/phases/02-react-foundation/02-CONTEXT.md
