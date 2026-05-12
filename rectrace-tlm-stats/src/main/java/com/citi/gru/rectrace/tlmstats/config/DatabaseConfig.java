@@ -23,6 +23,8 @@ import com.citi.gru.rectrace.tlmstats.model.TlmInstanceConfig;
 import com.citi.gru.rectrace.tlmstats.model.TlmInstancesWrapper;
 import com.citi.gru.rectrace.tlmstats.util.ScriptExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Database configuration for multiple TLM instances and reconmgmt database
@@ -66,6 +68,36 @@ public class DatabaseConfig {
     @Value("${password.script.path:/opt/rectify/control/scripts/get_password.sh}")
     private String passwordScriptPath;
 
+    @Value("${reconmgmt.datasource.hikari.maximum-pool-size:5}")
+    private int reconmgmtMaximumPoolSize;
+
+    @Value("${reconmgmt.datasource.hikari.minimum-idle:2}")
+    private int reconmgmtMinimumIdle;
+
+    @Value("${reconmgmt.datasource.hikari.connection-timeout:30000}")
+    private long reconmgmtConnectionTimeout;
+
+    @Value("${reconmgmt.datasource.hikari.idle-timeout:600000}")
+    private long reconmgmtIdleTimeout;
+
+    @Value("${reconmgmt.datasource.hikari.max-lifetime:1800000}")
+    private long reconmgmtMaxLifetime;
+
+    @Value("${recportal.datasource.hikari.maximum-pool-size:5}")
+    private int recportalMaximumPoolSize;
+
+    @Value("${recportal.datasource.hikari.minimum-idle:2}")
+    private int recportalMinimumIdle;
+
+    @Value("${recportal.datasource.hikari.connection-timeout:30000}")
+    private long recportalConnectionTimeout;
+
+    @Value("${recportal.datasource.hikari.idle-timeout:600000}")
+    private long recportalIdleTimeout;
+
+    @Value("${recportal.datasource.hikari.max-lifetime:1800000}")
+    private long recportalMaxLifetime;
+
     @Autowired
     private ScriptExecutor scriptExecutor;
 
@@ -74,19 +106,29 @@ public class DatabaseConfig {
      */
     @Bean(name = "reconmgmtDataSource")
     public DataSource reconmgmtDataSource() {
-        logger.info("Creating reconmgmt DataSource for service: {} and schema: {}", 
+        logger.info("Creating reconmgmt DataSource for service: {} and schema: {}",
                    reconmgmtServiceName, reconmgmtDbSchema);
-        
+
         String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
                 reconmgmtServiceName.toUpperCase(), reconmgmtDbSchema.toUpperCase());
-        
-        return DataSourceBuilder
-                .create()
-                .url(reconmgmtUrl)
-                .username(reconmgmtUsername)
-                .driverClassName(reconmgmtDriverClassName)
-                .password(decryptedPassword)
-                .build();
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(reconmgmtUrl);
+        config.setUsername(reconmgmtUsername);
+        config.setPassword(decryptedPassword);
+        config.setDriverClassName(reconmgmtDriverClassName);
+        config.setMaximumPoolSize(reconmgmtMaximumPoolSize);
+        config.setMinimumIdle(reconmgmtMinimumIdle);
+        config.setConnectionTimeout(reconmgmtConnectionTimeout);
+        config.setIdleTimeout(reconmgmtIdleTimeout);
+        config.setMaxLifetime(reconmgmtMaxLifetime);
+        config.setPoolName("Reconmgmt-HikariCP");
+
+        // Oracle specific optimizations
+        config.addDataSourceProperty("oracle.jdbc.ReadTimeout", "60000");
+        config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
+
+        return new HikariDataSource(config);
     }
 
     /**
@@ -102,19 +144,29 @@ public class DatabaseConfig {
      */
     @Bean(name = "recportalDataSource")
     public DataSource recportalDataSource() {
-        logger.info("Creating recportal DataSource for service: {} and schema: {}", 
+        logger.info("Creating recportal DataSource for service: {} and schema: {}",
                    recportalServiceName, recportalDbSchema);
-        
+
         String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
                 recportalServiceName.toUpperCase(), recportalDbSchema.toUpperCase());
-        
-        return DataSourceBuilder
-                .create()
-                .url(recportalUrl)
-                .username(recportalUsername)
-                .driverClassName(recportalDriverClassName)
-                .password(decryptedPassword)
-                .build();
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(recportalUrl);
+        config.setUsername(recportalUsername);
+        config.setPassword(decryptedPassword);
+        config.setDriverClassName(recportalDriverClassName);
+        config.setMaximumPoolSize(recportalMaximumPoolSize);
+        config.setMinimumIdle(recportalMinimumIdle);
+        config.setConnectionTimeout(recportalConnectionTimeout);
+        config.setIdleTimeout(recportalIdleTimeout);
+        config.setMaxLifetime(recportalMaxLifetime);
+        config.setPoolName("Recportal-HikariCP");
+
+        // Oracle specific optimizations
+        config.addDataSourceProperty("oracle.jdbc.ReadTimeout", "60000");
+        config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
+
+        return new HikariDataSource(config);
     }
 
     /**

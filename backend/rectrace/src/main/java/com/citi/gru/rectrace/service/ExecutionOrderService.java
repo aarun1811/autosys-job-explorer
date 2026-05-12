@@ -152,7 +152,7 @@ public class ExecutionOrderService {
             }
             return writer.toString();
         } catch (Exception e) {
-            System.err.println("Error reading CLOB");
+            logger.error("Error reading CLOB", e);
             return "";
         }
     }

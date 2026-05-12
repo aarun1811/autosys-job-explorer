@@ -1,5 +1,6 @@
 package com.citi.gru.rectrace.controller.v4;
 
+import com.citi.gru.rectrace.constants.AppConstants;
 import com.citi.gru.rectrace.dto.v4.*;
 import com.citi.gru.rectrace.service.v4.SearchServiceV4;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ public class SearchControllerV4 {
     @GetMapping("/initial")
     public ResponseEntity<?> performInitialSearch(
             @RequestParam String keyword,
-            @RequestHeader(value = "x-citiportal-loginid", required = false) String userId) {
+            @RequestHeader(value = AppConstants.CITI_PORTAL_LOGIN_ID_HEADER, required = false) String userId) {
         
         try {
             log.info("Initial search request - keyword: {}, user: {}", keyword, userId);
@@ -49,7 +50,7 @@ public class SearchControllerV4 {
     public ResponseEntity<?> fetchSSRMData(
             @PathVariable String category,
             @RequestBody SSRMRequestV4 request,
-            @RequestHeader(value = "x-citiportal-loginid", required = false) String userId) {
+            @RequestHeader(value = AppConstants.CITI_PORTAL_LOGIN_ID_HEADER, required = false) String userId) {
         
         try {
             log.debug("SSRM request - category: {}, user: {}, startRow: {}, endRow: {}", 
@@ -89,7 +90,7 @@ public class SearchControllerV4 {
     public void exportData(
             @PathVariable String category,
             @RequestBody ExportRequestV4 request,
-            @RequestHeader(value = "x-citiportal-loginid", required = false) String userId,
+            @RequestHeader(value = AppConstants.CITI_PORTAL_LOGIN_ID_HEADER, required = false) String userId,
             HttpServletResponse response) {
         
         try {
