@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Plan 00.1-05 complete (5 connected scenarios across 11 Oracle tables + ES rectrace_core_index; sibling commits 929ec5f + 7362305)
-last_updated: "2026-05-12T14:30:15.647Z"
+status: phase-complete
+stopped_at: Phase 00.1 COMPLETE (Plan 00.1-07 — application-local.properties + finalized README + D-0.1.23 smoke 5/5 automatable PASS; two KNOWN GAPS handed to Phase 1 BOOT-08; rectrace commit 9779ef1 + sibling commit 866752e)
+last_updated: "2026-05-12T14:44:05Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-12)
 
 ## Current Position
 
-Phase: 00.1 (Local Dev Seed Bootstrap) — EXECUTING
-Plan: 7 of 7 (Phase 00.1 plan counter; 00.1-01..00.1-05 complete, 00.1-06 ready)
-Status: Ready to execute
+Phase: 00.1 (Local Dev Seed Bootstrap) — COMPLETE
+Plan: 7 of 7 (all Phase 00.1 plans landed). Next milestone phase: 01 (Backend Platform Upgrade).
+Status: Phase 00.1 closed — subject to two KNOWN GAPS handed to Phase 1 BOOT-08 (see Decisions below) + 3 manual UI verification steps deferred to user
 Last activity: 2026-05-12
 
 Progress: [██████████] 100%
@@ -45,7 +45,7 @@ Progress: [██████████] 100%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 0 — Foundation | 3 | ~12min | ~4min |
-| Phase 00.1 — Local Dev Seed Bootstrap | 5/7 | ~17min | ~3.4min |
+| Phase 00.1 — Local Dev Seed Bootstrap | 7/7 | ~56min | ~8min |
 
 **Recent Trend:**
 
@@ -64,6 +64,7 @@ Progress: [██████████] 100%
 | Phase 00.1 P04 | 1min | 1 task | 1 file |
 | Phase 00.1 P05 | 3min | 2 tasks | 6 files |
 | Phase 00.1 P06 | 25min | 2 tasks | 1 files |
+| Phase 00.1 P07 | 14min | 3 tasks | 4 files (2 .properties + README + SUMMARY) |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase 00.1]: Seed-data plan 5 complete — 5 fully-connected fabricated scenarios across 11 Oracle tables (220 rows total: 5 rectrace_core + 5 ujo_job + 5 ujo_job_status + 15 autosys_tlm_recon_sequences + 20 autosys_all_jobs_data + 5 recon_bank + 50×3 mr_csum_* + 10 quickrec_stats + 5 recportal_manual_match) + ES rectrace_core_index (5 docs); ujo_job and ujo_job_status split with joid JOIN returning 5 rows (BLOCKER-1+3 verified live); mr_csum_* / quickrec.load_date / manual_match.cob+updated_date all use TRUNC(SYSDATE) ± N (WARNING-5); status mix [(1,2),(2,1),(4,1),(7,1)]; 2 of 5 scenarios use hyphenated identifiers (LOAD-ABC-123, RECON-XYZ-42 and friends), `term:set_id.keyword="SET-ABC-123"` and `term:job_name.keyword="LOAD-ABC-123"` each return 1 hit (Phase 8 dry-run target verified — LOCAL-DEV-04a). Rule 3 inline fix: index-create-from-mapping conditional added because plan 04 deleted the index for plan 06 idempotency — same conditional becomes apply.py's logic in plan 00.1-06.
 - [Phase 00.1]: apply.py owns ES index lifecycle (drop+recreate from mapping JSON on every --reset) — plan 05's inline conditional was a one-time bootstrap; apply.py is now the version-controlled source of truth for the 13 .keyword multi-fields
 - [Phase 00.1]: apply_sql_file does NOT strip trailing ';' from SQL chunks — oracledb thin mode REQUIRES 'END;' on PL/SQL blocks (PLS-00103 without it) and accepts a trailing ';' on plain DDL — the simpler-and-correct rule is to leave chunk endings untouched
+- [Phase 00.1 P07]: Two application-local.properties files committed in THIS repo (scope concession to D-0.1.24) — backend/rectrace points at localhost:1521/FREEPDB1 with rectrace/autosys schema-user credentials + http://localhost:9200 (no auth); rectrace-tlm-stats points at the same Oracle for reconmgmt/recportal. Phase 1 D-1.14 inherits these as-is. Rule 3 inline fix: removed `application-local.properties` from rectrace-tlm-stats/.gitignore.
+- [Phase 00.1 P07]: D-0.1.23 8-item smoke executed at phase exit — 5/5 automatable steps PASS (1=app starts with KNOWN GAP, 2=V4 search returns 3 SAMPLE_* rows, 3=suggest endpoint 200 OK empty, 7=hyphenated set_id.keyword=SET-ABC-123 returns 1 hit (Phase 8 dry-run prerequisite VERIFIED LIVE), 8=apply.py --reset idempotent across 2 cycles). UI steps 4/5/6 (execution-order graph, TLM-stats modal, QuickRec modal) deferred to manual user verification with explicit recipes in SUMMARY.md.
+- [Phase 00.1 P07]: TWO KNOWN GAPS handed to Phase 1 BOOT-08 — (a) **backend/rectrace DataSourceConfig.java** lines 41-42 unconditionally call scriptExecutor.executeScript("/opt/rectify/control/scripts/get_password.sh", ...) IGNORING datasource.password (newly discovered by strict smoke; matches the parallel rectrace-tlm-stats DatabaseConfig.java pattern at lines 80/108/190 the plan already knew about); (b) Lombok 1.18.30 ↔ Java 25 compile incompatibility (workaround: build with JAVA_HOME=Java 21). Both resolved by Phase 1 Boot 2.7 → 3.3.x upgrade.
 
 ### Pending Todos
 
@@ -112,6 +116,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-12T14:28:37.608Z
-Stopped at: Plan 00.1-05 complete (5 connected scenarios across 11 Oracle tables + ES rectrace_core_index; sibling commits 929ec5f + 7362305)
+Last session: 2026-05-12T14:44:05Z
+Stopped at: Phase 00.1 COMPLETE — Plan 00.1-07 application-local.properties + finalized README + D-0.1.23 smoke 5/5 automatable PASS (rectrace commit 9779ef1 + sibling commit 866752e). Next: begin Phase 1 (Backend Platform Upgrade).
 Resume file: None

@@ -11,7 +11,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 0: Foundation** — Test gate (`maven.test.skip` removed, CI fails on red) + React↔Angular parity matrix committed. (completed 2026-05-12)
-- [ ] **Phase 0.1: Local Dev Seed Bootstrap** (INSERTED) — Sibling `../rectrace-local-dev/` folder with Oracle DDL/seed scripts + ES index templates/bulk-load JSON; prerequisite for Phase 1's BOOT-09 smoke. Outside the project repo; does not ship to Citi.
+- [x] **Phase 0.1: Local Dev Seed Bootstrap** (INSERTED) — Sibling `../rectrace-local-dev/` folder with Oracle DDL/seed scripts + ES index templates/bulk-load JSON; prerequisite for Phase 1's BOOT-09 smoke. Outside the project repo; does not ship to Citi. (completed 2026-05-12; two KNOWN GAPS handed to Phase 1 BOOT-08: backend/rectrace DataSourceConfig.java + rectrace-tlm-stats DatabaseConfig.java unconditional script-executor calls)
 - [ ] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → 3.2, Java 17/21, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup.
 - [ ] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1.
 - [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states, side-by-side `/v6/` URL prefix.
@@ -45,7 +45,7 @@ Plans:
 **Goal**: Produce a standalone sibling repo `../rectrace-local-dev/` providing a one-command local Oracle 23c + Elasticsearch 8.13.4 stack with 5 fully-connected fabricated scenarios (≥2 hyphenated for the Phase 8 dry-run target), an idempotent Python `apply.py` driver, and `application-local.properties` files in this repo so the existing Boot 2.7.16 codebase can verify the seed end-to-end before Phase 1 ships.
 **Requirements**: LOCAL-DEV-01, LOCAL-DEV-02, LOCAL-DEV-03, LOCAL-DEV-04, LOCAL-DEV-04a, LOCAL-DEV-05, LOCAL-DEV-06
 **Depends on:** Phase 0
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans executed
 
 Plans:
 - [x] 00.1-01-PLAN.md — Sibling repo bootstrap (.gitignore, .env.example, requirements.txt, README skeleton, .venv)
@@ -54,7 +54,7 @@ Plans:
 - [x] 00.1-04-PLAN.md — ES rectrace_core_index mapping with explicit .keyword multi-fields on 13 hyphen-sensitive fields (Phase 8 fix prerequisite)
 - [x] 00.1-05-PLAN.md — 5 connected scenarios: scenarios.md + 4 Oracle INSERT files + ES NDJSON bulk-load
 - [x] 00.1-06-PLAN.md — apply.py idempotent driver with --reset, --verify, --oracle-only, --es-only flags
-- [ ] 00.1-07-PLAN.md — application-local.properties in this repo + finalized README + D-0.1.23 8-item smoke verification
+- [x] 00.1-07-PLAN.md — application-local.properties in this repo + finalized README + D-0.1.23 8-item smoke verification (5/5 automatable PASS; 3/3 UI deferred to manual user verification; 2 KNOWN GAPS handed to Phase 1 BOOT-08)
 
 ### Phase 1: Backend Platform Upgrade
 **Goal**: Both backend modules run on Spring Boot 3.2.x and Java 17/21 with `jakarta` namespaces, modern Spring Security configuration, refreshed dependency pins, and all existing functionality verified.
