@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 00.1-03 complete (11 Oracle tables live across 4 schemas; 4 DDL files committed; sibling repo commit count 4)
-last_updated: "2026-05-12T14:05:22Z"
+stopped_at: Plan 00.1-04 complete (ES index mapping with explicit .keyword multi-fields on 13 hyphen-sensitive fields; live-validated against localhost:9200; sibling repo commit count 5)
+last_updated: "2026-05-12T14:09:08Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
-  percent: 60
+  completed_plans: 7
+  percent: 70
 ---
 
 # Project State
@@ -26,30 +26,30 @@ See: .planning/PROJECT.md (updated 2026-05-12)
 ## Current Position
 
 Phase: 00.1 (Local Dev Seed Bootstrap) — EXECUTING
-Plan: 4 of 7 (Phase 00.1 plan counter; 00.1-01 + 00.1-02 + 00.1-03 complete, 00.1-04 ready)
+Plan: 5 of 7 (Phase 00.1 plan counter; 00.1-01..00.1-04 complete, 00.1-05 ready)
 Status: Ready to execute next plan
-Last activity: 2026-05-12 -- Plan 00.1-03 complete (Oracle DDL — 11 tables live across 4 schemas)
+Last activity: 2026-05-12 -- Plan 00.1-04 complete (ES rectrace_core_index mapping with 13 .keyword multi-fields at ignore_above:8192; live-validated)
 
-Progress: [██████░░░░] 60% (Phase 0: 3/3, Phase 00.1: 3/7)
+Progress: [███████░░░] 70% (Phase 0: 3/3, Phase 00.1: 4/7)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: ~2-6 min (mostly small bootstrap-style plans)
-- Total execution time: ~26 min cumulative
+- Total execution time: ~27 min cumulative
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 0 — Foundation | 3 | ~12min | ~4min |
-| Phase 00.1 — Local Dev Seed Bootstrap | 3/7 | ~13min | ~4min |
+| Phase 00.1 — Local Dev Seed Bootstrap | 4/7 | ~14min | ~3.5min |
 
 **Recent Trend:**
 
-- Last 6 plans: Phase 0 (3 plans complete) → Phase 00.1-01 (sibling repo bootstrap) → Phase 00.1-02 (docker stack + schema-user init) → Phase 00.1-03 (Oracle DDL across 4 schemas)
+- Last 7 plans: Phase 0 (3 plans complete) → Phase 00.1-01 (sibling repo bootstrap) → Phase 00.1-02 (docker stack + schema-user init) → Phase 00.1-03 (Oracle DDL across 4 schemas) → Phase 00.1-04 (ES rectrace_core_index mapping with 13 .keyword multi-fields)
 - Trend: Atomic, fast plans; no deviations triggered
 
 *Updated after each plan completion*
@@ -61,6 +61,7 @@ Progress: [██████░░░░] 60% (Phase 0: 3/3, Phase 00.1: 3/7)
 | Phase 00.1 P01 | 2min | 2 tasks | 4 files |
 | Phase 00.1 P02 | 6min | 2 tasks | 2 files |
 | Phase 00.1 P03 | 5min | 2 tasks | 4 files |
+| Phase 00.1 P04 | 1min | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -84,6 +85,7 @@ Recent decisions affecting current work:
 - [Phase 00.1]: Python virtualenv lives in .venv/ inside the sibling repo (per D-0.1.21); pinned deps installed: oracledb 4.0.0, elasticsearch 8.13.2, python-dotenv 1.2.2
 - [Phase 00.1]: Two-service docker stack live per D-0.1.15/D-0.1.16/D-0.1.17 — gvenzl/oracle-free:23-slim + elasticsearch:8.13.4, container_name pinning (BLOCKER-4 fix), :ro init mount (T-00.1-04 mitigated), -XX:UseSVE=0 Apple Silicon workaround (T-00.1-06 mitigated); 4 schema users created in FREEPDB1
 - [Phase 00.1]: 11 Oracle tables live across 4 schemas via 4 idempotent DDL files (schema/01-rectrace.sql..04-recportal.sql); ujo_job and ujo_job_status are SEPARATE tables joined on joid per JobStatusService.java:46-50 (BLOCKER-1+3 fix — status NUMBER(10), next_start NUMBER(19)); command/description CLOB on autosys_all_jobs_data per D-0.1.8; rectrace_core has 22 columns matching search-config-v4.json union; re-apply confirmed idempotent
+- [Phase 00.1]: ES rectrace_core_index mapping authored at es/rectrace_core_index.mapping.json with explicit `.keyword` multi-fields at `ignore_above: 8192` on the 13 hyphen-sensitive fields (file_name_pattern, recon, box_name, set_id, sub_acc, load_file_name_pattern, job_name, machine, run_calendar, exclude_calendar, tlm_instance, recon_id, recon_portal_id) — Phase 8 hyphen-bug fix prerequisite per CONTEXT.md D-0.1.10 / RESEARCH.md Pitfall 3 (dynamic mapping would default to ignore_above:256 and silently truncate); live-validated by PUT against localhost:9200 then deleted for plan 00.1-06 idempotency
 
 ### Pending Todos
 
@@ -105,6 +107,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-12T14:05:22Z
-Stopped at: Plan 00.1-03 complete (11 Oracle tables live across 4 schemas; 4 DDL files committed; sibling repo commit count 4)
-Resume file: .planning/phases/00.1-local-dev-seed-bootstrap/00.1-04-PLAN.md
+Last session: 2026-05-12T14:09:08Z
+Stopped at: Plan 00.1-04 complete (ES rectrace_core_index mapping with explicit .keyword multi-fields on 13 hyphen-sensitive fields; mapping JSON committed to sibling repo; live-validated against localhost:9200; sibling repo commit count 5)
+Resume file: .planning/phases/00.1-local-dev-seed-bootstrap/00.1-05-PLAN.md
