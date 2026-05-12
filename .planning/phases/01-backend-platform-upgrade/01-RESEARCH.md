@@ -622,36 +622,38 @@ Phase 1 is a code/config-only change. The "runtime state" question still warrant
 
 ## Javax → Jakarta Migration Inventory
 
-Complete grep of `^import javax\.` across both modules' `src/main/java`. **This is the migration checklist — every line below changes.** Lines marked `[KEEP]` are JDK API (not JEE) and stay `javax.*`.
+Complete grep of `^import javax\.` across both modules' `src/main/java`. **This is the migration checklist.** Lines marked `[KEEP]` are JDK API (not Jakarta EE) and stay `javax.*`.
 
-### backend/rectrace (14 lines, 9 files)
+> **AMENDED 2026-05-12 (executor-discovered):** The original table claimed `javax.sql.DataSource` belongs to the Jakarta rename set. That is **factually wrong** — `javax.sql.DataSource` is a JDK API (in the `java.sql` module: verified with `jar tf $JDK21/jmods/java.sql.jmod | grep DataSource`). There is no `jakarta.sql.DataSource` artifact in the Boot 3.5 dependency graph; renaming the imports breaks compile. The 5 `javax.sql.DataSource` rows below are marked `[KEEP]` instead of being part of the rename. Net rename count drops from 14 → 8 Jakarta-EE imports. The wave-exit grep deny-list (RESEARCH.md line ~1076 + VALIDATION.md BOOT-03) was also corrected to drop `sql` from the denied prefixes.
+
+### backend/rectrace (Jakarta-EE renames: 8 lines across 6 files)
 
 | File | Line | Current Import | Replacement | Category |
 |------|------|----------------|-------------|----------|
-| `config/AutosysDataSourceConfig.java` | 10 | `javax.sql.DataSource` | `jakarta.sql.DataSource` | sql (note: `javax.sql` IS in the Jakarta rename set despite the name — `javax.sql.DataSource` is bundled with Jakarta EE 9+; Boot 3 ships Jakarta-namespaced) |
-| `config/DataSourceConfig.java` | 3 | `javax.sql.DataSource` | `jakarta.sql.DataSource` | sql |
+| `config/AutosysDataSourceConfig.java` | 10 | `javax.sql.DataSource` | **[KEEP]** — JDK API (`java.sql` module), not Jakarta EE | sql (JDK) |
+| `config/DataSourceConfig.java` | 3 | `javax.sql.DataSource` | **[KEEP]** — JDK API | sql (JDK) |
 | `config/DataSourceConfig.java` | 4 | `javax.persistence.EntityManagerFactory` | `jakarta.persistence.EntityManagerFactory` | persistence |
-| `config/ElasticsearchDevConfiguration.java` | 3 | `javax.net.ssl.SSLContext` | **[KEEP `javax.net.ssl`]** — JDK API, not JEE; not in Jakarta rename set | net.ssl |
+| `config/ElasticsearchDevConfiguration.java` | 3 | `javax.net.ssl.SSLContext` | **[KEEP `javax.net.ssl`]** — JDK API, not Jakarta EE | net.ssl (JDK) |
 | `controller/SearchController.java` | 4 | `javax.servlet.http.HttpServletRequest` | `jakarta.servlet.http.HttpServletRequest` | servlet |
 | `controller/UserController.java` | 3 | `javax.servlet.http.HttpServletRequest` | `jakarta.servlet.http.HttpServletRequest` | servlet |
 | `controller/v4/SearchControllerV4.java` | 12 | `javax.servlet.http.HttpServletResponse` | `jakarta.servlet.http.HttpServletResponse` | servlet |
 | `service/ExecutionOrderService.java` | 12 | `javax.persistence.EntityManager` | `jakarta.persistence.EntityManager` | persistence |
 | `service/ExecutionOrderService.java` | 13 | `javax.persistence.PersistenceContext` | `jakarta.persistence.PersistenceContext` | persistence |
 | `service/ExecutionOrderService.java` | 14 | `javax.persistence.Query` | `jakarta.persistence.Query` | persistence |
-| `service/JobStatusService.java` | 14 | `javax.sql.DataSource` | `jakarta.sql.DataSource` | sql |
+| `service/JobStatusService.java` | 14 | `javax.sql.DataSource` | **[KEEP]** — JDK API | sql (JDK) |
 | `service/SearchConfigServiceV3.java` | 8 | `javax.annotation.PostConstruct` | `jakarta.annotation.PostConstruct` | annotation (**OR file is deleted entirely** per planner Discretion — see § Architecture note) |
-| `service/v3/OracleSearchProviderV3.java` | 12 | `javax.sql.DataSource` | **DELETED with v3/ dir** (D-1.5) | sql |
+| `service/v3/OracleSearchProviderV3.java` | 12 | `javax.sql.DataSource` | **[KEEP / DELETED with v3/ dir]** — `javax.sql` is JDK regardless; whole file removed in Wave 3 | sql (JDK) |
 | `service/v4/SearchConfigServiceV4.java` | 13 | `javax.annotation.PostConstruct` | `jakarta.annotation.PostConstruct` | annotation |
 
-### rectrace-tlm-stats (1 line, 1 file)
+### rectrace-tlm-stats (Jakarta-EE renames: 0 — the only `javax.*` in this module is `javax.sql`, JDK)
 
 | File | Line | Current Import | Replacement | Category |
 |------|------|----------------|-------------|----------|
-| `tlmstats/config/DatabaseConfig.java` | 9 | `javax.sql.DataSource` | `jakarta.sql.DataSource` | sql |
+| `tlmstats/config/DatabaseConfig.java` | 9 | `javax.sql.DataSource` | **[KEEP]** — JDK API, not Jakarta EE | sql (JDK) |
 
-### Summary
+### Summary (corrected)
 
-- **15 total imports**, **14 to rewrite** (1 stays `javax.net.ssl` — JDK), **1 evaporates with v3/ deletion** (`OracleSearchProviderV3`).
+- **15 total `javax.*` imports**, **8 Jakarta-EE renames** (servlet/persistence/annotation), **7 KEPT** (5 `javax.sql.DataSource` + 1 `javax.net.ssl.SSLContext` + 1 inside the soon-to-be-deleted V3 trio file).
 - **0 hits** for `javax.validation`, `javax.transaction`, `javax.ws.rs`, `javax.inject`, `javax.crypto`, `javax.xml.*`. Migration surface is narrow.
 - **No hits** for `javax.servlet.Filter`, `javax.servlet.ServletException`, `javax.servlet.http.HttpSession` — controller-only usage of servlet API.
 - All 14 rewrites are mechanical 1:1 package renames. No API method signatures changed.
@@ -1073,7 +1075,7 @@ cd backend/rectrace && mvn spring-boot:run -Dspring-boot.run.profiles=local
 |--------|----------|-----------|-------------------|-------------|
 | BOOT-01 | Java 21 toolchain compiles both modules | build | `mvn -f backend/rectrace/pom.xml -q -DskipTests compile && mvn -f rectrace-tlm-stats/pom.xml -q -DskipTests compile` | ✅ (compile target) |
 | BOOT-02 | Boot 3.3.13 BOM resolves cleanly | build | `mvn -f backend/rectrace/pom.xml dependency:tree -q | grep 'spring-boot.*3.3.13'` (presence assertion) | ✅ |
-| BOOT-03 | No `javax.*` imports remain (excluding `javax.net.ssl` and other JDK packages) | grep | `! grep -rn "^import javax\.\(servlet\|persistence\|annotation\|sql\|transaction\|validation\|ws\|inject\)" backend/rectrace/src/main rectrace-tlm-stats/src/main` | ✅ (one-liner) |
+| BOOT-03 | No Jakarta-EE `javax.*` imports remain (JDK packages `javax.sql`, `javax.net.ssl`, `javax.crypto`, `javax.xml.*` stay) | grep | `! grep -rn "^import javax\.\(servlet\|persistence\|annotation\|transaction\|validation\|ws\|inject\)" backend/rectrace/src/main rectrace-tlm-stats/src/main` (corrected 2026-05-12: `sql` removed from deny-list — `javax.sql.DataSource` is a JDK API with no `jakarta.sql.*` equivalent) | ✅ (one-liner) |
 | BOOT-04 | `SecurityFilterChain` bean loads; permit-all passes anonymous calls | integration | `ContextLoadsTest` boots with `spring-boot-starter-security` on classpath. Smoke: `curl -s -o /dev/null -w "%{http_code}" http://localhost:6088/rectrace/api/search/suggest?prefix=ABC` returns `200`. | ✅ (existing + smoke) |
 | BOOT-05 | Hibernate 6 / Spring Data JPA 3 context loads against new dialect | unit | `ContextLoadsTest` (test profile bypasses Oracle); live smoke against `local` profile boots without `ClassNotFoundException`. | ✅ |
 | BOOT-06 | `SuggestionService` returns suggestions on new client | integration (manual smoke) | `curl -s http://localhost:6088/rectrace/api/search/suggest?prefix=SET` returns JSON array (may be empty on test data) with HTTP 200. | ✅ |

@@ -169,11 +169,15 @@ Wave 1 → Wave 2 → Wave 3 → Wave 4 → Wave 5 → Wave 6 → Wave 7 → Wav
 
 ---
 
-## Wave 1: Parent POM bump + Java 21 + Boot 3.5.14 + jakarta sweep
+## Wave 1: Boot platform upgrade + jakarta sweep + ES Java API Client migration (MERGED WITH FORMER WAVE 4 — see amendment note)
 
-**Goal:** Both modules compile on Spring Boot 3.5.14 + Java 21. POM bumps and the `javax.*` → `jakarta.*` sweep land in the same wave because the bump alone leaves `mvn compile` red (every `javax.servlet`/`javax.persistence` import becomes unresolvable). This wave restores compile-green.
+> **Plan amendment 2026-05-12:** Wave 4 (Elasticsearch client migration) has been merged into Wave 1 after the executor's first pilot run discovered that Boot 3.5's `spring-boot-starter-data-elasticsearch` (Spring Data ES 5.x) **removes `RestHighLevelClient` from the classpath entirely** — no compat dep is permitted per CONTEXT.md D-1.4. Three files (`SuggestionService`, `ElasticsearchServiceV4`, `ElasticsearchDevConfiguration`) use vanished HLRC types and break `mvn compile` on `backend/rectrace` until they are rewritten. The original Wave 1 exit criterion ("both modules compile green") is therefore unsatisfiable without also landing Wave 4. Per PLAN.md Open Question #6 (atomic-per-wave bisectability), the right move is to make Wave 1 a single compile-green wave-anchor commit covering both. The original Wave 4 section below has been retired with a pointer to this merged wave.
 
-**Closes:** D-1.1, D-1.2, D-1.3, partial D-1.17 (preserves `@Profile("!test")` guards on touched files); BOOT-01, BOOT-02, BOOT-03; partial BOOT-07 (BOM resolution).
+> **Plan amendment 2026-05-12 (`javax.sql` correction):** The original Wave 1 Task 1.3 rename set included `javax.sql.DataSource → jakarta.sql.DataSource`, and the wave-exit verify deny-list included `sql`. This was a planning error — `javax.sql.DataSource` is a **JDK** API (in the `java.sql` module), not Jakarta EE. There is no `jakarta.sql.DataSource`. Removed `sql` from both the rename set and the verify deny-list. RESEARCH.md line 631 and VALIDATION.md BOOT-03 verify are corrected in lockstep.
+
+**Goal:** Both modules compile cleanly on Spring Boot 3.5.14 + Java 21. The wave combines (a) parent POM bump + Java 21 + jakarta sweep (former Wave 1) with (b) `SuggestionService` + `ElasticsearchServiceV4` rewrites onto `co.elastic.clients.elasticsearch.ElasticsearchClient` + `ElasticsearchDevConfiguration` deletion (former Wave 4). All four landings ship as one wave-anchor commit because intermediate states leave `mvn compile` red.
+
+**Closes:** D-1.1, D-1.2, D-1.3, D-1.4, D-1.6, partial D-1.17 (preserves `@Profile("!test")` guards on touched files); BOOT-01, BOOT-02, BOOT-03, BOOT-06; partial BOOT-07 (BOM resolution); T-1-SEC-02 partial (dev-config deletion).
 
 **Wave-exit verify:**
 ```bash
@@ -182,12 +186,17 @@ mvn -f rectrace-tlm-stats/pom.xml -q -DskipTests compile
 ```
 Both modules exit 0. Plus:
 ```bash
-! grep -rn '^import javax\.\(servlet\|persistence\|annotation\|sql\|transaction\|validation\|ws\|inject\)' \
+! grep -rn '^import javax\.\(servlet\|persistence\|annotation\|transaction\|validation\|ws\|inject\)' \
   backend/rectrace/src/main rectrace-tlm-stats/src/main
 ```
-No matches.
+No matches. Note: `javax.sql.DataSource` (JDK) and `javax.net.ssl.SSLContext` (JDK) intentionally stay; they are not Jakarta EE packages. Plus:
+```bash
+! grep -rn 'RestHighLevelClient\|elasticsearch\.client\.RestHighLevelClient' backend/rectrace/src/main && \
+! ls backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java 2>/dev/null
+```
+Zero HLRC imports remain; the dev SSL bypass file is gone.
 
-**Wave-exit commit:** `chore(01): bump Boot 2.7.16→3.5.14 + Java 17→21 + javax→jakarta sweep [BOOT-01,02,03]`
+**Wave-exit commit:** `feat(01): Boot 2.7.16→3.5.14 + Java 17→21 + jakarta sweep + ES Java API Client migration [BOOT-01,02,03,06,D-1.1,1.2,1.3,1.4,1.6,1.17,T-1-SEC-02p]`
 
 ### Task 1.1 — Bump `backend/rectrace/pom.xml` to Boot 3.5.14 + Java 21
 
@@ -216,33 +225,84 @@ No matches.
   - `<automated>grep -q '<version>3.5.14</version>' rectrace-tlm-stats/pom.xml && grep -q '<java.version>21</java.version>' rectrace-tlm-stats/pom.xml && diff <(grep -E '(<version>3\.5\.14|<java\.version|<maven\.compiler\.release)' backend/rectrace/pom.xml) <(grep -E '(<version>3\.5\.14|<java\.version|<maven\.compiler\.release)' rectrace-tlm-stats/pom.xml)</automated>` — diff exits 0 (the three lines match between modules).
 - **Done:** tlm-stats POM version triple matches backend POM byte-for-byte.
 
-### Task 1.3 — javax.* → jakarta.* sweep across 14 files
+### Task 1.3 — javax.* → jakarta.* sweep (Jakarta EE namespaces only; `javax.sql` / `javax.net.ssl` are JDK and stay)
 
-- **Files (14 imports across 10 files):**
-  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/AutosysDataSourceConfig.java:10` — `javax.sql.DataSource` → `jakarta.sql.DataSource`
-  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java:3` — `javax.sql.DataSource` → `jakarta.sql.DataSource`
+- **Files (8 Jakarta-EE imports across 7 files — corrected after the original `javax.sql` inclusion was identified as a planning bug; `javax.sql.DataSource` is a JDK API, not Jakarta EE):**
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java:4` — `javax.persistence.EntityManagerFactory` → `jakarta.persistence.EntityManagerFactory`
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java:4` — `javax.servlet.http.HttpServletRequest` → `jakarta.servlet.http.HttpServletRequest`
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/UserController.java:3` — `javax.servlet.http.HttpServletRequest` → `jakarta.servlet.http.HttpServletRequest`
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/v4/SearchControllerV4.java:12` — `javax.servlet.http.HttpServletResponse` → `jakarta.servlet.http.HttpServletResponse`
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/ExecutionOrderService.java:12-14` — three `javax.persistence.*` imports → `jakarta.persistence.*` (EntityManager, PersistenceContext, Query)
-  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/JobStatusService.java:14` — `javax.sql.DataSource` → `jakarta.sql.DataSource`
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java:8` — handled by Wave 3 deletion (planner Discretion: delete the orphaned file rather than rewrite); record as `[DELETED Wave 3]` here
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/SearchConfigServiceV4.java:13` — `javax.annotation.PostConstruct` → `jakarta.annotation.PostConstruct`
-  - `rectrace-tlm-stats/src/main/java/com/citi/gru/rectrace/tlmstats/config/DatabaseConfig.java:9` — `javax.sql.DataSource` → `jakarta.sql.DataSource`
-- **KEEP unchanged:** `backend/rectrace/.../config/ElasticsearchDevConfiguration.java:3` — `javax.net.ssl.SSLContext` is a JDK API, NOT in the Jakarta rename set (RESEARCH.md line 634). This file is deleted in Wave 4 (planner Discretion); until then the import stays.
+- **KEEP unchanged (JDK packages — NOT in the Jakarta rename set):**
+  - `javax.sql.DataSource` everywhere (5 files: AutosysDataSourceConfig, DataSourceConfig, JobStatusService, OracleSearchProviderV3 [deleted Wave 3], tlmstats/DatabaseConfig). The class lives in `java.sql` module; verified by `jar tf $JDK21/jmods/java.sql.jmod`. There is no `jakarta.sql.DataSource`.
+  - `javax.net.ssl.SSLContext` in `ElasticsearchDevConfiguration.java:3` — JDK API. This file is deleted in Task 1.6 of this wave anyway.
 - **Closes:** D-1.17 (preserves `@Profile("!test")` guards on every touched file), BOOT-03
 - **Threat ref:** —
-- **Bound to:** PATTERNS.md § "Javax→jakarta sweep" + RESEARCH.md § "Javax → Jakarta Migration Inventory" lines 623-657.
-- **Action:** Each line is a mechanical 1:1 import rename. No method signatures change. Preserve every existing `@Profile("!test")` annotation on the file — Phase 0 added these and D-1.17 requires they survive. Apply via Edit tool one file at a time (do NOT use `sed -i` — git history clarity matters here for bisectability). After editing each file, the file MUST still compile against the new Boot 3.5.14 BOM (`HttpServletRequest`, `EntityManager`, `DataSource`, `PostConstruct` all exist in `jakarta.*` under Boot 3.5).
+- **Bound to:** PATTERNS.md § "Javax→jakarta sweep" + RESEARCH.md § "Javax → Jakarta Migration Inventory" lines 623-657 (note: line 631 has a known doc bug claiming `javax.sql` is in the Jakarta rename set — corrected via 2026-05-12 RESEARCH.md amendment).
+- **Action:** Each line is a mechanical 1:1 import rename. No method signatures change. Preserve every existing `@Profile("!test")` annotation on the file — Phase 0 added these and D-1.17 requires they survive. Apply via Edit tool one file at a time (do NOT use `sed -i` — git history clarity matters here for bisectability). After editing each file, the file MUST still compile against the new Boot 3.5.14 BOM (`HttpServletRequest`, `EntityManager`, `PostConstruct` all exist in `jakarta.*` under Boot 3.5). `DataSource` references continue to resolve via the unchanged `javax.sql` JDK import.
 - **Verify:**
-  - `<automated>! grep -rn '^import javax\.\(servlet\|persistence\|annotation\|sql\|transaction\|validation\|ws\|inject\)' backend/rectrace/src/main rectrace-tlm-stats/src/main && mvn -f backend/rectrace/pom.xml -q -DskipTests compile && mvn -f rectrace-tlm-stats/pom.xml -q -DskipTests compile</automated>`
+  - `<automated>! grep -rn '^import javax\.\(servlet\|persistence\|annotation\|transaction\|validation\|ws\|inject\)' backend/rectrace/src/main rectrace-tlm-stats/src/main</automated>` — zero Jakarta-EE residuals (`sql` and `net.ssl` intentionally OUT of deny-list — JDK packages).
+  - Module compile-green deferred to Tasks 1.4/1.5/1.6 completion; the jakarta sweep alone leaves `mvn compile` red on backend (HLRC types disappear from BOM); the wave's atomic landing is what restores green.
   - `<automated>grep -c '@Profile("!test")' backend/rectrace/src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java backend/rectrace/src/main/java/com/citi/gru/rectrace/config/AutosysDataSourceConfig.java backend/rectrace/src/main/java/com/citi/gru/rectrace/service/ExecutionOrderService.java backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/v4/SearchControllerV4.java rectrace-tlm-stats/src/main/java/com/citi/gru/rectrace/tlmstats/config/DatabaseConfig.java | awk -F: '{ if ($2 < 1) { print "MISSING @Profile guard: " $1; exit 1 } } END { print "OK" }'</automated>` — every touched file with a Phase 0 guard still has it.
-- **Done:** Zero `javax.{servlet,persistence,annotation,sql,transaction,validation,ws,inject}` imports; both modules compile.
+- **Done:** Zero `javax.{servlet,persistence,annotation,transaction,validation,ws,inject}` imports under both modules' src/main; `javax.sql.DataSource` and `javax.net.ssl.SSLContext` JDK imports are intentionally kept.
 
-### Wave 1 commit
+### Task 1.4 — Rewrite `SuggestionService.java` on `ElasticsearchClient` (formerly Wave 4 Task 4.1)
 
-`chore(01): bump to Spring Boot 3.5.14 + Java 21 + javax→jakarta sweep [BOOT-01,02,03,D-1.1,1.2,1.3,1.17]`
+- **Files:** `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SuggestionService.java`
+- **Closes:** D-1.4, D-1.6, BOOT-06
+- **Threat ref:** —
+- **Bound to:** PATTERNS.md § "SuggestionService.java — RestHighLevelClient → ElasticsearchClient" + RESEARCH.md § Pattern 4 (lines 518-587 — full before/after).
+- **Action:** Replace `RestHighLevelClient` field with `@Autowired ElasticsearchClient esClient` (Boot 3.5 autoconfig provides the bean — no `@Configuration` needed per RESEARCH.md lines 689-691). Rewrite the suggest call to use `FieldSuggester.of(...)` + `esClient.search(s -> s.index(...).suggest(...).source(src -> src.fetch(false)).size(0), Void.class)`. Preserve the `/api/search/suggest` URL contract — the JSON response shape returned to the V5 Angular autocomplete frontend MUST be identical (D-1.6). Read the file first to confirm the current return type and contract.
+  Imports to add:
+  - `co.elastic.clients.elasticsearch.ElasticsearchClient`
+  - `co.elastic.clients.elasticsearch.core.SearchResponse`
+  - `co.elastic.clients.elasticsearch.core.search.FieldSuggester`
+  - `co.elastic.clients.elasticsearch.core.search.Suggester`
+  - `co.elastic.clients.elasticsearch.core.search.Suggestion`
+  - `co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption`
+
+  Imports to delete:
+  - All `org.elasticsearch.action.search.*`
+  - `org.elasticsearch.client.RestHighLevelClient`
+  - All `org.elasticsearch.search.suggest.*`
+
+  Preserve `@Profile("!test")` if currently present on the class (Phase 0 D-05).
+- **Verify:**
+  - `<automated>grep -q 'import co\.elastic\.clients\.elasticsearch\.ElasticsearchClient' backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SuggestionService.java && ! grep -n 'RestHighLevelClient' backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SuggestionService.java</automated>`
+  - Wave 8 smoke step 3 exercises the endpoint live (manual).
+- **Done:** SuggestionService is on the new client; no HLRC imports remain in the file.
+
+### Task 1.5 — Rewrite `ElasticsearchServiceV4.java` on `ElasticsearchClient` (formerly Wave 4 Task 4.2)
+
+- **Files:** `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/ElasticsearchServiceV4.java`
+- **Closes:** D-1.4, D-1.6, BOOT-06
+- **Threat ref:** —
+- **Bound to:** PATTERNS.md § "ElasticsearchServiceV4.java — RestHighLevelClient → ElasticsearchClient" + RESEARCH.md § Pattern 3 (lines 420-516 — full before/after of `getUniqueValues(...)`).
+- **Action:** Replace `RestHighLevelClient` field (`@Autowired(required=false)` — the `required=false` flag stays because Phase 0's test profile excludes ES autoconfig) with `@Autowired(required=false) ElasticsearchClient esClient`. Rewrite the search/SSRM/getUniqueValues calls per RESEARCH.md Pattern 3 (lines 466-516). The pattern is: replace `SearchSourceBuilder` + `BoolQueryBuilder.should(...)` with `esClient.search(s -> s.query(q -> q.bool(b -> b.should(shoulds))).collapse(...).size(...).sort(...), Map.class)`. Preserve the V5 frontend's expected JSON response shape for the V4 SSRM grid.
+  Companion check: `SearchServiceV4.java` may have a stray javax.servlet import that needs renaming. If so, Edit the import to `jakarta.*` in this same task. The file is mostly delegation — no ES-API call sites — but any compile error surfaces here and is fixed in place (CONTEXT.md Discretion line 92).
+- **Verify:**
+  - `<automated>grep -q 'import co\.elastic\.clients\.elasticsearch\.ElasticsearchClient' backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/ElasticsearchServiceV4.java && ! grep -n 'RestHighLevelClient' backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/ElasticsearchServiceV4.java</automated>`
+- **Done:** ElasticsearchServiceV4 on new client; no HLRC imports anywhere in the module.
+
+### Task 1.6 — Delete `ElasticsearchDevConfiguration.java` (formerly Wave 4 Task 4.3 — planner Discretion, T-1-SEC-02 partial)
+
+- **Files (deletions):** `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java`
+- **Closes:** planner Discretion (RESEARCH.md Open Q #4 line 695 — "Recommendation: delete ElasticsearchDevConfiguration.java in Phase 1")
+- **Threat ref:** T-1-SEC-02 (partial — removes the dev-only SSL bypass code path; the rest of SEC-02 is Phase 9)
+- **Bound to:** PATTERNS.md § Deletions table + RESEARCH.md § "SSL handling" lines 693-695.
+- **Action:**
+  1. Pre-flight grep: `grep -rn 'ElasticsearchDevConfiguration\|RestClientBuilderCustomizer' backend/rectrace/src/main 2>/dev/null`. Expect only matches inside the file itself. Any caller blocks deletion (none expected per RESEARCH.md call-graph).
+  2. `git rm backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java`
+  3. Phase 9 SEC-03/SEC-04 will install the proper truststore for prod; the `local` profile uses HTTP (`http://localhost:9200`, Phase 0.1 D-0.1.16) and never needed SSL trust-all.
+- **Verify:**
+  - `<automated>! ls backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java 2>/dev/null && ! grep -rn 'RestClientBuilderCustomizer' backend/rectrace/src/main</automated>`
+- **Done:** File gone; no remaining reference; full module compile is now green.
+
+### Wave 1 commit (merged)
+
+`feat(01): Boot 2.7.16→3.5.14 + Java 17→21 + jakarta sweep + ES Java API Client migration [BOOT-01,02,03,06,D-1.1,1.2,1.3,1.4,1.6,1.17,T-1-SEC-02p]`
 
 ---
 
@@ -377,9 +437,15 @@ mvn -f backend/rectrace/pom.xml -q -DskipTests compile
 
 ---
 
-## Wave 4: Elasticsearch client migration (HLRC → Java API Client)
+## Wave 4: MERGED INTO WAVE 1 (2026-05-12 amendment)
 
-**Goal:** Rewrite `SuggestionService` and `ElasticsearchServiceV4` against `co.elastic.clients.elasticsearch.ElasticsearchClient`. Delete `ElasticsearchDevConfiguration.java` (planner Discretion per RESEARCH.md line 695: local uses HTTP, Phase 9 owns prod truststore — file has no remaining purpose). `RestHighLevelClient` is gone from the codebase.
+> **Retired.** All three Wave 4 tasks (4.1 SuggestionService rewrite, 4.2 ElasticsearchServiceV4 rewrite, 4.3 ElasticsearchDevConfiguration delete) moved into Wave 1 as Tasks 1.4, 1.5, 1.6 — see the Wave 1 amendment note at the top of that section. Rationale: Spring Boot 3.5 removes `RestHighLevelClient` from the classpath via `spring-boot-starter-data-elasticsearch` (Spring Data ES 5.x); the executor's first pilot proved Wave 1 cannot end compile-green without also landing this work. Merging preserves the bisectability contract from Open Question #6 in this plan.
+>
+> The Wave 4 specifics below are kept for reference but are NOT separately executed — they are part of Wave 1's wave-anchor commit. Wave numbering 5, 6, 7, 8 stays unchanged so downstream task IDs (5.1, 6.1, 7.1, 8.1) remain stable.
+
+### (Reference) Original Wave 4 goal
+
+Rewrite `SuggestionService` and `ElasticsearchServiceV4` against `co.elastic.clients.elasticsearch.ElasticsearchClient`. Delete `ElasticsearchDevConfiguration.java` (planner Discretion per RESEARCH.md line 695: local uses HTTP, Phase 9 owns prod truststore — file has no remaining purpose). `RestHighLevelClient` is gone from the codebase.
 
 **Closes:** D-1.4, D-1.6; BOOT-06; partial T-1-SEC-02 (dev-config file deletion).
 
