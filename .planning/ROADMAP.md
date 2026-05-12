@@ -2,7 +2,7 @@
 
 ## Overview
 
-This milestone modernizes the Rectrace stack along three axes — a backend platform upgrade (Spring Boot 2.7 → 3.2, Java 17/21, jakarta), a net-new React frontend mirroring recviz, and a set of additive backend capabilities (config-driven SELECT, Oracle→ES scheduled loader, observability, ops script, Citi-domain security). The strategy is **vertical-slice strangler-fig**: a thin foundation lands first, then end-to-end slices ship one tab at a time while Angular keeps running. Backend-only phases (SQL, Loader, Observability) parallelize against React phases. The milestone closes with a hyphen-bug fix + design polish + ops hardening, then locks domain security as the production gate.
+This milestone modernizes the Rectrace stack along three axes — a backend platform upgrade (Spring Boot 2.7 → **3.5.14**, **Java 21**, jakarta), a net-new React frontend mirroring recviz, and a set of additive backend capabilities (config-driven SELECT, Oracle→ES scheduled loader, observability, ops script, Citi-domain security). The strategy is **vertical-slice strangler-fig**: a thin foundation lands first, then end-to-end slices ship one tab at a time while Angular keeps running. Backend-only phases (SQL, Loader, Observability) parallelize against React phases. The milestone closes with a hyphen-bug fix + design polish + ops hardening, then locks domain security as the production gate.
 
 ## Phases
 
@@ -12,7 +12,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 
 - [x] **Phase 0: Foundation** — Test gate (`maven.test.skip` removed, CI fails on red) + React↔Angular parity matrix committed. (completed 2026-05-12)
 - [x] **Phase 0.1: Local Dev Seed Bootstrap** (INSERTED) — Sibling `../rectrace-local-dev/` folder with Oracle DDL/seed scripts + ES index templates/bulk-load JSON; prerequisite for Phase 1's BOOT-09 smoke. Outside the project repo; does not ship to Citi. (completed 2026-05-12; two KNOWN GAPS handed to Phase 1 BOOT-08: backend/rectrace DataSourceConfig.java + rectrace-tlm-stats DatabaseConfig.java unconditional script-executor calls)
-- [ ] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → 3.2, Java 17/21, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup.
+- [x] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → **3.5.14**, **Java 21**, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup. (completed 2026-05-12)
 - [ ] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1.
 - [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states, side-by-side `/v6/` URL prefix.
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
@@ -57,16 +57,16 @@ Plans:
 - [x] 00.1-07-PLAN.md — application-local.properties in this repo + finalized README + D-0.1.23 8-item smoke verification (5/5 automatable PASS; 3/3 UI deferred to manual user verification; 2 KNOWN GAPS handed to Phase 1 BOOT-08)
 
 ### Phase 1: Backend Platform Upgrade
-**Goal**: Both backend modules run on Spring Boot 3.2.x and Java 17/21 with `jakarta` namespaces, modern Spring Security configuration, refreshed dependency pins, and all existing functionality verified.
+**Goal**: Both backend modules run on **Spring Boot 3.5.14** and **Java 21** with `jakarta` namespaces, modern Spring Security configuration, refreshed dependency pins, and all existing functionality verified.
 **Depends on**: Phase 0
 **Requirements**: BOOT-01, BOOT-02, BOOT-03, BOOT-04, BOOT-05, BOOT-06, BOOT-07, BOOT-08, BOOT-09
 **Success Criteria** (what must be TRUE):
-  1. `backend/rectrace` and `rectrace-tlm-stats` build and boot on Spring Boot 3.2.x and Java 17 (or 21 if Citi VM supports) on both dev laptop and target VM.
+  1. `backend/rectrace` and `rectrace-tlm-stats` build and boot on **Spring Boot 3.5.14** and **Java 21** on both dev laptop and target VM.
   2. All `javax.*` imports migrated to `jakarta.*`; build is clean and no deprecated namespace remains.
   3. Spring Security is configured via `SecurityFilterChain` (no `WebSecurityConfigurerAdapter`); the existing `x-citiportal-loginid` filter still works end-to-end.
-  4. All previously-skipped tests pass on 3.2, and a manual smoke confirms search, execution order, and TLM stats remain functional.
+  4. All previously-skipped tests pass on **3.5.14**, and a manual smoke confirms search, execution order, and TLM stats remain functional.
   5. `printStackTrace`, `show_sql=true`, and the CONCERNS.md LOW/MEDIUM cleanup items addressed during the upgrade are gone.
-**Plans**: TBD
+**Plans**: 1 plan (8 waves)
 
 ### Phase 2: React Foundation
 **Goal**: A net-new React shell that mirrors recviz's design language, runs side-by-side with the existing Angular app, and is ready to host vertical search/recviz slices.
@@ -181,7 +181,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-12 |
 | 0.1. Local Dev Seed Bootstrap (INSERTED) | 5/7 | In Progress | - |
-| 1. Backend Platform Upgrade | 0/TBD | Not started | - |
+| 1. Backend Platform Upgrade | 8/8 | Complete | 2026-05-12 |
 | 2. React Foundation | 0/TBD | Not started | - |
 | 3. React Search Vertical Slice | 0/TBD | Not started | - |
 | 4. recviz Integration | 0/TBD | Not started | - |
