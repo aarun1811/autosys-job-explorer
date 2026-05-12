@@ -606,7 +606,7 @@ mvn -f rectrace-tlm-stats/pom.xml -q test -Dtest=TlmStatsApplicationTests
   4. In `SearchControllerV4.java`: replace `@RequestHeader(value = "x-citiportal-loginid", required = false) String userId` (at lines 29, 52, 92 per RESEARCH.md line 871) with `@RequestHeader(value = AppConstants.CITI_PORTAL_LOGIN_ID_HEADER, required = false) String userId`. Add the AppConstants import. PATTERNS.md line 360 confirms `public static final String` satisfies the compile-time-constant requirement for the annotation attribute.
 - **Verify:**
   - `<automated>grep -q 'CITI_PORTAL_LOGIN_ID_HEADER = "x-citiportal-loginid"' backend/rectrace/src/main/java/com/citi/gru/rectrace/constants/AppConstants.java && ! grep -rn 'private static final String CITI_PORTAL_LOGIN_ID_HEADER' backend/rectrace/src/main && grep -c 'AppConstants\.CITI_PORTAL_LOGIN_ID_HEADER' backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/UserController.java backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/v4/SearchControllerV4.java | awk -F: 'NR<=3 && $2 < 1 { print "MISSING in " $1; exit 1 } END { print "OK" }' && mvn -f backend/rectrace/pom.xml -q -DskipTests compile</automated>`
-- **Done:** Constant populated; three controllers reference it; no module compiles cleanly.
+- **Done:** Constant populated; three controllers reference it; both modules compile cleanly.
 
 ### Wave 6 commit
 
@@ -748,6 +748,7 @@ mvn -f rectrace-tlm-stats/pom.xml clean test
 - **Threat ref:** —
 - **Bound to:** CONTEXT.md "Phase Boundary" line 23 + RESEARCH.md ADDENDUM lines 9-34.
 - **Action:** Edit `.planning/ROADMAP.md` Phase 1 section:
+  - Line 5 (Overview paragraph): "Spring Boot 2.7 → 3.2, Java 17/21" → "Spring Boot 2.7 → **3.5.14**, Java **21**".
   - Line 15 (the Phase 1 bullet in the phase list): "Spring Boot 2.7 → 3.2" → "Spring Boot 2.7 → **3.5.14**". "Java 17/21" → "**Java 21**".
   - Line 60 (Phase 1 Goal): "Spring Boot 3.2.x and Java 17/21" → "**Spring Boot 3.5.14** and **Java 21**".
   - Line 64 (Success Criterion #1): "Spring Boot 3.2.x and Java 17 (or 21 if Citi VM supports)" → "**Spring Boot 3.5.14** and **Java 21**".

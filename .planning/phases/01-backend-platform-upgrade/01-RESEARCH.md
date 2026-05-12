@@ -1016,7 +1016,10 @@ cd backend/rectrace && mvn spring-boot:run -Dspring-boot.run.profiles=local
 
 **Total assumed claims: 9.** A4 is the user-confirmation item (Boot 3.3 EOL). Others are minor and self-verifiable during execution.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Resolved during plan-phase orchestration on 2026-05-12. Q1 → 3.5.14 lock per Addendum at the top of this file; Q2/Q3/Q4 → planner adopted the researcher's recommendations (see PLAN.md "Open Questions for Plan Checker" for the closure notes).
+
 
 1. **Boot line: 3.3.13 vs 3.5.x — does the user want to revisit the locked D-1.2 given the EOL fact?**
    - What we know: D-1.2 locks 3.3.x LTS based on CONCERNS HIGH #3 wording. Boot 3.3 OSS support ended 2025-06-30; commercial support ends 2026-06-30 (six weeks from today).
