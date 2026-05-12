@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 00.1-01 complete (sibling repo bootstrap; 2 commits on sibling main)
-last_updated: "2026-05-12T13:53:37.353Z"
+stopped_at: Plan 00.1-02 complete (docker stack up; 4 schema users authenticated; 3 commits on sibling main)
+last_updated: "2026-05-12T14:00:07Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 10
-  completed_plans: 4
-  percent: 40
+  completed_plans: 5
+  percent: 50
 ---
 
 # Project State
@@ -26,30 +26,30 @@ See: .planning/PROJECT.md (updated 2026-05-12)
 ## Current Position
 
 Phase: 00.1 (Local Dev Seed Bootstrap) — EXECUTING
-Plan: 2 of 7 (Phase 00.1 plan counter; 00.1-01 complete, 00.1-02 ready)
+Plan: 3 of 7 (Phase 00.1 plan counter; 00.1-01 + 00.1-02 complete, 00.1-03 ready)
 Status: Ready to execute next plan
-Last activity: 2026-05-12 -- Plan 00.1-01 complete (sibling repo bootstrap)
+Last activity: 2026-05-12 -- Plan 00.1-02 complete (docker stack + schema-user init)
 
-Progress: [████░░░░░░] 40% (Phase 0: 3/3, Phase 00.1: 1/7)
+Progress: [█████░░░░░] 50% (Phase 0: 3/3, Phase 00.1: 2/7)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4
-- Average duration: ~2-5 min (mostly small bootstrap-style plans)
-- Total execution time: ~15 min cumulative
+- Total plans completed: 5
+- Average duration: ~2-6 min (mostly small bootstrap-style plans)
+- Total execution time: ~21 min cumulative
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 0 — Foundation | 3 | ~12min | ~4min |
-| Phase 00.1 — Local Dev Seed Bootstrap | 1/7 | ~2min | ~2min |
+| Phase 00.1 — Local Dev Seed Bootstrap | 2/7 | ~8min | ~4min |
 
 **Recent Trend:**
 
-- Last 5 plans: Phase 0 (3 plans complete) → Phase 00.1-01 (sibling repo bootstrap)
+- Last 5 plans: Phase 0 (3 plans complete) → Phase 00.1-01 (sibling repo bootstrap) → Phase 00.1-02 (docker stack + schema-user init)
 - Trend: Atomic, fast plans; no deviations triggered
 
 *Updated after each plan completion*
@@ -59,6 +59,7 @@ Progress: [████░░░░░░] 40% (Phase 0: 3/3, Phase 00.1: 1/7)
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 00.1 P01 | 2min | 2 tasks | 4 files |
+| Phase 00.1 P02 | 6min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,7 @@ Recent decisions affecting current work:
 - Log-aggregator target (Splunk / ELK / Loki / OTel) — deferred to Phase 7 planning
 - [Phase 00.1]: Sibling repo bootstrapped per D-0.1.1/D-0.1.2 — standalone git repo at /Users/aarun/Workspace/Projects/rectrace-local-dev/ on main; .gitignore committed FIRST to mitigate threat T-00.1-01
 - [Phase 00.1]: Python virtualenv lives in .venv/ inside the sibling repo (per D-0.1.21); pinned deps installed: oracledb 4.0.0, elasticsearch 8.13.2, python-dotenv 1.2.2
+- [Phase 00.1]: Two-service docker stack live per D-0.1.15/D-0.1.16/D-0.1.17 — gvenzl/oracle-free:23-slim + elasticsearch:8.13.4, container_name pinning (BLOCKER-4 fix), :ro init mount (T-00.1-04 mitigated), -XX:UseSVE=0 Apple Silicon workaround (T-00.1-06 mitigated); 4 schema users created in FREEPDB1
 
 ### Pending Todos
 
@@ -101,6 +103,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-12T13:53:20.435Z
-Stopped at: Plan 00.1-01 complete (sibling repo bootstrap; 2 commits on sibling main)
-Resume file: .planning/phases/00.1-local-dev-seed-bootstrap/00.1-02-PLAN.md
+Last session: 2026-05-12T14:00:07Z
+Stopped at: Plan 00.1-02 complete (docker stack up; 4 schema users authenticated; 3 commits on sibling main)
+Resume file: .planning/phases/00.1-local-dev-seed-bootstrap/00.1-03-PLAN.md
