@@ -1,0 +1,172 @@
+# Roadmap: Rectrace — Modernization Milestone
+
+## Overview
+
+This milestone modernizes the Rectrace stack along three axes — a backend platform upgrade (Spring Boot 2.7 → 3.2, Java 17/21, jakarta), a net-new React frontend mirroring recviz, and a set of additive backend capabilities (config-driven SELECT, Oracle→ES scheduled loader, observability, ops script, Citi-domain security). The strategy is **vertical-slice strangler-fig**: a thin foundation lands first, then end-to-end slices ship one tab at a time while Angular keeps running. Backend-only phases (SQL, Loader, Observability) parallelize against React phases. The milestone closes with a hyphen-bug fix + design polish + ops hardening, then locks domain security as the production gate.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (0, 1, 2…): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+- [ ] **Phase 0: Foundation** — Test gate (`maven.test.skip` removed, CI fails on red) + React↔Angular parity matrix committed.
+- [ ] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → 3.2, Java 17/21, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup.
+- [ ] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1.
+- [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states, side-by-side `/v6/` URL prefix.
+- [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
+- [ ] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses.
+- [ ] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown.
+- [ ] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess.
+- [ ] **Phase 8: Hyphen Bug + Design Polish + Ops Hardening** — ES `_analyze` diagnostic + `.keyword` fix + regression test; shadcn↔recviz token audit + visual regression; `rectrace-ops.sh` passes `shellcheck` + Linux CI + readiness probe.
+- [ ] **Phase 9: Domain Security** — User-auth mechanism (CitiPortal / SiteMinder / SPNEGO) + service-auth (keytab / Vault) locked + implemented; ES SSL re-enabled; Citi CA truststore; CORS allow-list; Citi-network preflight; CONCERNS.md CRITICAL closure.
+
+## Phase Details
+
+### Phase 0: Foundation
+**Goal**: Establish a green test gate and a committed React↔Angular parity matrix before any feature work begins.
+**Depends on**: Nothing (first phase)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04
+**Success Criteria** (what must be TRUE):
+  1. `mvn test` runs (not skipped) and passes locally and in CI for both `backend/rectrace` and `rectrace-tlm-stats`.
+  2. CI fails the build on any backend test failure; manual override is `-DskipTests` only.
+  3. At least one passing Spring context-load test exists per Maven module.
+  4. `.planning/parity-matrix.md` is committed, mapping every `cellRenderer` × every search category × every grid behavior to `port | drop | replace-with-recviz`.
+**Plans**: TBD
+
+### Phase 1: Backend Platform Upgrade
+**Goal**: Both backend modules run on Spring Boot 3.2.x and Java 17/21 with `jakarta` namespaces, modern Spring Security configuration, refreshed dependency pins, and all existing functionality verified.
+**Depends on**: Phase 0
+**Requirements**: BOOT-01, BOOT-02, BOOT-03, BOOT-04, BOOT-05, BOOT-06, BOOT-07, BOOT-08, BOOT-09
+**Success Criteria** (what must be TRUE):
+  1. `backend/rectrace` and `rectrace-tlm-stats` build and boot on Spring Boot 3.2.x and Java 17 (or 21 if Citi VM supports) on both dev laptop and target VM.
+  2. All `javax.*` imports migrated to `jakarta.*`; build is clean and no deprecated namespace remains.
+  3. Spring Security is configured via `SecurityFilterChain` (no `WebSecurityConfigurerAdapter`); the existing `x-citiportal-loginid` filter still works end-to-end.
+  4. All previously-skipped tests pass on 3.2, and a manual smoke confirms search, execution order, and TLM stats remain functional.
+  5. `printStackTrace`, `show_sql=true`, and the CONCERNS.md LOW/MEDIUM cleanup items addressed during the upgrade are gone.
+**Plans**: TBD
+
+### Phase 2: React Foundation
+**Goal**: A net-new React shell that mirrors recviz's design language, runs side-by-side with the existing Angular app, and is ready to host vertical search/recviz slices.
+**Depends on**: Phase 1
+**Requirements**: REACT-01, REACT-02, REACT-03, REACT-04, REACT-05, REACT-06, REACT-07, REACT-08
+**Success Criteria** (what must be TRUE):
+  1. `frontend-react/` boots locally via `npm run dev` with React 19 + Vite 7 + shadcn (Tailwind v4) + AG-Grid Enterprise via `ag-grid-react`, and renders an empty SSRM grid against an existing backend endpoint.
+  2. A canonical `tokens.css` + `theme.ts` exists, ESLint rejects raw hex codes in components, and a dark/light toggle reaches feature parity with the Angular app.
+  3. The app footer renders the build SHA / version for bug-report quoting.
+  4. The backend writes a `traceId` to MDC (via Micrometer Tracing post-BOOT) and the React shell propagates `X-Correlation-Id` on every request.
+  5. `ops/rectrace-ops.sh` v1 registers backend, tlm-stats, angular, and React components and can start/stop/status each one.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 3: React Search Vertical Slice
+**Goal**: An end-to-end React search experience for one category that proves the React shell + AG-Grid SSRM + existing backend integration, served alongside Angular behind a distinct URL.
+**Depends on**: Phase 2
+**Requirements**: SEARCH-01, SEARCH-02, SEARCH-03, SEARCH-04, SEARCH-05, SEARCH-06, SEARCH-07
+**Success Criteria** (what must be TRUE):
+  1. A user can open the React app at `/v6/` (or chosen prefix), run a search in the ported category, and see results in the SSRM grid identical to the Angular app's output.
+  2. At least one custom cell renderer from the Angular app is ported and visibly behaves the same in React.
+  3. URL fully encodes search state; pasting the URL into a new tab restores the exact view (deep linkable).
+  4. Excel export from the React grid is at feature parity with Angular; recent searches (last 10) appear in a typeahead from `localStorage`.
+  5. Any error in the React search flow surfaces the correlation ID as "Error — reference: <ID>" for the user to quote in a bug report.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 4: recviz Integration
+**Goal**: recviz can be embedded inside the new React app as a tab or modal, gated by a written cross-team contract and verified against the real recviz instance.
+**Depends on**: Phase 3
+**Requirements**: RECVIZ-01, RECVIZ-02, RECVIZ-03, RECVIZ-04, RECVIZ-05, RECVIZ-06, RECVIZ-07
+**Success Criteria** (what must be TRUE):
+  1. A written CSP / `frame-ancestors` / `SameSite` cookie / SSO contract with the recviz team exists in the repo and is referenced by the implementation.
+  2. A user can open a configured tab in the React app and see a recviz view rendered inside a sandboxed iframe sized correctly via `open-iframe-resizer` (or fork), with no `targetOrigin: '*'`.
+  3. Modals can render recviz iframes at parity with the existing execution-order / TLM-stats modal pattern.
+  4. All `postMessage` traffic flows through a versioned Zod-validated envelope (auth handoff, height sync, navigation events), and every listener validates `event.origin` against a per-environment allow-list.
+  5. A UAT smoke test against the real (non-localhost) recviz instance is recorded as evidence and committed.
+**Plans**: TBD
+**UI hint**: yes
+**Research hint**: yes — recviz CSP/cookie/SSO posture, Citi network topology between the two apps, and iframe-resizer fork OSS-review outcome should be researched during phase planning.
+
+### Phase 5: Config-driven SELECT
+**Goal**: Devs/admins can define a search tab as an arbitrary `SELECT` in config, with the application enforcing bounded resources, parser-based validation, and SSRM-shaped output — never exposing SQL to end users.
+**Depends on**: Phase 1
+**Requirements**: SQL-01, SQL-02, SQL-03, SQL-04, SQL-05, SQL-06, SQL-07
+**Success Criteria** (what must be TRUE):
+  1. A configured arbitrary `SELECT` tab can be hit from an AG-Grid SSRM client (Angular or React) and returns paged, filtered, sorted results from Oracle.
+  2. The application **fails to boot** if any configured query is not a `SELECT`/`WITH` or violates configured shape rules (JSqlParser-validated at startup).
+  3. All configured queries execute under a dedicated read-only Oracle account, with per-statement `setQueryTimeout`, `fetchSize`, and `maxRows` caps; the singleton `JdbcTemplate` is never globally mutated.
+  4. Any configured query without a `WHERE` clause or `FETCH FIRST N ROWS ONLY` is rejected — runaway scans cannot reach Oracle.
+  5. At least one example configured SELECT-tab is wired end-to-end as evidence and consumable by an existing grid.
+**Plans**: TBD
+
+### Phase 6: ES Loader Subsystem
+**Goal**: A configuration-driven, scheduled Oracle→Elasticsearch loader subsystem inside `backend/rectrace`, with run history, manual triggers, alias-only index access, and idempotent upserts.
+**Depends on**: Phase 1
+**Requirements**: LOADER-01, LOADER-02, LOADER-03, LOADER-04, LOADER-05, LOADER-06, LOADER-07, LOADER-08, LOADER-09, LOADER-10
+**Success Criteria** (what must be TRUE):
+  1. Multiple loader jobs can be defined in config (source `SELECT` + target ES alias + cron schedule + batch size) and the in-built scheduler runs them on schedule using the locked mechanism (Quartz JDBC JobStore *or* `@Scheduled` + ShedLock).
+  2. Every job writes to ES via an alias (never a literal index name) and produces idempotent upserts via a deterministic `_id` derived from the source primary key.
+  3. An operator can hit `LoaderAdminControllerV4` to list jobs, trigger a run-now, and view the last 20 runs per job with timestamp, status, row count, last-error message, and duration.
+  4. A JVM signal during a run flushes in-flight bulk requests before exit — no partial-batch loss observed in a soak test.
+  5. Bulk indexing uses `BulkProcessor` with sane defaults (5000 rows / 5 MB / 5 s) and is tunable per job in config.
+**Plans**: TBD
+**Research hint**: yes — the **Quartz JDBC JobStore vs `@Scheduled` + ShedLock decision** must be locked during phase planning per the open decision in research/SUMMARY.md; also verify ShedLock 5.x or Quartz Oracle delegate compatibility with the installed driver.
+
+### Phase 7: Observability Sweep
+**Goal**: Both backend modules emit structured, correlation-ID-tagged JSON logs, expose locked-down actuator endpoints with custom health indicators, and publish Prometheus metrics plus slow-query timing — instrumented horizontally now that there are multiple subsystems to observe.
+**Depends on**: Phase 6
+**Requirements**: OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, OBS-06, OBS-07, OBS-08
+**Success Criteria** (what must be TRUE):
+  1. `backend/rectrace` and `rectrace-tlm-stats` both emit JSON logs via `logstash-logback-encoder` configured in `logback-spring.xml` (never `logback.xml`) with `traceId`, `userId`, `path`, `method`, `status`, and `durationMs` fields.
+  2. `/actuator/health` reports custom `HealthIndicator` beans for Oracle reachability, ES reachability, loader-run-age, and search-config validity; actuator exposure is an explicit allow-list with no wildcards and `show-details` is `when-authorized` or `never`.
+  3. `/actuator/prometheus` exposes Micrometer metrics, and a CI guard rejects any attempt to override the BOM-pinned Micrometer version.
+  4. A slow-query log line is emitted for `JdbcTemplate` and ES calls exceeding a configurable threshold, via `@Timed`/AOP.
+  5. The correlation ID propagates through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations — verified by tracing a single request end-to-end.
+**Plans**: TBD
+**Research hint**: yes — lock the log-aggregator target (Splunk / ELK / Loki / OTel collector) during phase planning before forwarder config is written.
+
+### Phase 8: Hyphen Bug + Design Polish + Ops Hardening
+**Goal**: Close the daily hyphen-search complaint, eliminate visual drift between the React app and recviz, and harden the single-bash-script ops surface for both macOS and Linux.
+**Depends on**: Phase 7
+**Requirements**: BUG-01, BUG-02, BUG-03, DESIGN-01, DESIGN-02, DESIGN-03, OPS-01, OPS-02, OPS-03, OPS-04
+**Success Criteria** (what must be TRUE):
+  1. Searching for a hyphenated term (e.g. `ABC-123`) returns the expected documents; a regression test asserts this and is committed alongside the ES `_analyze` diagnostic and root-cause note.
+  2. The fix shipped is the `.keyword`-subfield path (or, if truly required, an alias-swap reindex); ES alias indirection is in place so future reindexes are atomic.
+  3. The shadcn token set is audited against recviz tokens, gaps are closed in the canonical token file, and a visual regression test fails on drift at the recviz↔React boundary.
+  4. `ops/rectrace-ops.sh` passes `shellcheck`, supports `start | stop | restart | status | logs` per-component or all, blocks `start` on an actuator health probe, manages PIDs in `run/` and logs in `logs/`, and a Linux CI job runs it on every push.
+  5. Adding a new managed component to the ops surface is a one-line change in `ops/components.sh`.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9: Domain Security
+**Goal**: The app meets Citi-domain production security posture — locked user-auth, locked service-auth, validated TLS, no public-CDN dependency, and all CRITICAL `CONCERNS.md` items closed.
+**Depends on**: Phase 8
+**Requirements**: SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06, SEC-07, SEC-08
+**Success Criteria** (what must be TRUE):
+  1. Requests without a portal-validated identity (mechanism locked in this phase: CitiPortal headers / SiteMinder / SPNEGO) are rejected by a Spring Security filter; the previous header-as-truth surface is gone.
+  2. Service-auth uses the locked mechanism (Kerberos keytab with rotation runbook *or* Vault with rotation policy); `get_password.sh`-style plaintext retrieval is removed and the chosen mechanism is documented.
+  3. ES SSL validation is enabled in all non-dev profiles, the dev-only bypass code path is excluded from production builds, and the internal Citi CA is installed in the JVM truststore with no in-code SSL trust manipulation outside dev.
+  4. CORS is configured with an explicit per-environment allow-list (never `*` with credentials), and the Citi-network preflight checklist passes — internal Nexus/Verdaccio/Artifactory used, JVM proxy configured, zero external CDN URLs in the React bundle.
+  5. All `CONCERNS.md` CRITICAL items are closed (column-name SQL injection in `OracleServiceV4.buildOrderByClause`, `printStackTrace`, `show_sql=true`, license placeholders).
+**Plans**: TBD
+**Research hint**: yes — the user-auth mechanism (CitiPortal / SiteMinder / SPNEGO) and service-auth mechanism (keytab+Kerberos / Vault) must be researched and locked during phase planning; also Citi-network preflight specifics (internal Nexus/npmrc, proxy at JVM level, internal CA truststore content).
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9. Phases 5 and 6 are backend-only and may run in parallel with Phases 3–4 by a separate dev; the table reflects logical ordering, not strict serialization.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 0. Foundation | 0/TBD | Not started | - |
+| 1. Backend Platform Upgrade | 0/TBD | Not started | - |
+| 2. React Foundation | 0/TBD | Not started | - |
+| 3. React Search Vertical Slice | 0/TBD | Not started | - |
+| 4. recviz Integration | 0/TBD | Not started | - |
+| 5. Config-driven SELECT | 0/TBD | Not started | - |
+| 6. ES Loader Subsystem | 0/TBD | Not started | - |
+| 7. Observability Sweep | 0/TBD | Not started | - |
+| 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |
+| 9. Domain Security | 0/TBD | Not started | - |
+
+---
+*Roadmap created: 2026-05-12*

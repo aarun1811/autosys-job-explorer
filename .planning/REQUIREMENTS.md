@@ -158,28 +158,94 @@ Acknowledged but deferred to a later milestone.
 
 ## Traceability
 
-Filled during roadmap creation. Each requirement maps to exactly one phase.
+Each requirement maps to exactly one phase. Filled during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01..04 | TBD | Pending |
-| BOOT-01..09 | TBD | Pending |
-| REACT-01..08 | TBD | Pending |
-| SEARCH-01..07 | TBD | Pending |
-| RECVIZ-01..07 | TBD | Pending |
-| SQL-01..07 | TBD | Pending |
-| LOADER-01..10 | TBD | Pending |
-| OBS-01..08 | TBD | Pending |
-| BUG-01..03 | TBD | Pending |
-| DESIGN-01..03 | TBD | Pending |
-| OPS-01..04 | TBD | Pending |
-| SEC-01..08 | TBD | Pending |
+| FOUND-01 | Phase 0 — Foundation | Pending |
+| FOUND-02 | Phase 0 — Foundation | Pending |
+| FOUND-03 | Phase 0 — Foundation | Pending |
+| FOUND-04 | Phase 0 — Foundation | Pending |
+| BOOT-01 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-02 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-03 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-04 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-05 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-06 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-07 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-08 | Phase 1 — Backend Platform Upgrade | Pending |
+| BOOT-09 | Phase 1 — Backend Platform Upgrade | Pending |
+| REACT-01 | Phase 2 — React Foundation | Pending |
+| REACT-02 | Phase 2 — React Foundation | Pending |
+| REACT-03 | Phase 2 — React Foundation | Pending |
+| REACT-04 | Phase 2 — React Foundation | Pending |
+| REACT-05 | Phase 2 — React Foundation | Pending |
+| REACT-06 | Phase 2 — React Foundation | Pending |
+| REACT-07 | Phase 2 — React Foundation | Pending |
+| REACT-08 | Phase 2 — React Foundation | Pending |
+| SEARCH-01 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-02 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-03 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-04 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-05 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-06 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-07 | Phase 3 — React Search Vertical Slice | Pending |
+| RECVIZ-01 | Phase 4 — recviz Integration | Pending |
+| RECVIZ-02 | Phase 4 — recviz Integration | Pending |
+| RECVIZ-03 | Phase 4 — recviz Integration | Pending |
+| RECVIZ-04 | Phase 4 — recviz Integration | Pending |
+| RECVIZ-05 | Phase 4 — recviz Integration | Pending |
+| RECVIZ-06 | Phase 4 — recviz Integration | Pending |
+| RECVIZ-07 | Phase 4 — recviz Integration | Pending |
+| SQL-01 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-02 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-03 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-04 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-05 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-06 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-07 | Phase 5 — Config-driven SELECT | Pending |
+| LOADER-01 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-02 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-03 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-04 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-05 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-06 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-07 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-08 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-09 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-10 | Phase 6 — ES Loader Subsystem | Pending |
+| OBS-01 | Phase 7 — Observability Sweep | Pending |
+| OBS-02 | Phase 7 — Observability Sweep | Pending |
+| OBS-03 | Phase 7 — Observability Sweep | Pending |
+| OBS-04 | Phase 7 — Observability Sweep | Pending |
+| OBS-05 | Phase 7 — Observability Sweep | Pending |
+| OBS-06 | Phase 7 — Observability Sweep | Pending |
+| OBS-07 | Phase 7 — Observability Sweep | Pending |
+| OBS-08 | Phase 7 — Observability Sweep | Pending |
+| BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| BUG-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| DESIGN-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| DESIGN-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| DESIGN-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OPS-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OPS-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OPS-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OPS-04 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| SEC-01 | Phase 9 — Domain Security | Pending |
+| SEC-02 | Phase 9 — Domain Security | Pending |
+| SEC-03 | Phase 9 — Domain Security | Pending |
+| SEC-04 | Phase 9 — Domain Security | Pending |
+| SEC-05 | Phase 9 — Domain Security | Pending |
+| SEC-06 | Phase 9 — Domain Security | Pending |
+| SEC-07 | Phase 9 — Domain Security | Pending |
+| SEC-08 | Phase 9 — Domain Security | Pending |
 
-**Coverage (pre-roadmap):**
+**Coverage:**
 - v1 requirements: 67 total (across 12 categories)
-- Mapped to phases: 0 (filled by roadmapper)
-- Unmapped: 67 (expected at this stage)
+- Mapped to phases: 67 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-12 after research*
+*Last updated: 2026-05-12 after roadmap creation*
