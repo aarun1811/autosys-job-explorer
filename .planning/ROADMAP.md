@@ -45,12 +45,12 @@ Plans:
 **Goal**: Produce a standalone sibling repo `../rectrace-local-dev/` providing a one-command local Oracle 23c + Elasticsearch 8.13.4 stack with 5 fully-connected fabricated scenarios (≥2 hyphenated for the Phase 8 dry-run target), an idempotent Python `apply.py` driver, and `application-local.properties` files in this repo so the existing Boot 2.7.16 codebase can verify the seed end-to-end before Phase 1 ships.
 **Requirements**: LOCAL-DEV-01, LOCAL-DEV-02, LOCAL-DEV-03, LOCAL-DEV-04, LOCAL-DEV-04a, LOCAL-DEV-05, LOCAL-DEV-06
 **Depends on:** Phase 0
-**Plans:** 2/7 plans executed
+**Plans:** 3/7 plans executed
 
 Plans:
 - [x] 00.1-01-PLAN.md — Sibling repo bootstrap (.gitignore, .env.example, requirements.txt, README skeleton, .venv)
 - [x] 00.1-02-PLAN.md — Docker stack: gvenzl/oracle-free:23-slim + elasticsearch:8.13.4 + first-boot Oracle init script for 4 schema users
-- [ ] 00.1-03-PLAN.md — Oracle DDL for 10 tables across RECTRACE / AUTOSYS / RECONMGMT / RECPORTAL schemas (idempotent drop+create)
+- [x] 00.1-03-PLAN.md — Oracle DDL for 11 tables across RECTRACE / AUTOSYS / RECONMGMT / RECPORTAL schemas (idempotent drop+create; ujo_job + ujo_job_status split per JobStatusService.java)
 - [ ] 00.1-04-PLAN.md — ES rectrace_core_index mapping with explicit .keyword multi-fields on 13 hyphen-sensitive fields (Phase 8 fix prerequisite)
 - [ ] 00.1-05-PLAN.md — 5 connected scenarios: scenarios.md + 4 Oracle INSERT files + ES NDJSON bulk-load
 - [ ] 00.1-06-PLAN.md — apply.py idempotent driver with --reset, --verify, --oracle-only, --es-only flags
