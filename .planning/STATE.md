@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: "Phase 01 planning complete (gsd-plan-checker PASS iter 1): RESEARCH + VALIDATION + PATTERNS + PLAN (8 waves, 27 tasks); D-1.2 amended to Spring Boot 3.5.14 after researcher surfaced Boot 3.3 EOL"
-last_updated: "2026-05-12T15:30:00.000Z"
+status: verifying
+stopped_at: "Phase 01 execution complete (7/8 waves landed, W4 retired-merged into W1). gsd-verifier PENDING-USER: 9/9 must-haves auto-verified PASS; 3 UI smoke items (execution-order graph, TLM-stats modal, QuickRec modal) deferred to manual user verification per Phase 00.1 P07 pattern. Plan amended twice in-flight to merge HLRC-using files (Wave 4 + Wave 3 V3 trio + SearchController V3 strip) into the Wave 1 anchor commit; bisectability preserved."
+last_updated: "2026-05-12T22:30:00.000Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
@@ -21,13 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12)
 
 **Core value:** Users can quickly find Autosys jobs and understand their dependencies and TLM statistics through a unified, performant, design-consistent UI.
-**Current focus:** Phase 01 — Backend Platform Upgrade (planned; ready to execute)
+**Current focus:** Phase 01 — Backend Platform Upgrade (executed; PENDING user UI smoke sign-off)
 
 ## Current Position
 
-Phase: 01 (Backend Platform Upgrade) — PLANNED, ready for `/gsd-execute-phase 1`
-Plan: PLAN.md authored (8 waves, 27 tasks). gsd-plan-checker PASS on iteration 1; 3 cosmetic follow-ups applied. RESEARCH.md, VALIDATION.md, PATTERNS.md all committed.
-Status: Planning complete. CONTEXT.md D-1.2 amended in-flight — Spring Boot lock moved from 3.3.x LTS → **3.5.14** after researcher + independent verification confirmed Boot 3.3 OSS support ended 2025-06-30 and commercial support ends 2026-06-30 (~6 weeks). 3.5 has the longest commercial-support runway (2032-06-30) and identical migration mechanics. Phase 00.1's 2 KNOWN GAPS + 3 deferred UI smoke items roll forward to Phase 01 Wave 7 + Wave 8.
+Phase: 01 (Backend Platform Upgrade) — EXECUTION COMPLETE, gsd-verifier PENDING-USER
+Plan: 8 waves authored; 7 wave-anchor commits landed (W4 retired-merged into W1 during execution). All 9/9 must-haves auto-verified PASS by gsd-verifier (commit e84e6e7).
+Status: Both modules build and boot on **Spring Boot 3.5.14 + Java 21**. Jakarta sweep complete (sql + net.ssl JDK packages preserved). ES Java API Client migration done (SuggestionService + ElasticsearchServiceV4 on `co.elastic.clients.elasticsearch.ElasticsearchClient`). V3 search trio + V3 endpoints + frontend search.service deleted. SecurityFilterChain permit-all bean per module. BOOT-08 cleanup quartet done (SLF4J + show_sql off + explicit HikariCP + AppConstants populated). Phase 0.1 KNOWN GAPS closed via conditional scriptExecutor wraps. ROADMAP.md updated to reflect 3.5.14/Java 21.
+
+**3 UI smoke items DEFERRED-TO-USER** (recipes in `.planning/phases/01-backend-platform-upgrade/01-SMOKE-CHECKLIST.md` lines 227-273):
+- UI-a: execution-order graph renders multi-node
+- UI-b: TLM-stats modal opens with charts
+- UI-c: QuickRec modal opens with data
+
+Once user signs off on UI-a/b/c, Phase 01 is ready for `/gsd-complete-phase 1`.
+
 Last activity: 2026-05-12
 
 Progress: [██████████] 100%
