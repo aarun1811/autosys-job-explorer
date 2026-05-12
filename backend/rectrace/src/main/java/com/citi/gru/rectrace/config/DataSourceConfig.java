@@ -37,6 +37,9 @@ public class DataSourceConfig {
     @Value("${datasource.db-schema}")
     private String dbschema;
 
+    @Value("${datasource.password:}")
+    private String datasourcePassword;
+
     @Value("${datasource.hikari.maximum-pool-size:5}")
     private int maximumPoolSize;
 
@@ -55,9 +58,18 @@ public class DataSourceConfig {
     @Bean
     @Primary
     public DataSource dataSource() {
-        ScriptExecutor scriptExecutor = new ScriptExecutor();
-        String decryptedPassword = scriptExecutor.executeScript("/opt/rectify/control/scripts/get_password.sh",
-                serviceName.toUpperCase(), dbschema.toUpperCase());
+        // Phase 0.1 P07 KNOWN GAP closure (Phase 1 Wave 7): use ${datasource.password}
+        // when supplied (e.g. local profile via application-local.properties); fall back
+        // to /opt/rectify/control/scripts/get_password.sh only on Citi VMs where the
+        // property is unset and the script is the canonical credential source.
+        String decryptedPassword;
+        if (datasourcePassword != null && !datasourcePassword.isBlank()) {
+            decryptedPassword = datasourcePassword;
+        } else {
+            ScriptExecutor scriptExecutor = new ScriptExecutor();
+            decryptedPassword = scriptExecutor.executeScript("/opt/rectify/control/scripts/get_password.sh",
+                    serviceName.toUpperCase(), dbschema.toUpperCase());
+        }
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);

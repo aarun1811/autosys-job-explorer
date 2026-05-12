@@ -50,6 +50,9 @@ public class DatabaseConfig {
     @Value("${reconmgmt.datasource.db-schema}")
     private String reconmgmtDbSchema;
 
+    @Value("${reconmgmt.datasource.password:}")
+    private String reconmgmtPassword;
+
     @Value("${recportal.datasource.driver-class-name:oracle.jdbc.OracleDriver}")
     private String recportalDriverClassName;
 
@@ -64,6 +67,9 @@ public class DatabaseConfig {
 
     @Value("${recportal.datasource.db-schema}")
     private String recportalDbSchema;
+
+    @Value("${recportal.datasource.password:}")
+    private String recportalPassword;
 
     @Value("${password.script.path:/opt/rectify/control/scripts/get_password.sh}")
     private String passwordScriptPath;
@@ -109,8 +115,16 @@ public class DatabaseConfig {
         logger.info("Creating reconmgmt DataSource for service: {} and schema: {}",
                    reconmgmtServiceName, reconmgmtDbSchema);
 
-        String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
-                reconmgmtServiceName.toUpperCase(), reconmgmtDbSchema.toUpperCase());
+        // Phase 0.1 P07 KNOWN GAP closure (Phase 1 Wave 7): use ${reconmgmt.datasource.password}
+        // when supplied (local profile via application-local.properties); fall back to
+        // get_password.sh only on Citi VMs where the property is unset.
+        String decryptedPassword;
+        if (reconmgmtPassword != null && !reconmgmtPassword.isBlank()) {
+            decryptedPassword = reconmgmtPassword;
+        } else {
+            decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
+                    reconmgmtServiceName.toUpperCase(), reconmgmtDbSchema.toUpperCase());
+        }
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(reconmgmtUrl);
@@ -147,8 +161,18 @@ public class DatabaseConfig {
         logger.info("Creating recportal DataSource for service: {} and schema: {}",
                    recportalServiceName, recportalDbSchema);
 
-        String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
-                recportalServiceName.toUpperCase(), recportalDbSchema.toUpperCase());
+        // Phase 0.1 P07 KNOWN GAP closure (Phase 1 Wave 7): use ${recportal.datasource.password}
+        // when supplied (local profile via application-local.properties); fall back to
+        // get_password.sh only on Citi VMs where the property is unset. Line ~234
+        // (TlmJdbcTemplateFactory.getJdbcTemplate) is intentionally NOT wrapped here —
+        // CONCERNS LOW #2 defers it to a later cleanup phase.
+        String decryptedPassword;
+        if (recportalPassword != null && !recportalPassword.isBlank()) {
+            decryptedPassword = recportalPassword;
+        } else {
+            decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
+                    recportalServiceName.toUpperCase(), recportalDbSchema.toUpperCase());
+        }
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(recportalUrl);
