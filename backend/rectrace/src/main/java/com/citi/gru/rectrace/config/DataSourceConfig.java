@@ -1,7 +1,7 @@
 package com.citi.gru.rectrace.config;
 
 import javax.sql.DataSource;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
