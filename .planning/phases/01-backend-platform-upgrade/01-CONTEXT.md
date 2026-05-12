@@ -6,21 +6,21 @@
 <domain>
 ## Phase Boundary
 
-Both Maven modules — `backend/rectrace` and `rectrace-tlm-stats` — are upgraded from Spring Boot 2.7.16 + Java 17 to **Spring Boot 3.3.x LTS + Java 21**, with `javax.*` → `jakarta.*` namespaces migrated, a permit-all `SecurityFilterChain` bean configured per module (no auth mechanism change — Phase 9 owns that), and the Elasticsearch client migrated to the new Java API Client (`co.elastic.clients.elasticsearch.ElasticsearchClient`) on the live ES code paths. The phase exits when both modules build green on Boot 3.3.x + Java 21, all existing tests pass (Phase 0's context-load tests on the `test` profile), and a manual smoke against a local Oracle + ES (via the new `local` Spring profile) confirms search, execution-order, TLM-stats, and the `/api/search/suggest` autocomplete still work end-to-end.
+Both Maven modules — `backend/rectrace` and `rectrace-tlm-stats` — are upgraded from Spring Boot 2.7.16 + Java 17 to **Spring Boot 3.5.14 + Java 21**, with `javax.*` → `jakarta.*` namespaces migrated, a permit-all `SecurityFilterChain` bean configured per module (no auth mechanism change — Phase 9 owns that), and the Elasticsearch client migrated to the new Java API Client (`co.elastic.clients.elasticsearch.ElasticsearchClient`) on the live ES code paths. The phase exits when both modules build green on Boot 3.5.14 + Java 21, all existing tests pass (Phase 0's context-load tests on the `test` profile), and a manual smoke against a local Oracle + ES (via the new `local` Spring profile) confirms search, execution-order, TLM-stats, and the `/api/search/suggest` autocomplete still work end-to-end.
 
 **In scope:**
-- Boot parent POM bump (2.7.16 → 3.3.x LTS) and Java target bump (17 → 21) in both modules' `pom.xml`, identical version properties in both.
+- Boot parent POM bump (2.7.16 → 3.5.14) and Java target bump (17 → 21) in both modules' `pom.xml`, identical version properties in both.
 - `javax.*` → `jakarta.*` namespace sweep (servlet, persistence, annotation, sql packages — full list from the `javax.` grep below).
 - `Oracle12cDialect` → `OracleDialect` (Hibernate 6 deprecation), both in `DataSourceConfig` Java code and in `application.properties`.
 - `RestHighLevelClient` → `ElasticsearchClient` migration for `SuggestionService` and `ElasticsearchServiceV4` only.
 - Removal of V3 search trio: `SearchServiceV3`, `OracleSearchProviderV3`, `ElasticsearchSearchProviderV3`, plus the three V3 endpoints in `SearchController` (`/v3/search/keyword`, `/v3/search/expand`, `/v3/search/ssrm/{category}`).
 - Removal of frontend dead code: `frontend/rectrace/src/app/services/search.service.ts` and its spec (CONCERNS MEDIUM #4).
 - New per-module `SecurityFilterChain` bean: permits everything, disables CSRF. CORS stays as-is (Phase 9 territory).
-- Dependency-pin refresh aligned with Boot 3.3 BOM (Micrometer 1.13.x, Hibernate 6.5.x, ES client 8.13.x — versions resolved transitively, never overridden).
+- Dependency-pin refresh aligned with the Boot 3.5 BOM (Hibernate 6.6.x, ES client 8.15.x, Micrometer 1.14.x — versions resolved transitively from `spring-boot-starter-parent:3.5.14`, never overridden). Exact transitive versions are confirmed at plan-time by the planner.
 - BOOT-08 cleanup quartet (all four folded in): replace `printStackTrace` + `System.err.println` with SLF4J across `ScriptExecutor` and `ExecutionOrderService.clobToString`; remove `show_sql=true` from default profile (Java + properties); add explicit `HikariCP` pool config to primary rectrace `DataSourceConfig.dataSource()`; either delete `AppConstants.java` or populate it with `CITI_PORTAL_LOGIN_ID_HEADER` (planner picks).
 - New `application-local.properties` in both modules pointing to `localhost:1521` Oracle and `localhost:9200` ES, used via `-Dspring.profiles.active=local` for laptop-side smoke testing.
 - All `@Profile("!test")` guards added in Phase 0 preserved across the migration.
-- ROADMAP.md updated to reflect actual locked versions: Spring Boot 3.3.x LTS (not 3.2.x as currently written) and Java 21 (not "17 or 21 if VM supports").
+- ROADMAP.md updated to reflect actual locked versions: Spring Boot **3.5.14** (replacing the previously-written "3.2.x" — and superseding the briefly-locked "3.3.x LTS" — per amended D-1.2) and Java 21 (not "17 or 21 if VM supports").
 
 **Out of scope for Phase 1:**
 - Auth mechanism choice and `x-citiportal-loginid` header validation — Phase 9 (SEC-01).
@@ -42,7 +42,7 @@ Both Maven modules — `backend/rectrace` and `rectrace-tlm-stats` — are upgra
 ### Version targets
 
 - **D-1.1:** Java target is **Java 21** for both modules. `<java.version>21</java.version>` and `<maven.compiler.release>21</maven.compiler.release>` in both `pom.xml`. Planner must verify the deployment VM has JDK 21+ before the upgrade ships (success criterion #1 in ROADMAP.md).
-- **D-1.2:** Spring Boot line is **3.3.x LTS** (the commercial LTS line recommended by `CONCERNS.md` HIGH #3, not the 3.2.x that ROADMAP.md currently lists). Planner picks the exact patch version at plan time (latest 3.3.x patch). ROADMAP.md is updated in this phase to reflect 3.3.x.
+- **D-1.2:** Spring Boot version is **3.5.14** (pin exactly). **Amended 2026-05-12** during plan-phase research after verifying current support state at endoflife.date: Boot 3.3 OSS support ended 2025-06-30 and commercial support ends 2026-06-30 (~6 weeks from the amendment date), making the originally-locked 3.3.x line effectively dead. Boot 3.5 is the **current OSS line with the longest commercial-support window** (2032-06-30 — six years), matching CONCERNS.md HIGH #3's "commercial LTS line" intent. Boot 4.0 (GA Nov 2025) was considered but rejected: it pulls in Spring Framework 7 and additional migration surface beyond what this phase scopes. The 2.7.16 → 3.5.14 migration mechanics are **identical** to those for 3.3.x per the gsd-phase-researcher pass — zero rework vs the original lock. ROADMAP.md is updated in this phase to reflect **3.5.14** (replacing the previously-written "3.2.x" / "3.3.x LTS").
 - **D-1.3:** Both modules pin **identical** `spring-boot.version` and `java.version` properties. Any future bump must be applied to both. No drift permitted — cross-module version alignment is a maintenance-cost reduction the user explicitly called out.
 
 ### Elasticsearch client strategy
@@ -103,7 +103,7 @@ None — no pending todos matched this phase at discuss time.
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Project context
-- `.planning/PROJECT.md` — Rectrace modernization milestone scope, constraints, tech-stack lock (Spring Boot 3.2.x LTS-style — superseded by D-1.2 to 3.3.x LTS).
+- `.planning/PROJECT.md` — Rectrace modernization milestone scope, constraints, tech-stack lock (Spring Boot 3.2.x LTS-style — superseded by amended D-1.2 to **3.5.14**).
 - `.planning/REQUIREMENTS.md` §"Backend platform upgrade" — BOOT-01..09 (the nine Phase 1 requirements).
 - `.planning/ROADMAP.md` §"Phase 1: Backend Platform Upgrade" — phase goal + success criteria. Will be edited in this phase to reflect locked versions.
 - `.planning/STATE.md` — current milestone state.
@@ -114,7 +114,7 @@ None — no pending todos matched this phase at discuss time.
 
 ### Research findings
 - `.planning/research/PITFALLS.md` Pitfall #10 — "`maven.test.skip=true` lets silent regressions ship" (Phase 0 closed this; Phase 1 must keep tests passing post-upgrade).
-- `.planning/research/PITFALLS.md` Pitfall #7 (partially) — "Observability misconfig" (relevant to: do NOT add per-component Micrometer version overrides; let the Boot 3.3 BOM resolve transitively).
+- `.planning/research/PITFALLS.md` Pitfall #7 (partially) — "Observability misconfig" (relevant to: do NOT add per-component Micrometer version overrides; let the Boot 3.5 BOM resolve transitively).
 - `.planning/research/SUMMARY.md` — note: "Phase 1: React foundation" in SUMMARY.md is **stale** roadmap nomenclature; the current Phase 1 in ROADMAP.md is Backend Platform Upgrade. Research notes for the upgrade are scattered across PITFALLS.md and CONCERNS.md.
 
 ### Codebase facts
@@ -130,7 +130,7 @@ None — no pending todos matched this phase at discuss time.
 ### Files to touch in Phase 1 (illustrative — planner finalizes)
 
 **Module `backend/rectrace`:**
-- `pom.xml` — parent version 2.7.16 → 3.3.x; `<java.version>` 17 → 21; `<maven.compiler.release>` 17 → 21.
+- `pom.xml` — parent version 2.7.16 → **3.5.14**; `<java.version>` 17 → 21; `<maven.compiler.release>` 17 → 21.
 - `src/main/java/com/citi/gru/rectrace/RectraceApplication.java` — verify still works; no changes expected.
 - `src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java` — `javax.sql` → `jakarta.sql`; `javax.persistence` → `jakarta.persistence`; `Oracle12cDialect` → `OracleDialect`; add HikariConfig pool sizing; remove `properties.setProperty("hibernate.show_sql","true")`.
 - `src/main/java/com/citi/gru/rectrace/config/AutosysDataSourceConfig.java` — `javax.sql` → `jakarta.sql`.
@@ -174,7 +174,7 @@ None — no pending todos matched this phase at discuss time.
 - `.planning/STATE.md` — updated by `/gsd-discuss-phase` workflow finalization.
 
 ### External references (Boot 3 migration playbooks)
-- Spring Boot 3.3 Migration Guide — https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.3-Release-Notes (planner may fetch at plan time).
+- Spring Boot 3.5 Release Notes — https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.5-Release-Notes (planner may fetch at plan time). The 3.3 and 3.4 release notes are also relevant since the project crosses 2.7 → 3.5 (and therefore inherits every interim breaking change).
 - Spring Security 6 migration guide — `WebSecurityConfigurerAdapter` → `SecurityFilterChain` (https://docs.spring.io/spring-security/reference/6.0/migration/index.html).
 - Elasticsearch Java API Client docs — https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/index.html (HLRC → new client migration).
 - Hibernate 6 deprecations: `Oracle12cDialect` → `OracleDialect`.
@@ -206,7 +206,7 @@ None — no pending todos matched this phase at discuss time.
 - **Frontend `search-v5.service.ts:137`** calls `/api/search/suggest` — must continue returning the same JSON shape after `SuggestionService` is rewritten on `ElasticsearchClient`. The endpoint URL contract is preserved (D-1.6).
 - **Frontend `search-v5.service.ts`** calls `/api/v4/search/initial`, `/api/v4/search/ssrm/{category}`, `/api/v4/search/export` — all live; must continue working through V4 service rewrite on the new ES client.
 - **Frontend execution-order graph component** calls `/api/execution-order/{jobName}` (`ExecutionOrderController`) — namespace migration only; behavior preserved.
-- **Frontend TLM-stats modal v2** calls `rectrace-tlm-stats` service on port 8080 — both modules upgrade in this phase; the cross-module contract is HTTP (JSON), not class-level, so as long as both stay green on Boot 3.3 the contract holds.
+- **Frontend TLM-stats modal v2** calls `rectrace-tlm-stats` service on port 8080 — both modules upgrade in this phase; the cross-module contract is HTTP (JSON), not class-level, so as long as both stay green on Boot 3.5 the contract holds.
 - **Local Oracle / ES** (Phase 0.1 prerequisite) — the contract Phase 1 needs from the local stack: Oracle listening on `localhost:1521` accepting `system/oracle` (or env-var creds), with schemas matching `application.properties`'s expectations; ES listening on `localhost:9200` with the indexes V4 + Suggestion query. Schema details flow into Phase 0.1's planning.
 
 </code_context>
@@ -226,7 +226,7 @@ None — no pending todos matched this phase at discuss time.
 <deferred>
 ## Deferred Ideas
 
-- **Round 2 cleanup phase** — long-file splits (`SearchServiceV4` ~750 lines, `OracleServiceV4` ~550 lines, `ExecutionOrderService` ~500 lines, `SearchV5GridComponent` ~655 lines), deeper code hygiene, structural refactors for long-term maintainability. Lands after Boot 3.3.x is stable. Out of scope for the upgrade phase because mixing structural refactors into a version-bump phase makes regression bisection harder.
+- **Round 2 cleanup phase** — long-file splits (`SearchServiceV4` ~750 lines, `OracleServiceV4` ~550 lines, `ExecutionOrderService` ~500 lines, `SearchV5GridComponent` ~655 lines), deeper code hygiene, structural refactors for long-term maintainability. Lands after Boot 3.5.x is stable. Out of scope for the upgrade phase because mixing structural refactors into a version-bump phase makes regression bisection harder.
 - **Parent aggregator POM at repo root** — share `dependencyManagement` across both modules so dependency versions live in one place. Real maintenance win but a structural refactor coupled to a version bump. Defer to a build-hygiene / repo-structure phase.
 - **Angular `search-v5/` → `search-v4/` rename** — alignment via Angular refactor. Rejected because Angular is on the decommission path; effort would be discarded. Alignment achieved via D-1.18 (React frontend uses V4 from Phase 2).
 - **Backend V4 → V5 rename** — would align with Angular's V5 naming, but propagates to URL contracts, search-config-v4.json filename, every frontend HTTP call, every test. Largest blast radius; also locks V5 nomenclature forward forever (Phase 5 SELECT, Phase 6 Loader, etc. all inherit V5). Rejected.
