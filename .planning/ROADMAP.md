@@ -10,7 +10,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - Integer phases (0, 1, 2…): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 0: Foundation** — Test gate (`maven.test.skip` removed, CI fails on red) + React↔Angular parity matrix committed.
+- [x] **Phase 0: Foundation** — Test gate (`maven.test.skip` removed, CI fails on red) + React↔Angular parity matrix committed. (completed 2026-05-12)
 - [ ] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → 3.2, Java 17/21, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup.
 - [ ] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1.
 - [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states, side-by-side `/v6/` URL prefix.
@@ -32,7 +32,12 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
   2. CI fails the build on any backend test failure; manual override is `-DskipTests` only.
   3. At least one passing Spring context-load test exists per Maven module.
   4. `.planning/parity-matrix.md` is committed, mapping every `cellRenderer` × every search category × every grid behavior to `port | drop | replace-with-recviz`.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 00-01-PLAN.md — backend/rectrace test gate (remove maven.test.skip, @Profile guards on DataSourceConfig + AutosysDataSourceConfig + ElasticsearchDevConfiguration, create ContextLoadsTest.java + application-test.properties)
+- [x] 00-02-PLAN.md — rectrace-tlm-stats test gate (remove maven.test.skip, @Profile("!test") on DatabaseConfig, create application-test.properties with recportal.datasource.url placeholder, add @ActiveProfiles("test") to TlmStatsApplicationTests)
+- [x] 00-03-PLAN.md — parity matrix day-0 inventory (create .planning/parity-matrix.md with all Angular routes/tabs/modals/features and target verbs)
 
 ### Phase 1: Backend Platform Upgrade
 **Goal**: Both backend modules run on Spring Boot 3.2.x and Java 17/21 with `jakarta` namespaces, modern Spring Security configuration, refreshed dependency pins, and all existing functionality verified.
@@ -157,7 +162,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 0/TBD | Not started | - |
+| 0. Foundation | 3/3 | Complete   | 2026-05-12 |
 | 1. Backend Platform Upgrade | 0/TBD | Not started | - |
 | 2. React Foundation | 0/TBD | Not started | - |
 | 3. React Search Vertical Slice | 0/TBD | Not started | - |
@@ -170,3 +175,4 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 
 ---
 *Roadmap created: 2026-05-12*
+*Phase 0 plans created: 2026-05-12*

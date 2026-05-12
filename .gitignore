@@ -67,3 +67,6 @@
 
 # VSCode
 .vscode/
+
+.agent/
+.claude/
