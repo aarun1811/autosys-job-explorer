@@ -664,7 +664,7 @@ class ContextLoadsTest {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `ElasticsearchDevConfiguration` get `@Profile("dev")` in Phase 0?**
    - What we know: The class is annotated `@Configuration` with no `@Profile`. It fires in all environments including production (CONCERNS.md CRITICAL). Adding `@Profile("dev")` is the documented fix.
