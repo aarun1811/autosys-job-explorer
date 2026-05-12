@@ -1,5 +1,6 @@
 package com.citi.gru.rectrace.controller;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO;
 import com.citi.gru.rectrace.service.ExecutionOrderService;
 
+@Profile("!test")
 @RestController
 @RequestMapping("/api/execution-order")
 public class ExecutionOrderController {

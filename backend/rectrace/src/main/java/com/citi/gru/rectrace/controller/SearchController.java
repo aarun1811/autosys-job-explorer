@@ -5,12 +5,14 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 import com.citi.gru.rectrace.dto.SearchCategoryResult;
 import com.citi.gru.rectrace.service.SuggestionService;
 import com.citi.gru.rectrace.service.v3.OracleSearchProviderV3;
 import com.citi.gru.rectrace.service.v3.SearchServiceV3;
 
+@Profile("!test")
 @RestController
 @RequestMapping("/api")
 public class SearchController {
