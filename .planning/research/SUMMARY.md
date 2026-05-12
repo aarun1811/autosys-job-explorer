@@ -1,6 +1,6 @@
 # Project Research Summary
 
-**Project:** Autosys Job Explorer — React modernization milestone
+**Project:** Rectrace — React modernization milestone
 **Domain:** Internal enterprise data-exploration tool (Citi-internal) — net-new React SPA + additive Spring Boot 2.7 backend features (config-driven SELECT, Oracle→ES scheduled loader, observability, ops script, Citi-domain security), with recviz embedded via iframe.
 **Researched:** 2026-05-12
 **Confidence:** HIGH overall — most decisions are grounded in the existing codebase, verified Context7/official docs, and well-established Spring Boot 2.7 / React 19 patterns. Specific Citi-infra choices (log aggregator target, user-auth mechanism, service-auth mechanism) are explicitly deferred.

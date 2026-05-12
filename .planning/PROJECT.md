@@ -1,8 +1,8 @@
-# Autosys Job Explorer
+# Rectrace
 
 ## What This Is
 
-Autosys Job Explorer is an internal enterprise web application at Citi for exploring and managing Autosys job information. Users search and visualize Autosys job metadata, dependencies, and TLM statistics pulled from Oracle databases and Elasticsearch.
+Rectrace is an internal enterprise web application at Citi for exploring and managing Autosys job information. Users search and visualize Autosys job metadata, dependencies, and TLM statistics pulled from Oracle databases and Elasticsearch.
 
 The system today is a three-tier stack — Spring Boot 2.7.16 REST API (`backend/rectrace`), an Angular 16 SPA with AG-Grid Enterprise (`frontend/rectrace`), and a standalone Spring Boot TLM stats service (`rectrace-tlm-stats`) — developed on a laptop and deployed to Citi VM servers.
 

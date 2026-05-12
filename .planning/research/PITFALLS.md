@@ -533,5 +533,5 @@ Phase names below are domain-aligned with the Active requirements in `PROJECT.md
 - shadcn/ui design philosophy (copy-into-repo model, no upstream upgrade path) — HIGH confidence.
 
 ---
-*Pitfalls research for: Autosys Job Explorer — React migration + backend extensions milestone*
+*Pitfalls research for: Rectrace — React migration + backend extensions milestone*
 *Researched: 2026-05-12*
