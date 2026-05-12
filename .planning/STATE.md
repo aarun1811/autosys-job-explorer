@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 00.1 verification PASSED; 2 KNOWN GAPS surfaced for Phase 1 BOOT-08; 3 UI smoke items deferred to manual user verification
-last_updated: "2026-05-12T14:52:24.106Z"
+status: planning
+stopped_at: "Phase 01 planning complete (gsd-plan-checker PASS iter 1): RESEARCH + VALIDATION + PATTERNS + PLAN (8 waves, 27 tasks); D-1.2 amended to Spring Boot 3.5.14 after researcher surfaced Boot 3.3 EOL"
+last_updated: "2026-05-12T15:30:00.000Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12)
 
 **Core value:** Users can quickly find Autosys jobs and understand their dependencies and TLM statistics through a unified, performant, design-consistent UI.
-**Current focus:** Phase 00.1 — Local Dev Seed Bootstrap
+**Current focus:** Phase 01 — Backend Platform Upgrade (planned; ready to execute)
 
 ## Current Position
 
-Phase: 00.1 (Local Dev Seed Bootstrap) — COMPLETE
-Plan: 7 of 7 (all Phase 00.1 plans landed). Next milestone phase: 01 (Backend Platform Upgrade).
-Status: Phase 00.1 closed — subject to two KNOWN GAPS handed to Phase 1 BOOT-08 (see Decisions below) + 3 manual UI verification steps deferred to user
+Phase: 01 (Backend Platform Upgrade) — PLANNED, ready for `/gsd-execute-phase 1`
+Plan: PLAN.md authored (8 waves, 27 tasks). gsd-plan-checker PASS on iteration 1; 3 cosmetic follow-ups applied. RESEARCH.md, VALIDATION.md, PATTERNS.md all committed.
+Status: Planning complete. CONTEXT.md D-1.2 amended in-flight — Spring Boot lock moved from 3.3.x LTS → **3.5.14** after researcher + independent verification confirmed Boot 3.3 OSS support ended 2025-06-30 and commercial support ends 2026-06-30 (~6 weeks). 3.5 has the longest commercial-support runway (2032-06-30) and identical migration mechanics. Phase 00.1's 2 KNOWN GAPS + 3 deferred UI smoke items roll forward to Phase 01 Wave 7 + Wave 8.
 Last activity: 2026-05-12
 
 Progress: [██████████] 100%
