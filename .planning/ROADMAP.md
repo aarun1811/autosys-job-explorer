@@ -42,13 +42,19 @@ Plans:
 
 ### Phase 00.1: Local Dev Seed Bootstrap (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal**: Produce a standalone sibling repo `../rectrace-local-dev/` providing a one-command local Oracle 23c + Elasticsearch 8.13.4 stack with 5 fully-connected fabricated scenarios (≥2 hyphenated for the Phase 8 dry-run target), an idempotent Python `apply.py` driver, and `application-local.properties` files in this repo so the existing Boot 2.7.16 codebase can verify the seed end-to-end before Phase 1 ships.
+**Requirements**: LOCAL-DEV-01, LOCAL-DEV-02, LOCAL-DEV-03, LOCAL-DEV-04, LOCAL-DEV-04a, LOCAL-DEV-05, LOCAL-DEV-06
 **Depends on:** Phase 0
-**Plans:** 0 plans
+**Plans:** 7 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 00.1 to break down)
+- [ ] 00.1-01-PLAN.md — Sibling repo bootstrap (.gitignore, .env.example, requirements.txt, README skeleton, .venv)
+- [ ] 00.1-02-PLAN.md — Docker stack: gvenzl/oracle-free:23-slim + elasticsearch:8.13.4 + first-boot Oracle init script for 4 schema users
+- [ ] 00.1-03-PLAN.md — Oracle DDL for 10 tables across RECTRACE / AUTOSYS / RECONMGMT / RECPORTAL schemas (idempotent drop+create)
+- [ ] 00.1-04-PLAN.md — ES rectrace_core_index mapping with explicit .keyword multi-fields on 13 hyphen-sensitive fields (Phase 8 fix prerequisite)
+- [ ] 00.1-05-PLAN.md — 5 connected scenarios: scenarios.md + 4 Oracle INSERT files + ES NDJSON bulk-load
+- [ ] 00.1-06-PLAN.md — apply.py idempotent driver with --reset, --verify, --oracle-only, --es-only flags
+- [ ] 00.1-07-PLAN.md — application-local.properties in this repo + finalized README + D-0.1.23 8-item smoke verification
 
 ### Phase 1: Backend Platform Upgrade
 **Goal**: Both backend modules run on Spring Boot 3.2.x and Java 17/21 with `jakarta` namespaces, modern Spring Security configuration, refreshed dependency pins, and all existing functionality verified.
@@ -174,7 +180,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-12 |
-| 0.1. Local Dev Seed Bootstrap (INSERTED) | 0/TBD | Not started | - |
+| 0.1. Local Dev Seed Bootstrap (INSERTED) | 0/7 | Not started | - |
 | 1. Backend Platform Upgrade | 0/TBD | Not started | - |
 | 2. React Foundation | 0/TBD | Not started | - |
 | 3. React Search Vertical Slice | 0/TBD | Not started | - |
