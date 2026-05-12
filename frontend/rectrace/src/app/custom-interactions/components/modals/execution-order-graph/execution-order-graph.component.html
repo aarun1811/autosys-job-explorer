@@ -15,8 +15,32 @@
       </button>
       <span class="zoom-level">{{ (currentZoom * 100).toFixed(0) }}%</span>
     </div>
+
+    <!-- Status Legend -->
+    <div class="status-legend" *ngIf="statusAvailable">
+      <div class="legend-item completed">
+        <span class="legend-dot"></span>
+        <span class="legend-label">Completed</span>
+      </div>
+      <div class="legend-item failed">
+        <span class="legend-dot"></span>
+        <span class="legend-label">Failed</span>
+      </div>
+      <div class="legend-item running">
+        <span class="legend-dot"></span>
+        <span class="legend-label">Running</span>
+      </div>
+      <div class="legend-item waiting">
+        <span class="legend-dot"></span>
+        <span class="legend-label">Waiting</span>
+      </div>
+      <div class="legend-item inactive">
+        <span class="legend-dot"></span>
+        <span class="legend-label">Inactive</span>
+      </div>
+    </div>
     <div class="help-text">
-      • Use mouse wheel to pan 
+      Use mouse wheel to pan
     </div>
   </div>
   <div #cy class="cytoscape-graph"></div>

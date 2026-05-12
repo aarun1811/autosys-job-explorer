@@ -5,6 +5,7 @@ import dagre from 'cytoscape-dagre';
 import { ThemeService } from '../../../../services/theme.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { JobStatusInfo, VisualState } from 'src/app/services/execution-order.service';
 
 // Register the dagre layout
 cytoscape.use(dagre);
@@ -25,17 +26,48 @@ interface JobDetails {
   description: string;
 }
 
+// Status color configuration for light and dark themes
+interface StatusColors {
+  bg: string;
+  border: string;
+  text: string;
+  icon: string;
+}
+
+const STATUS_COLORS: { light: Record<VisualState, StatusColors>; dark: Record<VisualState, StatusColors> } = {
+  light: {
+    COMPLETED: { bg: '#e6f4ea', border: '#34a853', text: '#1e4620', icon: 'check_circle' },
+    FAILED: { bg: '#fce8e6', border: '#ea4335', text: '#8b1a1a', icon: 'error' },
+    RUNNING: { bg: '#e8f0fe', border: '#1a73e8', text: '#1a4f8b', icon: 'play_circle' },
+    WAITING: { bg: '#fef7e0', border: '#f9ab00', text: '#7a5c00', icon: 'schedule' },
+    INACTIVE: { bg: '#f1f3f4', border: '#9aa0a6', text: '#5f6368', icon: 'pause_circle' }
+  },
+  dark: {
+    COMPLETED: { bg: '#1e3a2f', border: '#81c995', text: '#81c995', icon: 'check_circle' },
+    RUNNING: { bg: '#1e3a5f', border: '#8ab4f8', text: '#8ab4f8', icon: 'play_circle' },
+    FAILED: { bg: '#3c2a2a', border: '#f28b82', text: '#f28b82', icon: 'error' },
+    WAITING: { bg: '#3c3520', border: '#fdd663', text: '#fdd663', icon: 'schedule' },
+    INACTIVE: { bg: '#303134', border: '#9aa0a6', text: '#9aa0a6', icon: 'pause_circle' }
+  }
+}
+
 @Component({
   selector: 'app-execution-order-graph',
   templateUrl: './execution-order-graph.component.html',
-  styleUrls: ['./execution-order-graph.component.css']
+  styleUrls: ['./execution-order-graph.component.scss']
 })
 export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
   @ViewChild('cy') private readonly cyElement!: ElementRef;
   @Input() executionSequence: JobNode[] = [];
   @Input() jobDetails: { [key: string]: JobDetails } = {};
+  @Input() jobStatuses: { [key: string]: JobStatusInfo } = {};
+  @Input() statusAvailable: boolean = true;
   @Input() loadJob: string = '';
-  @Output() nodeSelected = new EventEmitter<{ jobName: string | undefined | null; details: JobDetails | undefined | null }>();
+  @Output() nodeSelected = new EventEmitter<{
+    jobName: string | undefined | null;
+    details: JobDetails | undefined | null;
+    status: JobStatusInfo | undefined | null;
+  }>();
 
   private cy: Core | undefined;
   private selectedNode: NodeSingular | null = null;
@@ -56,7 +88,7 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
           this.updateGraphTheme();
         }
       });
-    
+
     this.renderGraph();
     // Set initial zoom using calculation
     if (this.cy) {
@@ -67,10 +99,10 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
       this.updateZoomDisplay();
     }
   }
-  
+
   private updateGraphTheme() {
     if (!this.cy) return;
-    
+
     // Update styles based on theme
     this.cy.style()
       .selector('node')
@@ -109,7 +141,7 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
   }
 
   private renderGraph() {
-    const elements = [ ...this.getNodes(), ...this.getEdges() ];
+    const elements = [...this.getNodes(), ...this.getEdges()];
 
     const config: CytoscapeOptions = {
       container: this.cyElement.nativeElement,
@@ -118,22 +150,44 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
         {
           selector: 'node',
           style: {
-            'background-color': this.isDarkMode ? '#303134' : '#E8F0FE',
-            'label': 'data(label)',
+            // Use data-driven colors when status is available
+            'background-color': (ele: any) => {
+              if (this.statusAvailable && ele.data('statusBg')) {
+                return ele.data('statusBg');
+              }
+              return this.isDarkMode ? '#303134' : '#E8F0FE';
+            },
+            // Multi-line label: job name + status
+            'label': (ele: any) => {
+              const name = ele.data('label');
+              const status = ele.data('statusLabel');
+              return status ? `${name}\n(${status})` : name;
+            },
             'text-valign': 'center',
-            'color': this.isDarkMode ? '#8ab4f8' : '#1A73E8',
+            'color': (ele: any) => {
+              if (this.statusAvailable && ele.data('statusText')) {
+                return ele.data('statusText');
+              }
+              return this.isDarkMode ? '#8ab4f8' : '#1A73E8';
+            },
             'font-family': 'Google Sans, sans-serif',
-            'font-size': '13px',
+            'font-size': '12px',
             'font-weight': 500,
             'text-wrap': 'wrap',
-            'text-max-width': (ele: { data: (arg0: string) => any;}) => Math.max(100, ele.data('label').length * 9) - 6 + 'px',
-            'width': (ele: { data: (arg0: string) => any;}) => Math.max(100, ele.data('label').length * 9) + 'px',
-            'height': '32px',
+            'line-height': 1.3,
+            'text-max-width': (ele: any) => Math.max(120, ele.data('label').length * 8) - 6 + 'px',
+            'width': (ele: any) => Math.max(120, ele.data('label').length * 8) + 'px',
+            'height': (ele: any) => ele.data('statusLabel') ? '44px' : '32px',
             'padding': '4px 12px',
             'shape': 'round-rectangle',
-            'border-width': 1,
-            'border-color': this.isDarkMode ? '#5f6368' : '#E8EAED',
-            'border-opacity': 0.6,
+            'border-width': 2,
+            'border-color': (ele: any) => {
+              if (this.statusAvailable && ele.data('statusBorder')) {
+                return ele.data('statusBorder');
+              }
+              return this.isDarkMode ? '#5f6368' : '#E8EAED';
+            },
+            'border-opacity': 1,
             'border-style': 'solid',
             'background-opacity': 1,
             'transition-property': 'background-color, border-color, border-opacity',
@@ -252,14 +306,17 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
       this.selectedNode = node;
       const jobName = node.data('id');
       const details = this.jobDetails[jobName];
-      this.nodeSelected.emit({ jobName, details });
+      // Look up status (case-insensitive)
+      const statusKey = Object.keys(this.jobStatuses || {}).find(
+        key => key.toLowerCase() === jobName.toLowerCase()
+      );
+      const status = statusKey ? this.jobStatuses[statusKey] : null;
+      this.nodeSelected.emit({ jobName, details, status });
     });
 
     this.cy.on('unselect', 'node', (event) => {
       this.selectedNode = null;
-      const jobName = null;
-      const details = null;
-      this.nodeSelected.emit({ jobName, details });
+      this.nodeSelected.emit({ jobName: null, details: null, status: null });
     });
 
     // Handle trackpad and mouse wheel events
@@ -270,8 +327,8 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
         event.preventDefault();
 
         // Handle panning for both trackpad and mouse wheel
-        const deltaX = event.deltaX || 0;
-        const deltaY = event.deltaY || 0;
+        const deltaX = event.deltaX ?? 0;
+        const deltaY = event.deltaY ?? 0;
 
         // Adjust sensitivity for trackpad
         const sensitivity = 0.5;
@@ -294,15 +351,36 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
     this.currentZoom = this.cy?.zoom() ?? 1;
   }
 
+  private getStatusColors(visualState: VisualState): StatusColors {
+    const theme = this.isDarkMode ? 'dark' : 'light';
+    return STATUS_COLORS[theme][visualState] || STATUS_COLORS[theme].INACTIVE;
+  }
+
   private getNodes() {
-    return this.executionSequence.map(job => ({
+    return this.executionSequence.map(job => {
+      // Look up status by job name (case-insensitive)
+      const statusKey = Object.keys(this.jobStatuses || {}).find(
+        key => key.toLowerCase() === job.jobName.toLowerCase()
+      );
+      const status = statusKey ? this.jobStatuses[statusKey] : null;
+      const visualState: VisualState = status?.visualState || 'INACTIVE';
+      const colors = this.getStatusColors(visualState);
+
+      return {
         data: {
           id: job.jobName,
           label: job.jobName,
+          statusLabel: this.statusAvailable && status ? status.statusName : '',
           executionOrder: job.executionOrder,
           type: job.jobName === this.loadJob ? 'loadJob' : 'regularJob',
+          visualState: visualState,
+          statusBg: colors.bg,
+          statusBorder: colors.border,
+          statusText: colors.text,
+          statusIcon: colors.icon
         }
-      }));
+      };
+    });
   }
 
   private getEdges() {
@@ -384,7 +462,7 @@ export class ExecutionOrderGraphComponent implements AfterViewInit, OnDestroy {
     if (nodeCount <= 30) return 0.6;
     return Math.max(0.5, 25 / nodeCount);
   }
-  
+
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();

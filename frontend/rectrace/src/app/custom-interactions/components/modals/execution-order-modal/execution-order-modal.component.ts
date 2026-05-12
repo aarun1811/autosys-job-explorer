@@ -1,11 +1,11 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { JobStatusInfo, VisualState, ExecutionOrderData, JobDetails } from '../../../../services/execution-order.service'
+import { JobStatusInfo, VisualState, ExecutionOrderData, JobDetails } from '../../../../services/execution-order.service';
 
 @Component({
   selector: 'app-execution-order-modal',
   templateUrl: './execution-order-modal.component.html',
-  styleUrls: ['./execution-order-modal.component.css']
+  styleUrls: ['./execution-order-modal.component.scss']
 })
 export class ExecutionOrderModalComponent {
   public selectedJobName: string | null | undefined = null;
@@ -22,7 +22,11 @@ export class ExecutionOrderModalComponent {
     });
   }
 
-  onNodeSelected(event: { jobName: string | null | undefined; details: JobDetails | null | undefined; status: JobStatusInfo | null | undefined }) {
+  onNodeSelected(event: {
+    jobName: string | null | undefined;
+    details: JobDetails | null | undefined;
+    status: JobStatusInfo | null | undefined
+  }) {
     this.selectedJobName = event.jobName;
     this.selectedJobDetails = event.details || null;
     this.selectedJobStatus = event.status || null;
@@ -37,7 +41,7 @@ export class ExecutionOrderModalComponent {
       WAITING: 'schedule'
     }
     return icons[visualState] || 'help';
-  }
+  };
 
   onKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
