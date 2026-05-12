@@ -286,6 +286,42 @@ Zero HLRC imports remain; the dev SSL bypass file is gone.
   - `<automated>grep -q 'import co\.elastic\.clients\.elasticsearch\.ElasticsearchClient' backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/ElasticsearchServiceV4.java && ! grep -n 'RestHighLevelClient' backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/ElasticsearchServiceV4.java</automated>`
 - **Done:** ElasticsearchServiceV4 on new client; no HLRC imports anywhere in the module.
 
+### Task 1.5b — Delete the V3 search trio directory (merged from Wave 3 Task 3.1 — second amendment 2026-05-12)
+
+> **Plan amendment 2026-05-12 (second):** Wave 1 cannot end compile-green without also deleting `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/` because `ElasticsearchSearchProviderV3.java` imports HLRC types (`RestHighLevelClient`, `SearchSourceBuilder`, etc.) that disappear from the classpath under Boot 3.5's BOM. The executor's second pilot caught this (18 compile errors in that single file). Same root pattern as the Wave 4 merge: every HLRC-using file must be rewritten or deleted in the same wave-anchor commit as the POM bump.
+
+- **Files (deletions):**
+  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/SearchServiceV3.java`
+  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/OracleSearchProviderV3.java`
+  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/ElasticsearchSearchProviderV3.java`
+  - (the `v3/` directory itself becomes empty and goes away)
+- **Closes:** D-1.5 (V3 trio deletion); partially closes Wave 3 task 3.1 (the `v3/` dir piece; `SearchConfigServiceV3.java` + `search-config.json` legacy file remain Wave 3 scope because they don't use HLRC and don't block Wave 1 compile).
+- **Threat ref:** —
+- **Bound to:** PATTERNS.md § Deletions table + RESEARCH.md § "V3 deletion call-graph" (the V3 trio has zero non-V3-internal callers; the only external entry was via `SearchController.java`'s three `/v3/*` endpoint methods which are stripped in Task 1.5c below).
+- **Action:** `git rm` the three files. Do not touch `SearchConfigServiceV3.java`, `search-config.json`, or any frontend file — those are still Wave 3 scope.
+- **Verify:**
+  - `<automated>! find backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3 -type f 2>/dev/null | grep -q .</automated>` — directory absent or empty
+  - `<automated>! grep -rn 'SearchServiceV3\|OracleSearchProviderV3\|ElasticsearchSearchProviderV3' backend/rectrace/src/main</automated>` — no remaining references (anything in SearchController is stripped by Task 1.5c)
+- **Done:** v3/ directory gone; module compiles cleanly w.r.t. the v3/ files (any remaining V3 references in SearchController are handled by Task 1.5c).
+
+### Task 1.5c — Strip V3 endpoint methods + V3 service fields from `SearchController.java` (merged from Wave 3 Task 3.2 — second amendment 2026-05-12)
+
+- **Files:** `backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java`
+- **Closes:** D-1.5 (V3 endpoint removal); partially closes Wave 3 task 3.2.
+- **Threat ref:** —
+- **Bound to:** PATTERNS.md § "SearchController.java" + RESEARCH.md § "V3 deletion".
+- **Action:**
+  1. Delete the three V3 endpoint methods: handlers for `/v3/search/keyword`, `/v3/search/expand`, `/v3/search/ssrm/{category}`. (Method names may differ — match by `@RequestMapping`/`@GetMapping`/`@PostMapping` path attribute, NOT by method name.)
+  2. Delete the V3 service injection fields: `SearchServiceV3`, plus any constructor parameter or `@Autowired` field referencing the three V3 classes.
+  3. Delete the imports for `SearchServiceV3`, `OracleSearchProviderV3`, `ElasticsearchSearchProviderV3`.
+  4. **KEEP** the `/api/search/suggest` endpoint and its `SuggestionService` injection — this is the V5 frontend autocomplete contract (D-1.6, kept alive on the new client by Task 1.4).
+  5. **KEEP** all controller-class-level annotations (`@RestController`, `@RequestMapping`, etc.) and the `CITI_PORTAL_LOGIN_ID_HEADER` literal pattern (Wave 6 Task 6.4 will replace those with `AppConstants.CITI_PORTAL_LOGIN_ID_HEADER`).
+- **Verify:**
+  - `<automated>! grep -n 'SearchServiceV3\|OracleSearchProviderV3\|ElasticsearchSearchProviderV3' backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java</automated>`
+  - `<automated>! grep -nE '/v3/search/(keyword|expand|ssrm)' backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java</automated>`
+  - `<automated>grep -q 'SuggestionService' backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java && grep -q '/api/search/suggest' backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java</automated>` — `/api/search/suggest` and SuggestionService still wired
+- **Done:** SearchController has zero V3 endpoints/imports/fields; `/api/search/suggest` preserved; module compiles cleanly.
+
 ### Task 1.6 — Delete `ElasticsearchDevConfiguration.java` (formerly Wave 4 Task 4.3 — planner Discretion, T-1-SEC-02 partial)
 
 - **Files (deletions):** `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java`
@@ -364,57 +400,45 @@ mvn -f rectrace-tlm-stats/pom.xml -q test -Dtest=TlmStatsApplicationTests
 
 ---
 
-## Wave 3: V3 dead-code deletion (backend + frontend, lockstep)
+## Wave 3: V3 dead-code deletion — slimmed (backend + frontend, lockstep)
 
-**Goal:** Delete the entire V3 search trio + V3 endpoint methods + orphaned `SearchConfigServiceV3` + legacy `search-config.json` + frontend `search.service.ts`/spec. Each deletion is verified by grep to have zero remaining callers before removal.
+> **Plan amendment 2026-05-12 (second):** The V3 service trio (`SearchServiceV3.java`, `OracleSearchProviderV3.java`, `ElasticsearchSearchProviderV3.java`) AND the V3 endpoint strip in `SearchController.java` have **moved to Wave 1** (new Tasks 1.5b and 1.5c) because `ElasticsearchSearchProviderV3.java` imports HLRC types that disappear on Boot 3.5's BOM, blocking Wave 1's compile-green exit. Wave 3 retains only the deletions that do NOT use HLRC: `SearchConfigServiceV3.java`, the legacy `search-config.json` file, and the frontend `search.service.ts` + spec.
 
-**Closes:** D-1.5, D-1.6, D-1.7, partial BOOT-08 (dead-code prune).
+**Goal:** Delete the orphaned post-V3-trio leftovers: `SearchConfigServiceV3.java` (planner Discretion), the legacy `search-config.json` (V3 era), and the frontend `search.service.ts` + spec (CONCERNS MEDIUM #4).
+
+**Closes:** D-1.7, partial D-1.13 (Discretion); partial BOOT-08 (dead-code prune of the leftover backend file). D-1.5 and D-1.6 close in Wave 1 (Tasks 1.5b + 1.5c).
 
 **Wave-exit verify:**
 ```bash
-! find backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3 -type f 2>/dev/null && \
 ! ls backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java 2>/dev/null && \
-! grep -rn '/v3/search/' backend/rectrace/src/main && \
+! ls backend/rectrace/src/main/resources/search-config.json 2>/dev/null && \
 ! ls frontend/rectrace/src/app/services/search.service.ts frontend/rectrace/src/app/services/search.service.spec.ts 2>/dev/null && \
 mvn -f backend/rectrace/pom.xml -q -DskipTests compile
 ```
 
-**Wave-exit commit:** `feat(01): delete V3 search trio + V3 endpoints + frontend search.service [D-1.5,1.6,1.7,BOOT-08]`
+**Wave-exit commit:** `chore(01): delete SearchConfigServiceV3 + legacy search-config.json + frontend search.service [D-1.7,1.13p,BOOT-08p]`
 
-### Task 3.1 — Delete V3 service trio directory + orphaned SearchConfigServiceV3 + legacy JSON config
+### Task 3.1 — Delete `SearchConfigServiceV3.java` + legacy `search-config.json`
+
+> **Slimmed by amendment 2026-05-12 (second):** the V3 service trio (`SearchServiceV3.java`, `OracleSearchProviderV3.java`, `ElasticsearchSearchProviderV3.java`) is now deleted in Wave 1 Task 1.5b. This task retains only the two HLRC-free leftovers.
 
 - **Files (deletions):**
-  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/SearchServiceV3.java`
-  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/OracleSearchProviderV3.java`
-  - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/ElasticsearchSearchProviderV3.java`
   - `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java` (planner Discretion per CONTEXT.md D-1.13 / RESEARCH.md line 687 — orphaned post-V3-trio; V4 has its own `SearchConfigServiceV4`)
   - `backend/rectrace/src/main/resources/search-config.json` (legacy V3 config; `search-config-v4.json` is canonical — verify zero readers before delete)
-- **Closes:** D-1.5, partial D-1.13 (discretion), BOOT-08
+- **Closes:** partial D-1.13 (discretion), BOOT-08 partial.
 - **Threat ref:** —
 - **Bound to:** PATTERNS.md § Deletions table + RESEARCH.md § "Call-graph safety check" lines 697-706.
 - **Action:**
-  1. Pre-flight grep: `grep -rn 'SearchServiceV3\|OracleSearchProviderV3\|ElasticsearchSearchProviderV3\|SearchConfigServiceV3\|search-config\.json' backend/rectrace/src/main backend/rectrace/src/test rectrace-tlm-stats/src 2>/dev/null`. Expect only matches inside the v3/ directory and inside `SearchController.java` (which is rewritten in task 3.2). Any other match BLOCKS deletion.
-  2. `rm -rf backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3/` (deletes the directory and its three files).
-  3. `rm backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java`
-  4. `rm backend/rectrace/src/main/resources/search-config.json` (only after verifying no Java code references it via `@Value` or `ClassPathResource` — `grep -rn 'search-config\.json' backend/rectrace/src` returns only the file itself or zero hits).
+  1. Pre-flight grep: `grep -rn 'SearchConfigServiceV3\|search-config\.json' backend/rectrace/src 2>/dev/null` should return only matches inside the two target files. Any other match BLOCKS deletion.
+  2. `git rm backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java`
+  3. `git rm backend/rectrace/src/main/resources/search-config.json` (only after verifying no Java code references it via `@Value` or `ClassPathResource` in step 1).
 - **Verify:**
-  - `<automated>! find backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v3 -type f 2>/dev/null && ! ls backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java 2>/dev/null && ! ls backend/rectrace/src/main/resources/search-config.json 2>/dev/null</automated>`
-- **Done:** All five paths gone from the working tree (and from the index via `git rm`).
+  - `<automated>! ls backend/rectrace/src/main/java/com/citi/gru/rectrace/service/SearchConfigServiceV3.java 2>/dev/null && ! ls backend/rectrace/src/main/resources/search-config.json 2>/dev/null</automated>`
+- **Done:** Both paths removed from the working tree (and the index).
 
-### Task 3.2 — Strip V3 fields, V3 endpoints, and V3 imports from `SearchController.java`
+### Task 3.2 — RETIRED (moved to Wave 1 Task 1.5c — second amendment 2026-05-12)
 
-- **Files:** `backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java`
-- **Closes:** D-1.5, D-1.6 (planner Discretion: keep `SearchController` as a slimmed-down single-endpoint controller hosting `/api/search/suggest` rather than folding into `SearchControllerV4` — keeps package hygiene; `SearchControllerV4` already owns the v4 namespace)
-- **Threat ref:** —
-- **Bound to:** PATTERNS.md row "`SearchController.java` — V3 removal + jakarta + AppConstants reference" (steps 2-4 are this task; steps 1, 5, 6 already happened in Wave 1 task 1.3 and Wave 6 task 6.4 respectively).
-- **Action:**
-  1. Delete imports for `SearchServiceV3` and `OracleSearchProviderV3` (lines around 12-13 — verify by Read before edit).
-  2. Delete the V3 service fields, V3 constructor parameters, and V3 constructor assignments (lines around 26-27, 31-32 — exact lines after Wave 1's jakarta sweep shifted nothing; verify by Read).
-  3. Delete the three V3 endpoint methods entirely: `keywordSearchV3`, `expandGroupV3`, `ssrmDataV3` (the methods serving `/v3/search/keyword`, `/v3/search/expand`, `/v3/search/ssrm/{category}`). Each is its own `@GetMapping`/`@PostMapping`/`@RequestMapping` block.
-  4. The surviving endpoint is the `/api/search/suggest` method that delegates to `SuggestionService`. Keep the `@Profile("!test")`, `@RestController`, `@RequestMapping("/api")` class annotations (D-1.17). The local `private static final String CITI_PORTAL_LOGIN_ID_HEADER` constant and its callers stay for now — they get replaced in Wave 6 task 6.4 with `AppConstants.CITI_PORTAL_LOGIN_ID_HEADER`.
-- **Verify:**
-  - `<automated>! grep -n 'SearchServiceV3\|OracleSearchProviderV3\|"/v3/search/' backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java && mvn -f backend/rectrace/pom.xml -q -DskipTests compile</automated>`
-- **Done:** SearchController has no V3 references; compiles; `@Profile("!test")` preserved.
+> The V3 endpoint strip from `SearchController.java` is now Wave 1 Task 1.5c because the V3 trio deletion (which 1.5c depends on) is now Wave 1 Task 1.5b. See Wave 1.
 
 ### Task 3.3 — Delete frontend `search.service.ts` + spec (D-1.7, CONCERNS MEDIUM #4)
 
