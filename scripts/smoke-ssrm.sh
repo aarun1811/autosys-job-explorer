@@ -1,60 +1,111 @@
 #!/usr/bin/env bash
-# scripts/smoke-ssrm.sh — smoke test: SSRM POST /rectrace/api/v4/search/ssrm/fileName
-# Prerequisites: backend running with local profile + Phase 0.1 seed loaded
+# scripts/smoke-ssrm.sh — end-to-end smoke test for the search API.
+#
+# Exercises the canonical two-step search flow:
+#   1) GET  /rectrace/api/v4/search/initial?keyword=<term>
+#        → returns the set of `initialFilter.values` for each category that match
+#          the keyword in Elasticsearch.
+#   2) POST /rectrace/api/v4/search/ssrm/fileName
+#        → with the values from step 1 as `initialFilter.values`, returns the
+#          actual Oracle rows for those file-name patterns.
+#
+# Prerequisites:
+#   - Backend running with the local profile (`./ops/rectrace-ops.sh start backend`)
+#   - Phase 0.1 seed loaded (`cd ../rectrace-local-dev && .venv/bin/python apply.py`)
+#
 # Usage: bash scripts/smoke-ssrm.sh
 # Exit 0 = PASS, Exit 1 = FAIL
 
 BACKEND_URL="${RECTRACE_URL:-http://localhost:6088}"
-ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/ssrm/fileName"
+INITIAL_ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/initial"
+SSRM_ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/ssrm/fileName"
 
-# 32 lowercase hex chars — passes Brave HEX32 regex.
-# Distinct from smoke-correlation-id.sh value (0000000000000000000000000001cafe)
-# so log lines from the two smoke scripts are distinguishable.
+# 32 lowercase hex — passes the backend's HEX32 regex on the Brave
+# Propagation.Factory and is distinct from smoke-correlation-id.sh.
 SMOKE_CORR_ID="0000000000000000000000000002cafe"
 
-REQUEST_BODY='{"category":"fileName","initialFilter":null,"rowGroupCols":[],"groupKeys":[],"sortModel":[],"filterModel":{},"startRow":0,"endRow":20,"visibleColumns":[]}'
+# Keyword that the Phase 0.1 seed guarantees matches at least one file-name pattern.
+# The seed loads docs whose `file_name_pattern` includes ".csv", so "csv" returns
+# all three file-name-pattern values in the seed.
+KEYWORD="${SMOKE_KEYWORD:-csv}"
 
 echo "=== SSRM Smoke Test ==="
-echo "Endpoint: $ENDPOINT"
+echo "Backend: $BACKEND_URL"
+echo "Keyword: $KEYWORD"
 echo "X-Correlation-Id: $SMOKE_CORR_ID"
 
-# Capture body and HTTP status separately so we can distinguish connection
-# failures (no output, curl exits non-zero) from HTTP errors (4xx/5xx body).
-# -w '\n%{http_code}' appends the status on a final line; head/tail splits them.
-RAW=$(curl -s -w '\n%{http_code}' -X POST "$ENDPOINT" \
+# ---- Step 1: keyword search → harvest fileName values --------------------------
+
+RAW=$(curl -s -w '\n%{http_code}' "$INITIAL_ENDPOINT?keyword=$KEYWORD" \
+  -H "X-Correlation-Id: $SMOKE_CORR_ID" 2>&1)
+CURL_EXIT=$?
+
+# BSD/macOS `head` does not support negative line counts (GNU-only).
+# Split RAW at the final newline using parameter expansion: text after the last
+# newline = status, before = body.
+HTTP_STATUS="${RAW##*$'\n'}"
+RESPONSE="${RAW%$'\n'*}"
+
+if [ "$CURL_EXIT" -ne 0 ]; then
+  echo "FAIL: /initial curl failed (exit $CURL_EXIT). Is the backend running?"
+  exit 1
+fi
+if [ "$HTTP_STATUS" != "200" ]; then
+  echo "FAIL: /initial returned HTTP $HTTP_STATUS. Body: $RESPONSE"
+  exit 1
+fi
+
+# Extract the fileName.values array as a JSON-shaped list.
+# Avoid a hard dep on jq — use a portable inline python invocation.
+VALUES_JSON=$(printf '%s' "$RESPONSE" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+vals = (d.get('categoryResults') or {}).get('fileName', {}).get('values') or []
+print(json.dumps(vals))
+" 2>/dev/null)
+
+if [ -z "$VALUES_JSON" ] || [ "$VALUES_JSON" = "[]" ]; then
+  echo "FAIL: /initial?keyword=$KEYWORD returned no fileName values."
+  echo "  Likely the seed isn't loaded. Run:"
+  echo "    cd ../rectrace-local-dev && .venv/bin/python apply.py --reset"
+  exit 1
+fi
+
+echo "Step 1 OK: fileName.values = $VALUES_JSON"
+
+# ---- Step 2: SSRM POST with the harvested values ---------------------------------
+
+REQUEST_BODY=$(printf '{"category":"fileName","initialFilter":{"values":%s},"rowGroupCols":[],"groupKeys":[],"sortModel":[],"filterModel":{},"startRow":0,"endRow":20,"visibleColumns":[]}' "$VALUES_JSON")
+
+RAW=$(curl -s -w '\n%{http_code}' -X POST "$SSRM_ENDPOINT" \
   -H "Content-Type: application/json" \
   -H "X-Correlation-Id: $SMOKE_CORR_ID" \
   -d "$REQUEST_BODY" 2>&1)
 CURL_EXIT=$?
 
-# BSD/macOS `head` has no -n -N (GNU-only). Split RAW at the final newline via
-# bash parameter expansion: text after the last newline = status, before = body.
 HTTP_STATUS="${RAW##*$'\n'}"
 RESPONSE="${RAW%$'\n'*}"
 
 if [ "$CURL_EXIT" -ne 0 ]; then
-  echo "FAIL: curl failed (exit $CURL_EXIT). Is the backend running? (ops/rectrace-ops.sh start backend)"
+  echo "FAIL: SSRM curl failed (exit $CURL_EXIT)."
   exit 1
 fi
-
 if [ "$HTTP_STATUS" != "200" ]; then
-  echo "FAIL: HTTP $HTTP_STATUS from $ENDPOINT. Body: $RESPONSE"
+  echo "FAIL: SSRM returned HTTP $HTTP_STATUS. Body: $RESPONSE"
   exit 1
 fi
 
-ROW_COUNT=$(echo "$RESPONSE" | grep -o '"rows":\[' | wc -l | tr -d ' ')
-if [ "$ROW_COUNT" -eq 0 ]; then
-  echo "FAIL: Response does not contain 'rows' array. Response: $RESPONSE"
+# Confirm a non-empty rows array via portable JSON parsing.
+ROW_COUNT=$(printf '%s' "$RESPONSE" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+print(len(d.get('rows') or []))
+" 2>/dev/null)
+
+if [ -z "$ROW_COUNT" ] || [ "$ROW_COUNT" -eq 0 ] 2>/dev/null; then
+  echo "FAIL: SSRM rows array is empty. Body: $RESPONSE"
   exit 1
 fi
 
-# Verify at least 1 row returned (the Phase 0.1 seed has 5 rows)
-ROWS_EMPTY=$(echo "$RESPONSE" | grep -c '"rows":\[\]' || true)
-if [ "$ROWS_EMPTY" -gt 0 ]; then
-  echo "FAIL: rows array is empty. Ensure Phase 0.1 seed is loaded:"
-  echo "  cd ../rectrace-local-dev && python apply.py --reset"
-  exit 1
-fi
-
-echo "PASS: SSRM returned rows from /rectrace/api/v4/search/ssrm/fileName"
+echo "PASS: SSRM returned $ROW_COUNT row(s) from /rectrace/api/v4/search/ssrm/fileName"
 exit 0

@@ -8,19 +8,25 @@
 BACKEND_URL="${RECTRACE_URL:-http://localhost:6088}"
 
 # Exactly 32 lowercase hex chars — passes Brave Propagation.Factory HEX32 regex.
-# Under Option B (Plan 02-02), the custom factory adopts this value as the backend traceId,
-# so it appears verbatim in the [traceId=...] MDC field written by logback-spring.xml.
+# Under Option B (Plan 02-02), the custom factory adopts this value as the backend
+# 128-bit traceId, so it appears verbatim in the [traceId=...] MDC field written by
+# logback-spring.xml.
+#
+# IMPORTANT: the high 64 bits MUST be non-zero. Brave's TraceContext.traceIdString()
+# omits leading-zero high bits and renders the ID as only the low 16 chars when
+# traceIdHigh == 0. Real `crypto.randomUUID()` IDs from the React fetch wrapper have
+# non-zero high bits, so this test value is shaped to exercise the realistic path.
 # Different from smoke-ssrm.sh value (0000000000000000000000000002cafe) so log lines
 # from the two smoke scripts are distinguishable.
-CORR_ID="0000000000000000000000000001cafe"
-ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/ssrm/fileName"
+CORR_ID="ca570f1deadbeef000000000000001cafe"
+# Trim to exactly 32 chars (in case of typo above):
+CORR_ID="${CORR_ID:0:32}"
+ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/initial?keyword=trade"
 LOG_FILE="${RECTRACE_LOG:-logs/backend.log}"
 
 echo "=== Correlation ID Smoke Test ==="
 echo "Sending X-Correlation-Id: $CORR_ID"
 echo "Log file: $LOG_FILE"
-
-REQUEST_BODY='{"category":"fileName","initialFilter":null,"rowGroupCols":[],"groupKeys":[],"sortModel":[],"filterModel":{},"startRow":0,"endRow":1,"visibleColumns":[]}'
 
 # Capture log line count before the request.
 # Add 1 so tail -n +N starts at the first line AFTER all existing content.
@@ -33,11 +39,11 @@ else
   PRE_COUNT=1
 fi
 
-# Send request
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$ENDPOINT" \
-  -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: $CORR_ID" \
-  -d "$REQUEST_BODY")
+# Send GET request to /initial (the controller's log statement is at INFO level,
+# so a log line is guaranteed to emit; the SSRM endpoint logs at DEBUG which
+# default INFO log level suppresses).
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$ENDPOINT" \
+  -H "X-Correlation-Id: $CORR_ID")
 
 if [ "$HTTP_STATUS" != "200" ]; then
   echo "FAIL: HTTP $HTTP_STATUS from backend. Is the backend running?"
