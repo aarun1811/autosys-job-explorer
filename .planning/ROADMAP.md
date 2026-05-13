@@ -81,11 +81,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Frontend scaffold: Vite 7 + React 19 + shadcn + tokens + ESLint hex rule + vitest
-- [ ] 02-02-PLAN.md — Backend tracing: micrometer-tracing-bridge-brave + logback-spring.xml + X-Correlation-Id baggage
+- [x] 02-01-PLAN.md — Frontend scaffold: Vite 7 + React 19 + shadcn + tokens + ESLint hex rule + vitest
+- [x] 02-02-PLAN.md — Backend tracing: micrometer-tracing-bridge-brave + logback-spring.xml + X-Correlation-Id baggage
 - [ ] 02-03-PLAN.md — App shell: ThemeProvider + ThemeSwitch + footer SHA + QueryClient + SmokeGrid SSRM
 - [ ] 02-04-PLAN.md — Ops scripts: rectrace-ops.sh v1 + build.sh react + smoke-ssrm + smoke-correlation-id
-- [ ] 02-05-PLAN.md — Doc supersessions: ROADMAP/REQUIREMENTS/STATE edits + frontend-react README
+- [x] 02-05-PLAN.md — Doc supersessions: ROADMAP/REQUIREMENTS/STATE edits + frontend-react README
 
 **UI hint**: yes
 
