@@ -79,16 +79,21 @@ start_component() {
 # stop_component: label pid_file
 stop_component() {
   local label="$1" pid_file="$2"
-  if [ ! -f "$pid_file" ]; then
-    echo "$label: not running (no pid file)"
-    return 0
-  fi
+  [ -f "$pid_file" ] || { echo "$label: not running (no pid file)"; return 0; }
   local pid
   pid=$(cat "$pid_file")
   if kill -0 "$pid" 2>/dev/null; then
     echo "Stopping $label (pid $pid) ..."
     kill "$pid"
-    sleep 3
+    local waited=0
+    while kill -0 "$pid" 2>/dev/null && [ "$waited" -lt 30 ]; do
+      sleep 1
+      waited=$((waited + 1))
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "WARN: $label (pid $pid) did not stop in 30s — sending SIGKILL"
+      kill -9 "$pid" 2>/dev/null || true
+    fi
     rm -f "$pid_file"
     echo "$label stopped."
   else
