@@ -28,10 +28,10 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### React Foundation (scaffolding + cross-cutting filter)
 
-- [ ] **REACT-01**: Scaffold `frontend-react/` with Vite 7 + React 19 + TypeScript 5.6 + shadcn/ui (Tailwind v4).
+- [x] **REACT-01**: Scaffold `frontend-react/` with Vite 7 + React 19 + TypeScript 5.6 + shadcn/ui (Tailwind v4).
 - [x] **REACT-02**: Wire TanStack Router + TanStack Query + Zustand + React Hook Form + Zod.
 - [x] **REACT-03**: Integrate AG-Grid Enterprise via `ag-grid-react` with an SSRM datasource that calls the existing backend search endpoints unchanged.
-- [ ] **REACT-04**: Single canonical design-tokens file (`tokens.css` + `theme.ts`) aligned with recviz; ESLint rule rejects hex codes in components.
+- [x] **REACT-04**: Single canonical design-tokens file (`tokens.css` + `theme.ts`) aligned with recviz; ESLint rule rejects hex codes in components.
 - [x] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
 - [x] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
 - [x] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").

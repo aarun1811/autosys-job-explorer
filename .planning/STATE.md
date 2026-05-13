@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 02 complete
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-05-13T03:06:03.353Z"
-last_activity: 2026-05-13 -- Phase 02 marked complete
+status: ready_for_next_phase
+stopped_at: Phase 02 fully PASS — 4/4 UAT items live-stack verified
+last_updated: "2026-05-13T13:45:00Z"
+last_activity: 2026-05-13 -- Phase 02 closed (PASS); ready for Phase 03
 progress:
   total_phases: 11
   completed_phases: 4
@@ -21,12 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12)
 
 **Core value:** Users can quickly find Autosys jobs and understand their dependencies and TLM statistics through a unified, performant, design-consistent UI.
-**Current focus:** Phase 02 — react-foundation
+**Current focus:** Phase 03 — React Search Vertical Slice (next; not yet specced)
 
 ## Current Position
 
-Phase: 02 — COMPLETE
-Plan: 5 of 5 (final)
+Phase: 02 (React Foundation) — **CLOSED PASS** (4/4 live-stack UAT items verified 2026-05-13; ROADMAP success criteria 1-5 all green; code review fix-cycle 4C/8W/5I → 14 fixed; 8 follow-up `fix(02): …` commits closed latent Phase 01 boot/wiring regressions surfaced during UAT).
+
+**Phase 02 deliverables landed:**
+
+- `frontend-react/` net-new SPA boots via Vite 7 + React 19 + TypeScript + shadcn (Tailwind v4 / new-york / mist tokens)
+- AG-Grid Enterprise SSRM `SmokeGrid` against `/rectrace/api/v4/search/ssrm/fileName`
+- TanStack Router + TanStack Query + apiFetch wrapper with `X-Correlation-Id` propagation
+- Custom dark/light ThemeProvider with `rectrace-theme` localStorage key + visible build SHA in footer
+- ESLint flat config with hex-rejection rule and proof fixture
+- Backend Brave Propagation.Factory (Option B) — inbound `X-Correlation-Id` adopted as 128-bit traceId, written to MDC via `%X{traceId}`
+- `ops/rectrace-ops.sh` v1 (backend/tlm-stats/react; no angular per D-2.15), `ops/build.sh`, `scripts/smoke-ssrm.sh`, `scripts/smoke-correlation-id.sh`
+- Phase 0.1 docs supersessions (D-2.5, D-2.17, D-2.18 captured)
+
+**Phase 02 surfaced & fixed latent Phase 01 regressions** (committed back to milestone branch):
+
+- Missing Lombok annotation processor (compile failure on clean build)
+- `spring.servlet.context-path` typo (should be `server.servlet.…`)
+- Missing `spring-boot-starter-actuator` (broke Brave auto-config + health endpoint)
+- Brave 5.12+ API migration in `CorrelationIdPropagationConfig` (both modules)
+- `ops/rectrace-ops.sh` spring profile flag typo (`-Dspring.profiles.active` → `-Dspring-boot.run.profiles`)
+- `smoke-ssrm.sh` BSD `head` portability + two-step `/initial` → SSRM real-data flow
+- `SmokeGrid` failed-request Sonner toast wiring + Sonner Toaster mount-order race
+
+Plan: 5 of 5 — final.
 
 **Phase 01 deliverables landed:**
 
@@ -39,9 +61,9 @@ Plan: 5 of 5 (final)
 - Phase 0.1 KNOWN GAPS closed via conditional `scriptExecutor.executeScript` wraps
 - ROADMAP.md updated to reflect 3.5.14/Java 21
 
-**Next:** Phase 02 — React Foundation. Requirements: REACT-01..REACT-08. Depends on Phase 01 (now satisfied). Entry point: `/gsd-spec-phase 2` (clarify scope) or `/gsd-discuss-phase 2` (gather context for planning).
+**Next:** Phase 03 — React Search Vertical Slice. Requirements: SEARCH-01..SEARCH-07. Depends on Phase 02 (now satisfied). Entry point: `/gsd-ui-phase 3` (recommended — UI-hint phase; produce UI-SPEC.md design contract first), or `/gsd-discuss-phase 3` (skip the UI contract step and go straight to context gathering).
 
-Last activity: 2026-05-13 -- Phase 02 marked complete
+Last activity: 2026-05-13 -- Phase 02 closed (PASS); ready for Phase 03
 
 Progress: [██████████] 100%
 
