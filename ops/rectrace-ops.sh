@@ -65,9 +65,9 @@ start_component() {
   fi
   echo "Starting $label ..."
   if [ -n "$dir" ]; then
-    cd "$dir" || { echo "ERROR: cannot cd to $dir"; return 1; }
-    $cmd >> "$log_file" 2>&1 &
-    cd - > /dev/null || true
+    # Use a subshell to avoid mutating the parent shell's working directory.
+    # $! captures the subshell PID, which is sufficient for our kill/status usage.
+    (cd "$dir" || { echo "ERROR: cannot cd to $dir"; exit 1; }; $cmd >> "$log_file" 2>&1) &
   else
     $cmd >> "$log_file" 2>&1 &
   fi
