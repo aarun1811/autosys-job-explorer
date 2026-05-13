@@ -19,7 +19,11 @@ function getSystemTheme(): 'light' | 'dark' {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'system'
-    return (localStorage.getItem(STORAGE_KEY) as Theme) ?? 'system'
+    try {
+      return (localStorage.getItem(STORAGE_KEY) as Theme) ?? 'system'
+    } catch {
+      return 'system'
+    }
   })
 
   const resolvedTheme = theme === 'system' ? getSystemTheme() : theme
@@ -33,18 +37,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (theme === 'system') {
       const mq = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = () => {
-        const root = document.documentElement
-        root.classList.remove('light', 'dark')
-        root.classList.add(getSystemTheme())
-      }
+      // Trigger re-render via state so resolvedTheme recomputes and context
+      // consumers (e.g. ThemeSwitch icon) update correctly on OS theme change.
+      const handler = () => setThemeState('system')
       mq.addEventListener('change', handler)
       return () => mq.removeEventListener('change', handler)
     }
   }, [theme])
 
   const setTheme = (t: Theme) => {
-    localStorage.setItem(STORAGE_KEY, t)
+    try {
+      localStorage.setItem(STORAGE_KEY, t)
+    } catch {
+      // localStorage blocked (Safari ITP, private browsing) — continue without persistence
+    }
     setThemeState(t)
   }
 
