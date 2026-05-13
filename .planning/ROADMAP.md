@@ -14,7 +14,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 0.1: Local Dev Seed Bootstrap** (INSERTED) — Sibling `../rectrace-local-dev/` folder with Oracle DDL/seed scripts + ES index templates/bulk-load JSON; prerequisite for Phase 1's BOOT-09 smoke. Outside the project repo; does not ship to Citi. (completed 2026-05-12; two KNOWN GAPS handed to Phase 1 BOOT-08: backend/rectrace DataSourceConfig.java + rectrace-tlm-stats DatabaseConfig.java unconditional script-executor calls)
 - [x] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → **3.5.14**, **Java 21**, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup. (completed 2026-05-12)
 - [ ] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1.
-- [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states, side-by-side `/v6/` URL prefix.
+- [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states.
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
 - [ ] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses.
 - [ ] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown.
@@ -69,24 +69,32 @@ Plans:
 **Plans**: 1 plan (8 waves)
 
 ### Phase 2: React Foundation
-**Goal**: A net-new React shell that mirrors recviz's design language, runs side-by-side with the existing Angular app, and is ready to host vertical search/recviz slices.
+**Goal**: A net-new React shell that mirrors recviz's design language, runs side-by-side with the existing Angular app during development, and is ready to host vertical search/recviz slices.
 **Depends on**: Phase 1
 **Requirements**: REACT-01, REACT-02, REACT-03, REACT-04, REACT-05, REACT-06, REACT-07, REACT-08
 **Success Criteria** (what must be TRUE):
-  1. `frontend-react/` boots locally via `npm run dev` with React 19 + Vite 7 + shadcn (Tailwind v4) + AG-Grid Enterprise via `ag-grid-react`, and renders an empty SSRM grid against an existing backend endpoint.
+  1. `frontend-react/` boots locally via `pnpm dev` (or `npm run dev` fallback) with React 19 + Vite 7 + shadcn (Tailwind v4) + AG-Grid Enterprise via `ag-grid-react`, and renders an empty SSRM grid against an existing backend endpoint.
   2. A canonical `tokens.css` + `theme.ts` exists, ESLint rejects raw hex codes in components, and a dark/light toggle reaches feature parity with the Angular app.
   3. The app footer renders the build SHA / version for bug-report quoting.
   4. The backend writes a `traceId` to MDC (via Micrometer Tracing post-BOOT) and the React shell propagates `X-Correlation-Id` on every request.
-  5. `ops/rectrace-ops.sh` v1 registers backend, tlm-stats, angular, and React components and can start/stop/status each one.
-**Plans**: TBD
+  5. `ops/rectrace-ops.sh` v1 registers backend, tlm-stats, and React components and can start/stop/status each one.
+**Plans**: 5 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Frontend scaffold: Vite 7 + React 19 + shadcn + tokens + ESLint hex rule + vitest
+- [ ] 02-02-PLAN.md — Backend tracing: micrometer-tracing-bridge-brave + logback-spring.xml + X-Correlation-Id baggage
+- [ ] 02-03-PLAN.md — App shell: ThemeProvider + ThemeSwitch + footer SHA + QueryClient + SmokeGrid SSRM
+- [ ] 02-04-PLAN.md — Ops scripts: rectrace-ops.sh v1 + build.sh react + smoke-ssrm + smoke-correlation-id
+- [ ] 02-05-PLAN.md — Doc supersessions: ROADMAP/REQUIREMENTS/STATE edits + frontend-react README
+
 **UI hint**: yes
 
 ### Phase 3: React Search Vertical Slice
-**Goal**: An end-to-end React search experience for one category that proves the React shell + AG-Grid SSRM + existing backend integration, served alongside Angular behind a distinct URL.
+**Goal**: An end-to-end React search experience for one category that proves the React shell + AG-Grid SSRM + existing backend integration, served at `/rectrace/` (the production base path).
 **Depends on**: Phase 2
 **Requirements**: SEARCH-01, SEARCH-02, SEARCH-03, SEARCH-04, SEARCH-05, SEARCH-06, SEARCH-07
 **Success Criteria** (what must be TRUE):
-  1. A user can open the React app at `/v6/` (or chosen prefix), run a search in the ported category, and see results in the SSRM grid identical to the Angular app's output.
+  1. A user can open the React app at `/rectrace/` (the production base path; no `/v6/` prefix — see Phase 2 D-2.4), run a search in the ported category, and see results in the SSRM grid identical to the Angular app's output.
   2. At least one custom cell renderer from the Angular app is ported and visibly behaves the same in React.
   3. URL fully encodes search state; pasting the URL into a new tab restores the exact view (deep linkable).
   4. Excel export from the React grid is at feature parity with Angular; recent searches (last 10) appear in a typeahead from `localStorage`.
@@ -180,9 +188,9 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Foundation | 3/3 | Complete   | 2026-05-12 |
-| 0.1. Local Dev Seed Bootstrap (INSERTED) | 5/7 | In Progress | - |
+| 0.1. Local Dev Seed Bootstrap (INSERTED) | 7/7 | Complete | 2026-05-12 |
 | 1. Backend Platform Upgrade | 8/8 | Complete | 2026-05-12 |
-| 2. React Foundation | 0/TBD | Not started | - |
+| 2. React Foundation | 0/5 | Not started | - |
 | 3. React Search Vertical Slice | 0/TBD | Not started | - |
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 0/TBD | Not started | - |
@@ -194,3 +202,4 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 ---
 *Roadmap created: 2026-05-12*
 *Phase 0 plans created: 2026-05-12*
+*Phase 2 plans created: 2026-05-13*
