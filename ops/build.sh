@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # ops/build.sh — build pipeline for rectrace
 # Usage: ops/build.sh react
 # Separated from rectrace-ops.sh per D-2.16: runtime ops != build pipeline.
@@ -18,10 +19,11 @@ case "$cmd" in
       npm run build
     fi
     echo "Cleaning backend static/ and copying dist/..."
-    # T-2-05 guard: only rm -rf the literal static/ path, not a variable that could be empty.
-    # STATIC_DIR is computed as a literal sub-path of REPO_ROOT (not from $PWD or env injection).
-    if [ -z "$STATIC_DIR" ]; then
-      echo "ERROR: STATIC_DIR is empty. Aborting to prevent accidental deletion."
+    # T-2-05 guard: validate STATIC_DIR is non-empty AND is a descendant of REPO_ROOT
+    # before executing rm -rf. Guards against empty REPO_ROOT (e.g., BASH_SOURCE[0] empty)
+    # or path traversal that would produce a valid-looking but incorrect path.
+    if [ -z "$REPO_ROOT" ] || [ -z "$STATIC_DIR" ] || [[ "$STATIC_DIR" != "$REPO_ROOT"* ]]; then
+      echo "ERROR: STATIC_DIR safety check failed (REPO_ROOT='$REPO_ROOT', STATIC_DIR='$STATIC_DIR'). Aborting."
       exit 1
     fi
     rm -rf "$STATIC_DIR"
