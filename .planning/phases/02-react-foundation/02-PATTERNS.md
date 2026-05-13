@@ -969,15 +969,16 @@ Apply the identical class to `rectrace-tlm-stats/src/main/java/com/citi/gru/rect
 
 **No existing analog in repo.** Use RESEARCH.md Pattern 8 as the implementation template.
 
-**Pattern (both modules, identical):**
+> **Note:** Option A baggage config was superseded by D-2.10 → custom Brave Propagation.Factory during planning; traceId MDC value IS the X-Correlation-Id header value when valid hex(32) is supplied. The pattern below reflects the implemented Option B from Plan 02-02.
+
+**Pattern (both modules, identical — Option B: `%X{traceId:-}` ONLY):**
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [traceId=%X{traceId:-}] [corrId=%X{x-correlation-id:-}] %logger{36} - %msg%n</pattern>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [traceId=%X{traceId:-}] %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
   <root level="INFO">
@@ -985,6 +986,8 @@ Apply the identical class to `rectrace-tlm-stats/src/main/java/com/citi/gru/rect
   </root>
 </configuration>
 ```
+
+Do NOT include `%X{x-correlation-id:-}` in the pattern. Under Option B the custom `CorrelationIdPropagationConfig.extractor()` adopts the X-Correlation-Id header value as the Brave `traceId`; no separate `x-correlation-id` MDC key is populated. The traceId MDC field IS the correlation ID.
 
 **Critical:** file must be named `logback-spring.xml` (not `logback.xml`) — Spring Boot loads `logback-spring.xml` after context is ready, enabling Spring property substitution and profile-aware config. Phase 7 OBS-01 replaces this minimal pattern with the full JSON layout via `logstash-logback-encoder`.
 
