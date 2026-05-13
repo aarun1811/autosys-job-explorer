@@ -22,7 +22,10 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
-      const corrId = (error as { correlationId?: string }).correlationId
+      const corrId =
+        error != null && typeof (error as Record<string, unknown>)['correlationId'] === 'string'
+          ? (error as Record<string, unknown>)['correlationId'] as string
+          : undefined
       toast.error('Request failed', {
         description: corrId
           ? `Error reference: ${corrId}`
