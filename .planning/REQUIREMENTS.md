@@ -35,7 +35,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [x] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
 - [x] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
 - [x] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
-- [ ] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, and React components registered; no angular component (decommissioned at React go-live per D-2.15 / D-2.17).
+- [x] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, and React components registered; no angular component (decommissioned at React go-live per D-2.15 / D-2.17).
 
 ### React Vertical Slice — Search
 
@@ -182,7 +182,7 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | REACT-05 | Phase 2 — React Foundation | Complete |
 | REACT-06 | Phase 2 — React Foundation | Complete |
 | REACT-07 | Phase 2 — React Foundation | Complete |
-| REACT-08 | Phase 2 — React Foundation | Pending |
+| REACT-08 | Phase 2 — React Foundation | Complete |
 | SEARCH-01 | Phase 3 — React Search Vertical Slice | Pending |
 | SEARCH-02 | Phase 3 — React Search Vertical Slice | Pending |
 | SEARCH-03 | Phase 3 — React Search Vertical Slice | Pending |

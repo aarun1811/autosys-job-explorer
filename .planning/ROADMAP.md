@@ -13,7 +13,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 0: Foundation** — Test gate (`maven.test.skip` removed, CI fails on red) + React↔Angular parity matrix committed. (completed 2026-05-12)
 - [x] **Phase 0.1: Local Dev Seed Bootstrap** (INSERTED) — Sibling `../rectrace-local-dev/` folder with Oracle DDL/seed scripts + ES index templates/bulk-load JSON; prerequisite for Phase 1's BOOT-09 smoke. Outside the project repo; does not ship to Citi. (completed 2026-05-12; two KNOWN GAPS handed to Phase 1 BOOT-08: backend/rectrace DataSourceConfig.java + rectrace-tlm-stats DatabaseConfig.java unconditional script-executor calls)
 - [x] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → **3.5.14**, **Java 21**, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup. (completed 2026-05-12)
-- [ ] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1.
+- [x] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1. (completed 2026-05-13)
 - [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states.
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
 - [ ] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses.
@@ -84,7 +84,7 @@ Plans:
 - [x] 02-01-PLAN.md — Frontend scaffold: Vite 7 + React 19 + shadcn + tokens + ESLint hex rule + vitest
 - [x] 02-02-PLAN.md — Backend tracing: micrometer-tracing-bridge-brave + logback-spring.xml + X-Correlation-Id baggage
 - [x] 02-03-PLAN.md — App shell: ThemeProvider + ThemeSwitch + footer SHA + QueryClient + SmokeGrid SSRM
-- [ ] 02-04-PLAN.md — Ops scripts: rectrace-ops.sh v1 + build.sh react + smoke-ssrm + smoke-correlation-id
+- [x] 02-04-PLAN.md — Ops scripts: rectrace-ops.sh v1 + build.sh react + smoke-ssrm + smoke-correlation-id
 - [x] 02-05-PLAN.md — Doc supersessions: ROADMAP/REQUIREMENTS/STATE edits + frontend-react README
 
 **UI hint**: yes
@@ -190,7 +190,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 0. Foundation | 3/3 | Complete   | 2026-05-12 |
 | 0.1. Local Dev Seed Bootstrap (INSERTED) | 7/7 | Complete | 2026-05-12 |
 | 1. Backend Platform Upgrade | 8/8 | Complete | 2026-05-12 |
-| 2. React Foundation | 4/5 | In Progress|  |
+| 2. React Foundation | 5/5 | Complete   | 2026-05-13 |
 | 3. React Search Vertical Slice | 0/TBD | Not started | - |
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 0/TBD | Not started | - |
