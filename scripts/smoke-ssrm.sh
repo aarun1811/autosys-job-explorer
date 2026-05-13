@@ -18,13 +18,25 @@ echo "=== SSRM Smoke Test ==="
 echo "Endpoint: $ENDPOINT"
 echo "X-Correlation-Id: $SMOKE_CORR_ID"
 
-RESPONSE=$(curl -sf -X POST "$ENDPOINT" \
+# Capture body and HTTP status separately so we can distinguish connection
+# failures (no output, curl exits non-zero) from HTTP errors (4xx/5xx body).
+# -w '\n%{http_code}' appends the status on a final line; head/tail splits them.
+RAW=$(curl -s -w '\n%{http_code}' -X POST "$ENDPOINT" \
   -H "Content-Type: application/json" \
   -H "X-Correlation-Id: $SMOKE_CORR_ID" \
   -d "$REQUEST_BODY" 2>&1)
+CURL_EXIT=$?
 
-if [ $? -ne 0 ]; then
-  echo "FAIL: curl request failed. Is the backend running? (ops/rectrace-ops.sh start backend)"
+HTTP_STATUS=$(printf '%s' "$RAW" | tail -1)
+RESPONSE=$(printf '%s' "$RAW" | head -n -1)
+
+if [ "$CURL_EXIT" -ne 0 ]; then
+  echo "FAIL: curl failed (exit $CURL_EXIT). Is the backend running? (ops/rectrace-ops.sh start backend)"
+  exit 1
+fi
+
+if [ "$HTTP_STATUS" != "200" ]; then
+  echo "FAIL: HTTP $HTTP_STATUS from $ENDPOINT. Body: $RESPONSE"
   exit 1
 fi
 
