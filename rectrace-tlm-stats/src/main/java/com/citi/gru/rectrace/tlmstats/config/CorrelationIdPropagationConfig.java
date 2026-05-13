@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -70,9 +71,14 @@ public class CorrelationIdPropagationConfig {
                                 String hex = raw.toLowerCase();
                                 long hi = Long.parseUnsignedLong(hex.substring(0, 16), 16);
                                 long lo = Long.parseUnsignedLong(hex.substring(16), 16);
+                                // Use a random spanId distinct from the traceId low bits.
+                                // spanId == traceId-low violates W3C traceparent uniqueness
+                                // and causes trace UIs to render a self-referencing cycle
+                                // when Zipkin/Jaeger export is enabled (Phase 7 OBS-01).
+                                long spanId = ThreadLocalRandom.current().nextLong();
                                 TraceContext ctx = TraceContext.newBuilder()
                                     .traceIdHigh(hi).traceId(lo)
-                                    .spanId(lo)  // best-effort root spanId
+                                    .spanId(spanId)
                                     .sampled(true)
                                     .build();
                                 return TraceContextOrSamplingFlags.create(ctx);
