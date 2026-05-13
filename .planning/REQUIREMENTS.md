@@ -29,12 +29,12 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 ### React Foundation (scaffolding + cross-cutting filter)
 
 - [ ] **REACT-01**: Scaffold `frontend-react/` with Vite 7 + React 19 + TypeScript 5.6 + shadcn/ui (Tailwind v4).
-- [ ] **REACT-02**: Wire TanStack Router + TanStack Query + Zustand + React Hook Form + Zod.
-- [ ] **REACT-03**: Integrate AG-Grid Enterprise via `ag-grid-react` with an SSRM datasource that calls the existing backend search endpoints unchanged.
+- [x] **REACT-02**: Wire TanStack Router + TanStack Query + Zustand + React Hook Form + Zod.
+- [x] **REACT-03**: Integrate AG-Grid Enterprise via `ag-grid-react` with an SSRM datasource that calls the existing backend search endpoints unchanged.
 - [ ] **REACT-04**: Single canonical design-tokens file (`tokens.css` + `theme.ts`) aligned with recviz; ESLint rule rejects hex codes in components.
-- [ ] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
-- [ ] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
-- [ ] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
+- [x] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
+- [x] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
+- [x] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
 - [ ] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, and React components registered; no angular component (decommissioned at React go-live per D-2.15 / D-2.17).
 
 ### React Vertical Slice — Search
@@ -176,12 +176,12 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | BOOT-08 | Phase 1 — Backend Platform Upgrade | Pending |
 | BOOT-09 | Phase 1 — Backend Platform Upgrade | Pending |
 | REACT-01 | Phase 2 — React Foundation | Pending |
-| REACT-02 | Phase 2 — React Foundation | Pending |
-| REACT-03 | Phase 2 — React Foundation | Pending |
+| REACT-02 | Phase 2 — React Foundation | Complete |
+| REACT-03 | Phase 2 — React Foundation | Complete |
 | REACT-04 | Phase 2 — React Foundation | Pending |
-| REACT-05 | Phase 2 — React Foundation | Pending |
-| REACT-06 | Phase 2 — React Foundation | Pending |
-| REACT-07 | Phase 2 — React Foundation | Pending |
+| REACT-05 | Phase 2 — React Foundation | Complete |
+| REACT-06 | Phase 2 — React Foundation | Complete |
+| REACT-07 | Phase 2 — React Foundation | Complete |
 | REACT-08 | Phase 2 — React Foundation | Pending |
 | SEARCH-01 | Phase 3 — React Search Vertical Slice | Pending |
 | SEARCH-02 | Phase 3 — React Search Vertical Slice | Pending |
