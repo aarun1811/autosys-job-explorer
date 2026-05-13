@@ -95,7 +95,7 @@ Inherited from Phase 2. No changes.
 | Category tab bar height | 40px | Matches AG-Grid header height — consistent horizontal band rhythm |
 | Category tab horizontal padding | 16px (md) | Standard shadcn Tab item internal padding |
 | Execution-order button height | 24px | Matches Angular `execution-order-btn` height exactly (parity) |
-| Execution-order button horizontal padding | 10px | Matches Angular source: `padding: 0 10px` |
+| Execution-order button horizontal padding | 8px (sm) | React port snaps to 4-multiple grid. Angular source uses `padding: 0 10px`; React uses 8px (-2px per side, -4px total width). Button still meets 80px min-width — "View" label at 12px uses ~28-32px, so 64px content area is sufficient. Closer to Angular than 12px (+2/side). Recviz precedent confirmed Phase 2 D-2.6. |
 | Execution-order button min-width | 80px | Matches Angular source: `min-width: 80px` |
 | Recent-search popover max-height | 320px | 10 items × 32px row; prevents overflow on small viewports |
 | AG-Grid row height | 36px (`--ag-row-height`) | Phase 2 inherited AG-Grid token bridge |
@@ -306,13 +306,13 @@ Use CSS variable `--grid-height` declared on the grid container for maintainabil
 4. On click: set `isLoading = true`, call `apiFetch('/rectrace/api/execution-order/' + jobName)`. On success, open execution-order modal (Phase 4 owns the modal implementation — in Phase 3, if the modal is not yet built, open a placeholder `Sheet` or `Dialog` showing raw JSON data). On error: `reportRequestFailure(err)` via Sonner toast.
 5. Loading state: replace "View" text with a `Loader2Icon` spinning (lucide) — `animate-spin` class. Button remains rendered but `disabled`.
 
-**Visual spec (exact measurements matching Angular parity):**
+**Visual spec (exact measurements — grid-aligned):**
 
 | Property | Value |
 |----------|-------|
 | Height | 24px |
 | Min-width | 80px |
-| Padding | `0 10px` (horizontal only) |
+| Padding | `0 8px` (horizontal only) — grid-aligned at 8px (sm); Angular source used `0 10px` which is not a 4-multiple; React port snaps to 8px (-2px per side). Button meets 80px min-width with ample content area. |
 | Border-radius | 4px |
 | Background | transparent |
 | Border | none |
