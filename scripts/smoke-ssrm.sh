@@ -27,8 +27,10 @@ RAW=$(curl -s -w '\n%{http_code}' -X POST "$ENDPOINT" \
   -d "$REQUEST_BODY" 2>&1)
 CURL_EXIT=$?
 
-HTTP_STATUS=$(printf '%s' "$RAW" | tail -1)
-RESPONSE=$(printf '%s' "$RAW" | head -n -1)
+# BSD/macOS `head` has no -n -N (GNU-only). Split RAW at the final newline via
+# bash parameter expansion: text after the last newline = status, before = body.
+HTTP_STATUS="${RAW##*$'\n'}"
+RESPONSE="${RAW%$'\n'*}"
 
 if [ "$CURL_EXIT" -ne 0 ]; then
   echo "FAIL: curl failed (exit $CURL_EXIT). Is the backend running? (ops/rectrace-ops.sh start backend)"
