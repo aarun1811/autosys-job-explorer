@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
@@ -28,10 +30,13 @@ public class CorrelationIdPropagationConfig {
      *
      * Security: the 32-hex regex in extractor() is the validation boundary for T-2-02.
      * Header values that fail the regex (including log-injection strings like "foo\n[...]")
-     * are rejected — Brave generates a fresh traceId instead. No OncePerRequestFilter needed.
+     * are rejected — Brave falls back to B3 extraction instead.
      *
      * inject(): echoes X-Correlation-Id on outbound calls (lowercase hex of traceId)
      * AND writes B3 downstream headers via the delegate.
+     *
+     * Brave 5.12+ uses Propagation.Factory.get() returning Propagation<String> directly;
+     * the legacy create(KeyFactory) overload is removed and throws at runtime.
      *
      * Phase 7 OBS-01 owns the full observability pipeline (exporters, structured logs).
      * Phase 2 scope: MDC population only, no Zipkin/Jaeger/OTel exporter.
@@ -42,36 +47,39 @@ public class CorrelationIdPropagationConfig {
     public Propagation.Factory correlationIdPropagationFactory() {
         return new Propagation.Factory() {
             @Override
-            public <K> Propagation<K> create(Propagation.KeyFactory<K> keyFactory) {
-                final Propagation<K> delegate = B3Propagation.FACTORY.create(keyFactory);
-                final K headerKey = keyFactory.create(HEADER);
-                return new Propagation<K>() {
-                    @Override public java.util.List<K> keys() {
-                        java.util.List<K> all = new java.util.ArrayList<>(delegate.keys());
-                        all.add(headerKey);
+            public Propagation<String> get() {
+                final Propagation<String> delegate = B3Propagation.FACTORY.get();
+                return new Propagation<String>() {
+                    @Override
+                    public List<String> keys() {
+                        List<String> all = new ArrayList<>(delegate.keys());
+                        all.add(HEADER);
                         return all;
                     }
-                    @Override public <R> TraceContext.Injector<R> injector(Propagation.Setter<R, K> setter) {
+
+                    @Override
+                    public <R> TraceContext.Injector<R> injector(Propagation.Setter<R, String> setter) {
                         // Inject B3 downstream AND echo X-Correlation-Id (lowercase hex of traceId)
                         return (traceContext, carrier) -> {
                             delegate.injector(setter).inject(traceContext, carrier);
                             String hex = traceContext.traceIdString();
                             if (hex != null && hex.length() == 32) {
-                                setter.put(carrier, headerKey, hex);
+                                setter.put(carrier, HEADER, hex);
                             }
                         };
                     }
-                    @Override public <R> TraceContext.Extractor<R> extractor(Propagation.Getter<R, K> getter) {
+
+                    @Override
+                    public <R> TraceContext.Extractor<R> extractor(Propagation.Getter<R, String> getter) {
                         return carrier -> {
-                            String raw = getter.get(carrier, headerKey);
+                            String raw = getter.get(carrier, HEADER);
                             if (raw != null && HEX32.matcher(raw).matches()) {
                                 String hex = raw.toLowerCase();
                                 long hi = Long.parseUnsignedLong(hex.substring(0, 16), 16);
                                 long lo = Long.parseUnsignedLong(hex.substring(16), 16);
-                                // Use a random spanId distinct from the traceId low bits.
-                                // spanId == traceId-low violates W3C traceparent uniqueness
-                                // and causes trace UIs to render a self-referencing cycle
-                                // when Zipkin/Jaeger export is enabled (Phase 7 OBS-01).
+                                // Random spanId distinct from traceId low bits — spanId == traceId-low
+                                // violates W3C traceparent uniqueness and creates self-referencing
+                                // cycles in Zipkin/Jaeger UIs when export ships in Phase 7 (OBS-01).
                                 long spanId = ThreadLocalRandom.current().nextLong();
                                 TraceContext ctx = TraceContext.newBuilder()
                                     .traceIdHigh(hi).traceId(lo)
