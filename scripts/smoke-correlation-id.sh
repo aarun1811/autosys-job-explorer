@@ -22,12 +22,15 @@ echo "Log file: $LOG_FILE"
 
 REQUEST_BODY='{"category":"fileName","initialFilter":null,"rowGroupCols":[],"groupKeys":[],"sortModel":[],"filterModel":{},"startRow":0,"endRow":1,"visibleColumns":[]}'
 
-# Capture log line count before the request
+# Capture log line count before the request.
+# Add 1 so tail -n +N starts at the first line AFTER all existing content.
+# Without +1, tail -n +PRE_COUNT re-reads the final pre-existing line, which
+# could contain a prior run's CORR_ID and cause a false PASS.
 if [ -f "$LOG_FILE" ]; then
-  PRE_COUNT=$(wc -l < "$LOG_FILE")
+  PRE_COUNT=$(( $(wc -l < "$LOG_FILE") + 1 ))
 else
   echo "WARN: $LOG_FILE not found. Start backend with: ops/rectrace-ops.sh start backend"
-  PRE_COUNT=0
+  PRE_COUNT=1
 fi
 
 # Send request
