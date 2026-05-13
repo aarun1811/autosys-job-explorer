@@ -11,13 +11,13 @@ LOG_DIR="$REPO_ROOT/logs"
 mkdir -p "$RUN_DIR" "$LOG_DIR"
 
 # Component: backend
-BACKEND_CMD="mvn spring-boot:run -f $REPO_ROOT/backend/rectrace/pom.xml -Dspring.profiles.active=local"
+BACKEND_CMD="mvn spring-boot:run -f $REPO_ROOT/backend/rectrace/pom.xml -Dspring-boot.run.profiles=local"
 BACKEND_PID="$RUN_DIR/backend.pid"
 BACKEND_LOG="$LOG_DIR/backend.log"
 BACKEND_READY_URL="http://localhost:6088/rectrace/actuator/health"
 
 # Component: tlm-stats
-TLMSTATS_CMD="mvn spring-boot:run -f $REPO_ROOT/rectrace-tlm-stats/pom.xml -Dspring.profiles.active=local"
+TLMSTATS_CMD="mvn spring-boot:run -f $REPO_ROOT/rectrace-tlm-stats/pom.xml -Dspring-boot.run.profiles=local"
 TLMSTATS_PID="$RUN_DIR/tlmstats.pid"
 TLMSTATS_LOG="$LOG_DIR/tlmstats.log"
 TLMSTATS_READY_URL="http://localhost:8080/actuator/health"
