@@ -35,7 +35,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [ ] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
 - [ ] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
 - [ ] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
-- [ ] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, angular components registered; React added once `npm run dev` boots.
+- [ ] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, and React components registered; no angular component (decommissioned at React go-live per D-2.15 / D-2.17).
 
 ### React Vertical Slice — Search
 
@@ -45,7 +45,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [ ] **SEARCH-04**: Excel export carryover — feature parity with the Angular app's export.
 - [ ] **SEARCH-05**: Recent searches stored in `localStorage`; show last 10 in a typeahead/dropdown.
 - [ ] **SEARCH-06**: All error states display the correlation ID so users can quote it in bug reports.
-- [ ] **SEARCH-07**: React app served behind a distinct URL prefix (e.g. `/v6/`) so Angular and React run side-by-side until the parity matrix says shutdown.
+- [ ] **SEARCH-07**: React app served at `/rectrace/` (no `/v6/` prefix — D-2.4; Angular is decommissioned at React go-live); React and Angular run side-by-side during development only (manual `npm start` in `frontend/rectrace/`).
 
 ### recviz Integration
 
