@@ -92,11 +92,11 @@ a custom font stack; it inherits Inter from the AG-Grid bridge declaration.
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 14px | 400 (regular) | 1.5 | Default prose, form labels, grid cell text, toast body |
-| Label / Caption | 12px | 500 (medium) | 1.4 | AG-Grid header text (`--ag-header-font-size: 12px; --ag-header-font-weight: 500`), metadata labels |
+| Label / Caption | 12px | 600 (semibold) | 1.4 | AG-Grid header text (`--ag-header-font-size: 12px; --ag-header-font-weight: 600`), metadata labels |
 | Heading (small) | 16px | 600 (semibold) | 1.3 | Section headings, card titles, empty-state heading |
 | Display | 20px | 600 (semibold) | 1.2 | App shell brand label "Rectrace" in header (if rendered as text) |
 
-**Weights in use: exactly 2 base weights:** regular (400) and semibold (600), plus one supplementary medium (500) used only inside AG-Grid headers per the bridge token. Component implementation must not add a fourth weight category.
+**Weights in use: exactly 2 weights:** regular (400) and semibold (600). No medium/500 weight is declared or used in this phase. AG-Grid header text uses the same semibold (600) as headings — this aligns with recviz's semibold heading convention. Component implementation must not add a third weight category.
 
 **Font stack declaration site:** `--ag-font-family` in the `.ag-theme-quartz` block of `index.css`. Body font is implicitly `system-ui, sans-serif` from Tailwind's base reset; Inter is only explicitly declared in the grid theme bridge. If Inter is needed outside the grid, add `@import url(...)` or use system-ui.
 
@@ -199,6 +199,8 @@ Phase 2 delivers a minimal three-zone shell. This is the reference layout for Ph
 └─────────────────────────────────────────────────────────────┘
 ```
 
+Primary visual anchor: the SmokeGrid table body — occupies the majority of viewport height and is the only interactive data surface in Phase 2; in Phase 3 this slot is replaced by the search results grid.
+
 ### Header
 
 - **Position:** `sticky top-0 z-50` with `border-b` and `backdrop-blur-md` — mirrors recviz header class list.
@@ -283,7 +285,7 @@ Rationale: Phase 2 only has one data surface (the smoke grid). A non-blocking to
 | Primary CTA | None in Phase 2 | No destructive or submit actions in scaffold |
 | Theme toggle label (sr-only) | Toggle theme | Accessible screen reader text on the ThemeSwitch button |
 | Footer build label | Build: {sha} | `sha` = 7-char git short SHA injected at build time; falls back to `dev` |
-| Empty state heading | No results | Shown in AG-Grid overlay when SSRM returns 0 rows |
+| Empty state heading | No seed data found | Shown in AG-Grid overlay when SSRM returns 0 rows |
 | Empty state body | The local seed returned no records. Verify the backend is running with the local profile and the Phase 0.1 seed is loaded. | Contextual: Phase 2 expects 5 rows from the seed; 0 rows = environment issue, not a search feature |
 | Error state toast title | Request failed | Short, factual |
 | Error state toast description | Error reference: {correlationId} | `correlationId` = 32-char hex from the fetch wrapper; user quotes this in a bug report |
@@ -293,7 +295,7 @@ Rationale: Phase 2 only has one data surface (the smoke grid). A non-blocking to
 **Tone:** Terse, factual, internal-tool voice. No marketing language. No emoji. No exclamation marks.
 
 **Empty state notes:**
-- The AG-Grid `overlayNoRowsTemplate` is a static HTML string: `<span>No results</span>`. The extended body copy above should render in a wrapper `div` above or below the grid — executor decides placement. If a `Card` component is used as an empty-state container, use: heading `text-sm font-semibold text-foreground`, body `text-sm text-muted-foreground`.
+- The AG-Grid `overlayNoRowsTemplate` is a static HTML string: `<span>No seed data found</span>`. The extended body copy above should render in a wrapper `div` above or below the grid — executor decides placement. If a `Card` component is used as an empty-state container, use: heading `text-sm font-semibold text-foreground`, body `text-sm text-muted-foreground`.
 
 ---
 
