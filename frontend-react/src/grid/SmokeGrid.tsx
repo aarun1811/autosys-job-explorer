@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import type { IServerSideDatasource, ColDef } from 'ag-grid-community'
-import { apiFetch } from '@/lib/queryClient'
+import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 
 const columnDefs: ColDef[] = [
   { field: 'jobName', headerName: 'Job Name', width: 200 },
@@ -42,6 +42,17 @@ export function SmokeGrid() {
         } catch (err) {
           if ((err as { name?: string }).name !== 'AbortError') {
             console.error('SSRM fail', err)
+            // The AG-Grid SSRM datasource bypasses React Query, so the QueryClient
+            // queryCache onError handler does not fire. Surface the failure (and
+            // the corr-id, when present on the error) via the same Sonner toast
+            // path so users can quote the reference in a bug report.
+            //
+            // The deferral via setTimeout(0) prevents a Sonner 2.x race: AG-Grid's
+            // initial getRows fires inside the same commit/effect cascade as the
+            // Toaster's own mount, and Sonner silently drops toasts dispatched
+            // before its subscriber attaches. Pushing this to the next macrotask
+            // guarantees the Toaster is live when toast.error() runs.
+            setTimeout(() => reportRequestFailure(err), 0)
             params.fail()
           }
         }

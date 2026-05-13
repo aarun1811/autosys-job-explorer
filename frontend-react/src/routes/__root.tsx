@@ -29,8 +29,13 @@ function RootLayout() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <Outlet />
+        {/* Toaster must mount BEFORE any child that may dispatch toasts during
+            its initial render — otherwise Sonner 2.x silently discards toasts
+            queued before its Toaster consumer subscribes. SmokeGrid kicks off
+            an SSRM fetch on mount and routes failures through toast.error;
+            without this ordering, those very first errors never render. */}
         <Toaster richColors position="bottom-right" />
+        <Outlet />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ThemeProvider>
