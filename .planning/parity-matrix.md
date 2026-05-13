@@ -7,6 +7,8 @@
 > has a non-`tbd` value in the **Target** column. Priority and Notes may remain `tbd`
 > at that point — they are filled during each React phase's planning.
 
+> **Phase 2 Foundation Gate Note (D-2.18):** The strict FOUND-04 gate ("Phase 2 can begin once every row has a non-`tbd` value in Target") is relaxed for Phase 2 Foundation. Phase 2 ships only scaffolding (empty SSRM smoke grid) — no cell renderers, modals, or search tabs are ported. Target values are locked **per-port-phase**: Phase 3 locks Targets for search tab + renderers it ports; Phase 4 locks Targets for the modals it owns.
+
 > **Target vocabulary:**
 > - `port` — build the capability in React natively
 > - `replace-content-with-recviz` — React owns the renderer/modal shell; content inside is a recviz iframe

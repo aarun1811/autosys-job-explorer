@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: Phase 2 plans verified (5 plans, 3 waves)
-last_updated: "2026-05-13T02:11:12.106Z"
-last_activity: 2026-05-12
+stopped_at: Phase 2 React Foundation plan complete
+last_updated: "2026-05-13T02:35:00.000Z"
+last_activity: 2026-05-13 -- Phase 02 Plan 05 doc supersessions applied
 progress:
   total_phases: 11
   completed_phases: 2
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12)
 
 **Core value:** Users can quickly find Autosys jobs and understand their dependencies and TLM statistics through a unified, performant, design-consistent UI.
-**Current focus:** Phase 02 — React Foundation (next; not yet specced)
+**Current focus:** Phase 02 — react-foundation
 
 ## Current Position
 
-Phase: 01 (Backend Platform Upgrade) — **CLOSED PASS** (user-accepted closure 2026-05-12).
-Plan: 8 waves authored; 7 wave-anchor commits landed (W4 retired-merged into W1 during execution). gsd-verifier verdict PASS at commit `097af9c`. The 3 Angular UI smoke items (UI-a/b/c) were accepted deferred — they will be re-exercised under the React rollout in Phases 2-4 rather than against the legacy Angular app.
+Phase: 02 (react-foundation) — EXECUTING
+Plan: 1 of 5
 
 **Phase 01 deliverables landed:**
 
@@ -41,7 +41,7 @@ Plan: 8 waves authored; 7 wave-anchor commits landed (W4 retired-merged into W1 
 
 **Next:** Phase 02 — React Foundation. Requirements: REACT-01..REACT-08. Depends on Phase 01 (now satisfied). Entry point: `/gsd-spec-phase 2` (clarify scope) or `/gsd-discuss-phase 2` (gather context for planning).
 
-Last activity: 2026-05-12
+Last activity: 2026-05-13 -- Phase 02 execution started
 
 Progress: [██████████] 100%
 
@@ -127,7 +127,7 @@ Items acknowledged and carried forward from previous milestone close:
 |----------|------|--------|-------------|
 | Planning state | REQUIREMENTS.md missing LOCAL-DEV-01..06 entries (referenced by ROADMAP Phase 00.1 + every 00.1-*-PLAN.md) — see `.planning/phases/00.1-local-dev-seed-bootstrap/deferred-items.md` | Open | Plan 00.1-01 (2026-05-12) |
 | Design tokens | Add chart/series/ramp tokens to `frontend-react/src/index.css` "Rectrace extensions" overlay block — surfaces when first chart/data-viz component is planned (see Phase 2 CONTEXT.md D-2.7). Reference recviz `src/index.css` `--series-1..8`, `--ramp-low/high`, `--chart-positive/negative/warning`. Phase 8 DESIGN-01 audits the lot. | Open | Phase 2 discuss (2026-05-13) |
-| Docs hygiene | ROADMAP.md (Phase 2 SC#5, Phase 3 SC#1) + REQUIREMENTS.md (REACT-08, SEARCH-07) need edits: drop `/v6/` references (superseded by Phase 2 D-2.4); drop "angular" from ops-script component lists (superseded by Phase 2 D-2.15). Either fold into Phase 2 plan-phase or capture separately. | Open | Phase 2 discuss (2026-05-13) |
+| Docs hygiene | ROADMAP.md (Phase 2 SC#5, Phase 3 SC#1) + REQUIREMENTS.md (REACT-08, SEARCH-07) need edits: drop `/v6/` references (superseded by Phase 2 D-2.4); drop "angular" from ops-script component lists (superseded by Phase 2 D-2.15). Either fold into Phase 2 plan-phase or capture separately. | Closed — resolved in Plan 02-05 | Phase 2 discuss (2026-05-13) |
 
 ## Session Continuity
 
