@@ -70,3 +70,8 @@
 
 .agent/
 .claude/
+
+# ===== Runtime ops (ops/rectrace-ops.sh) =====
+# PID files and logs are created at runtime; never committed.
+run/
+logs/
