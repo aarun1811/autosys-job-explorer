@@ -65,7 +65,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [ ] **SQL-04**: Per-statement `setQueryTimeout`, `fetchSize`, and `maxRows` cap enforced inside `SqlQueryServiceV4` (NEVER set on the singleton `JdbcTemplate`).
 - [ ] **SQL-05**: Mandatory `WHERE` clause or `FETCH FIRST N ROWS ONLY` injection at executor level — runaway scans rejected.
 - [ ] **SQL-06**: `SqlSearchControllerV4` exposes SSRM-shaped responses compatible with the AG-Grid SSRM datasource shape.
-- [ ] **SQL-07**: At least one example configured SELECT-tab end-to-end (Angular grid can consume it as a sanity check during transition).
+- [x] **SQL-07**: At least one example configured SELECT-tab end-to-end (Angular grid can consume it as a sanity check during transition).
 
 ### ES Loader (Oracle → Elasticsearch, scheduled)
 
@@ -203,7 +203,7 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | SQL-04 | Phase 5 — Config-driven SELECT | Pending |
 | SQL-05 | Phase 5 — Config-driven SELECT | Pending |
 | SQL-06 | Phase 5 — Config-driven SELECT | Pending |
-| SQL-07 | Phase 5 — Config-driven SELECT | Pending |
+| SQL-07 | Phase 5 — Config-driven SELECT | Complete |
 | LOADER-01 | Phase 6 — ES Loader Subsystem | Pending |
 | LOADER-02 | Phase 6 — ES Loader Subsystem | Pending |
 | LOADER-03 | Phase 6 — ES Loader Subsystem | Pending |

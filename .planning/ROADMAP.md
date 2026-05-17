@@ -16,7 +16,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1. (completed 2026-05-13)
 - [x] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states. (completed 2026-05-17)
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
-- [ ] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses.
+- [x] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses. (completed 2026-05-17)
 - [ ] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown.
 - [ ] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess.
 - [ ] **Phase 8: Hyphen Bug + Design Polish + Ops Hardening** — ES `_analyze` diagnostic + `.keyword` fix + regression test; shadcn↔recviz token audit + visual regression; `rectrace-ops.sh` passes `shellcheck` + Linux CI + readiness probe.
@@ -140,12 +140,12 @@ Plans:
 **Plans**: 6 plans (5 waves)
 
 Plans:
-- [ ] 05-01-PLAN.md — Wave 1: Test scaffolding (5 JUnit 5 classes + scripts/smoke-sql-search.sh) — SQL-02/04/05/06/07 contracts as @Disabled tests
-- [ ] 05-02-PLAN.md — Wave 1: Local-dev DDL (rectrace_readonly Oracle user, SELECT-only grants) + backend/rectrace application-local.properties datasource.readonly.* keys — SQL-03
-- [ ] 05-03-PLAN.md — Wave 2: pom.xml JSqlParser 5.3 + ReadonlyDataSourceConfig (@Profile(!test), readonlyDataSource + readonlyJdbcTemplate beans, no setters on template) — SQL-03/04
-- [ ] 05-04-PLAN.md — Wave 3: DTOs + sql-search-config-v4.json + SqlShapeValidator (JSqlParser visitor) + SqlSearchConfigServiceV4 (@PostConstruct, boot-fails on shape violation) — SQL-01/02/05
-- [ ] 05-05-PLAN.md — Wave 4: SqlQueryServiceV4 (wrapped query + StatementCallback + whitelisted sort/filter) + SqlSearchControllerV4 (GET /config, POST /ssrm/{tabKey}) — SQL-04/05/06
-- [ ] 05-06-PLAN.md — Wave 5: 6-assertion smoke against live stack + ANGULAR-WIRING.md + parity-matrix update — SQL-07
+- [x] 05-01-PLAN.md — Wave 1: Test scaffolding (5 JUnit 5 classes + scripts/smoke-sql-search.sh) — SQL-02/04/05/06/07 contracts as @Disabled tests
+- [x] 05-02-PLAN.md — Wave 1: Local-dev DDL (rectrace_readonly Oracle user, SELECT-only grants) + backend/rectrace application-local.properties datasource.readonly.* keys — SQL-03
+- [x] 05-03-PLAN.md — Wave 2: pom.xml JSqlParser 5.3 + ReadonlyDataSourceConfig (@Profile(!test), readonlyDataSource + readonlyJdbcTemplate beans, no setters on template) — SQL-03/04
+- [x] 05-04-PLAN.md — Wave 3: DTOs + sql-search-config-v4.json + SqlShapeValidator (JSqlParser visitor) + SqlSearchConfigServiceV4 (@PostConstruct, boot-fails on shape violation) — SQL-01/02/05
+- [x] 05-05-PLAN.md — Wave 4: SqlQueryServiceV4 (wrapped query + StatementCallback + whitelisted sort/filter) + SqlSearchControllerV4 (GET /config, POST /ssrm/{tabKey}) — SQL-04/05/06
+- [x] 05-06-PLAN.md — Wave 5: 6-assertion smoke against live stack + ANGULAR-WIRING.md + parity-matrix update — SQL-07
 
 ### Phase 6: ES Loader Subsystem
 **Goal**: A configuration-driven, scheduled Oracle→Elasticsearch loader subsystem inside `backend/rectrace`, with run history, manual triggers, alias-only index access, and idempotent upserts.
@@ -212,7 +212,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 2. React Foundation | 5/5 | Complete   | 2026-05-13 |
 | 3. React Search Vertical Slice | 8/8 | Complete   | 2026-05-17 |
 | 4. recviz Integration | 0/TBD | Not started | - |
-| 5. Config-driven SELECT | 0/TBD | Not started | - |
+| 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 0/TBD | Not started | - |
 | 7. Observability Sweep | 0/TBD | Not started | - |
 | 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |

@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
 stopped_at: Phase 3 context gathered
-last_updated: "2026-05-17T10:08:30.499Z"
+last_updated: "2026-05-17T11:44:44.663Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
-  completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
-  percent: 36
+  completed_phases: 5
+  total_plans: 23
+  completed_plans: 23
+  percent: 45
 ---
 
 # Project State
@@ -102,6 +102,7 @@ Progress: [██████████] 100%
 | Phase 00.1 P07 | 14min | 3 tasks | 4 files (2 .properties + README + SUMMARY) |
 | Phase 02-react-foundation P03 | 12 | 2 tasks | 17 files |
 | Phase 03 P08 | 15min | 2 tasks | 2 files |
+| Phase 05-config-driven-select P06 | 25min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,8 @@ Recent decisions affecting current work:
 - [Phase ?]: apiFetch wrapper with X-Correlation-Id — 32-char hex per call; correlationId attached to thrown Error for toast display
 - [Phase ?]: Custom ThemeProvider context (NOT next-themes) with STORAGE_KEY='rectrace-theme' mirroring recviz pattern
 - [Phase ?]: Phase 3 close: smoke-ssrm Step 0 asserts /config exposes the 3 Phase 3 renderer keys; parity-matrix flipped 6 deliverables to port
+- [Phase ?]: D-5.06.1: Schema-qualify configured SELECT (rectrace.rectrace_core) to resolve Plan 05 deferred ORA-00942 without touching sibling seed repo.
+- [Phase ?]: D-5.06.2: Ship ANGULAR-WIRING.md (file:line citation) rather than Angular code edits — strangler-fig + D-5.18 + SQL-07 satisfied by green smoke.
 
 ### Pending Todos
 
@@ -159,6 +162,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T10:07:56.275Z
+Last session: 2026-05-17T11:44:31.690Z
 Stopped at: Phase 3 context gathered
 Resume file: None
