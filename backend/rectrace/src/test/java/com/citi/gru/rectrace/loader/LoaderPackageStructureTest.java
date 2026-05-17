@@ -2,7 +2,6 @@ package com.citi.gru.rectrace.loader;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,7 +31,6 @@ class LoaderPackageStructureTest {
     }
 
     @Test
-    @Disabled("Plan 06-04 — enable when OracleToEsLoaderJob is implemented")
     void oracleToEsLoaderJobExists() {
         // Plan 06-04 deliverable.
         assertThatCode(() -> Class.forName("com.citi.gru.rectrace.loader.OracleToEsLoaderJob"))
@@ -57,7 +55,6 @@ class LoaderPackageStructureTest {
     }
 
     @Test
-    @Disabled("Plan 06-04 — enable when LoaderTicker is implemented")
     void loaderTickerExists() {
         // Plan 06-04 deliverable.
         assertThatCode(() -> Class.forName("com.citi.gru.rectrace.loader.LoaderTicker"))
