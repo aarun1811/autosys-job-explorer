@@ -14,7 +14,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 0.1: Local Dev Seed Bootstrap** (INSERTED) — Sibling `../rectrace-local-dev/` folder with Oracle DDL/seed scripts + ES index templates/bulk-load JSON; prerequisite for Phase 1's BOOT-09 smoke. Outside the project repo; does not ship to Citi. (completed 2026-05-12; two KNOWN GAPS handed to Phase 1 BOOT-08: backend/rectrace DataSourceConfig.java + rectrace-tlm-stats DatabaseConfig.java unconditional script-executor calls)
 - [x] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → **3.5.14**, **Java 21**, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup. (completed 2026-05-12)
 - [x] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1. (completed 2026-05-13)
-- [ ] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states.
+- [x] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states. (completed 2026-05-17)
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
 - [ ] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses.
 - [ ] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown.
@@ -102,14 +102,14 @@ Plans:
 **Plans**: 8 plans (6 waves)
 
 Plans:
-- [ ] 03-01-PLAN.md — Wave 1: Zod schemas (SearchConfigurationV4, SSRMRequestV4, InitialSearchResponseV4, ColumnDefinitionV4) + useSearchConfig TanStack Query hook (staleTime: Infinity)
-- [ ] 03-02-PLAN.md — Wave 1: useSearchState (TanStack Router URL ↔ {q, cat}) + useRecentSearches (localStorage LRU, 10-cap, case-sensitive dedupe per D-3.11)
-- [ ] 03-03-PLAN.md — Wave 2: Three renderers (AppID anchor, SupportEmail mailto, ExecutionOrder button + placeholder Dialog with TODO(Phase 4)) + renderer registry string→component map + shadcn Dialog vendored
-- [ ] 03-04-PLAN.md — Wave 3: configCategoryToColDefs adapter (kebab→camelCase cellStyle; graceful unknown-renderer fallback) + main.tsx registers ExcelExportModule/ColumnsToolPanelModule/FiltersToolPanelModule + 8 shadcn primitives vendored (input, badge, separator, command, popover, tooltip, dropdown-menu, skeleton) at pin 3.8.5
-- [ ] 03-05-PLAN.md — Wave 4: SearchGrid (config-driven columnDefs from adapter; remount-by-key on (q, cat); SSRM datasource useMemo([q, cat, initialFilter]); Sonner-mount setTimeout(0) workaround per D-3.6; no Date.now()+Math.random() — Pitfall 1)
-- [ ] 03-06-PLAN.md — Wave 4: SearchBar (Input + clear-X + Search button + recent-searches Popover via shadcn Command), SearchToolbar (locale-formatted result Badge + Excel export DropdownMenu), CategoryTabBar (single-tab seed for Phase 4+)
-- [ ] 03-07-PLAN.md — Wave 5: /search route (Zod validateSearch) + / → /search redirect + SearchPage orchestrator (URL-restore useEffect, /initial GET ?keyword= per Pitfall 4, Excel export filename + columnKeys filter, error-state card) + delete SmokeGrid (Pitfall 8) + human UAT checkpoint (13-step verification against local seed)
-- [ ] 03-08-PLAN.md — Wave 6: Extend scripts/smoke-ssrm.sh with /api/v4/search/config shape assertion (regression net for the three renderer keys) + update .planning/parity-matrix.md (flip 6 rows: File Name tab, 3 renderers, Excel, Recent → `port`)
+- [x] 03-01-PLAN.md — Wave 1: Zod schemas (SearchConfigurationV4, SSRMRequestV4, InitialSearchResponseV4, ColumnDefinitionV4) + useSearchConfig TanStack Query hook (staleTime: Infinity)
+- [x] 03-02-PLAN.md — Wave 1: useSearchState (TanStack Router URL ↔ {q, cat}) + useRecentSearches (localStorage LRU, 10-cap, case-sensitive dedupe per D-3.11)
+- [x] 03-03-PLAN.md — Wave 2: Three renderers (AppID anchor, SupportEmail mailto, ExecutionOrder button + placeholder Dialog with TODO(Phase 4)) + renderer registry string→component map + shadcn Dialog vendored
+- [x] 03-04-PLAN.md — Wave 3: configCategoryToColDefs adapter (kebab→camelCase cellStyle; graceful unknown-renderer fallback) + main.tsx registers ExcelExportModule/ColumnsToolPanelModule/FiltersToolPanelModule + 8 shadcn primitives vendored (input, badge, separator, command, popover, tooltip, dropdown-menu, skeleton) at pin 3.8.5
+- [x] 03-05-PLAN.md — Wave 4: SearchGrid (config-driven columnDefs from adapter; remount-by-key on (q, cat); SSRM datasource useMemo([q, cat, initialFilter]); Sonner-mount setTimeout(0) workaround per D-3.6; no Date.now()+Math.random() — Pitfall 1)
+- [x] 03-06-PLAN.md — Wave 4: SearchBar (Input + clear-X + Search button + recent-searches Popover via shadcn Command), SearchToolbar (locale-formatted result Badge + Excel export DropdownMenu), CategoryTabBar (single-tab seed for Phase 4+)
+- [x] 03-07-PLAN.md — Wave 5: /search route (Zod validateSearch) + / → /search redirect + SearchPage orchestrator (URL-restore useEffect, /initial GET ?keyword= per Pitfall 4, Excel export filename + columnKeys filter, error-state card) + delete SmokeGrid (Pitfall 8) + human UAT checkpoint (13-step verification against local seed)
+- [x] 03-08-PLAN.md — Wave 6: Extend scripts/smoke-ssrm.sh with /api/v4/search/config shape assertion (regression net for the three renderer keys) + update .planning/parity-matrix.md (flip 6 rows: File Name tab, 3 renderers, Excel, Recent → `port`)
 
 **UI hint**: yes
 
@@ -202,7 +202,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 0.1. Local Dev Seed Bootstrap (INSERTED) | 7/7 | Complete | 2026-05-12 |
 | 1. Backend Platform Upgrade | 8/8 | Complete | 2026-05-12 |
 | 2. React Foundation | 5/5 | Complete   | 2026-05-13 |
-| 3. React Search Vertical Slice | 0/8 | Not started | - |
+| 3. React Search Vertical Slice | 8/8 | Complete   | 2026-05-17 |
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 0/TBD | Not started | - |
 | 6. ES Loader Subsystem | 0/TBD | Not started | - |

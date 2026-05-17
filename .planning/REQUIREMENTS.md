@@ -39,11 +39,11 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### React Vertical Slice — Search
 
-- [ ] **SEARCH-01**: Port the **latest** search flow (currently v3/v4) to React end-to-end for one search category, consuming the existing backend without modification.
-- [ ] **SEARCH-02**: Port at least one custom cell renderer from `custom-interactions/components/renderers/` to React, preserving behavior.
+- [x] **SEARCH-01**: Port the **latest** search flow (currently v3/v4) to React end-to-end for one search category, consuming the existing backend without modification.
+- [x] **SEARCH-02**: Port at least one custom cell renderer from `custom-interactions/components/renderers/` to React, preserving behavior.
 - [ ] **SEARCH-03**: URL-synced search state — every meaningful UI parameter is reflected in / restored from the URL (deep-linkable).
-- [ ] **SEARCH-04**: Excel export carryover — feature parity with the Angular app's export.
-- [ ] **SEARCH-05**: Recent searches stored in `localStorage`; show last 10 in a typeahead/dropdown.
+- [x] **SEARCH-04**: Excel export carryover — feature parity with the Angular app's export.
+- [x] **SEARCH-05**: Recent searches stored in `localStorage`; show last 10 in a typeahead/dropdown.
 - [ ] **SEARCH-06**: All error states display the correlation ID so users can quote it in bug reports.
 - [ ] **SEARCH-07**: React app served at `/rectrace/` (no `/v6/` prefix — D-2.4; Angular is decommissioned at React go-live); React and Angular run side-by-side during development only (manual `npm start` in `frontend/rectrace/`).
 
@@ -183,11 +183,11 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | REACT-06 | Phase 2 — React Foundation | Complete |
 | REACT-07 | Phase 2 — React Foundation | Complete |
 | REACT-08 | Phase 2 — React Foundation | Complete |
-| SEARCH-01 | Phase 3 — React Search Vertical Slice | Pending |
-| SEARCH-02 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-01 | Phase 3 — React Search Vertical Slice | Complete |
+| SEARCH-02 | Phase 3 — React Search Vertical Slice | Complete |
 | SEARCH-03 | Phase 3 — React Search Vertical Slice | Pending |
-| SEARCH-04 | Phase 3 — React Search Vertical Slice | Pending |
-| SEARCH-05 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-04 | Phase 3 — React Search Vertical Slice | Complete |
+| SEARCH-05 | Phase 3 — React Search Vertical Slice | Complete |
 | SEARCH-06 | Phase 3 — React Search Vertical Slice | Pending |
 | SEARCH-07 | Phase 3 — React Search Vertical Slice | Pending |
 | RECVIZ-01 | Phase 4 — recviz Integration | Pending |
