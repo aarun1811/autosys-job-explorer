@@ -45,12 +45,18 @@ import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { SearchGrid, _test_buildDatasource } from '../SearchGrid'
 import type { InitialSearchResponseV4 } from '../types'
 
-// Canonical fixture matching InitialSearchResponseV4Schema.
+// Canonical fixture matching the real /initial response shape (key, label,
+// values, count, hasMore, columns). SearchGrid combines this with
+// category.searchColumn from /config to build the SSRM body's initialFilter.
 const initialFilterFixture: InitialSearchResponseV4 = {
   categoryResults: {
     fileName: {
-      category: 'fileName',
-      initialFilter: { column: 'file_name_pattern', values: ['acct.csv', 'gl.csv'] },
+      key: 'fileName',
+      label: 'File Name',
+      values: ['acct.csv', 'gl.csv'],
+      count: 2,
+      hasMore: false,
+      columns: [{ field: 'file_name_pattern', headerName: 'File Name Pattern' }],
     },
   },
 }
@@ -115,7 +121,7 @@ describe('SearchGrid', () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
     mockApi.mockResolvedValue({ json: () => Promise.resolve({ rows: [], lastRow: 0 }) })
 
-    const ds = _test_buildDatasource('csv', 'fileName', initialFilterFixture)
+    const ds = _test_buildDatasource('csv', 'fileName', initialFilterFixture, 'file_name_pattern')
 
     const params = {
       request: {
@@ -156,7 +162,7 @@ describe('SearchGrid', () => {
     const networkErr = Object.assign(new Error('Boom'), { correlationId: 'abc123', name: 'TypeError' })
     mockApi.mockRejectedValue(networkErr)
 
-    const ds = _test_buildDatasource('csv', 'fileName', initialFilterFixture)
+    const ds = _test_buildDatasource('csv', 'fileName', initialFilterFixture, 'file_name_pattern')
 
     const params = {
       request: {
@@ -187,7 +193,7 @@ describe('SearchGrid', () => {
     const abortErr = Object.assign(new Error('aborted'), { name: 'AbortError' })
     mockApi.mockRejectedValue(abortErr)
 
-    const ds = _test_buildDatasource('csv', 'fileName', initialFilterFixture)
+    const ds = _test_buildDatasource('csv', 'fileName', initialFilterFixture, 'file_name_pattern')
 
     const params = {
       request: {

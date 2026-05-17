@@ -134,7 +134,7 @@ describe('SearchPage', () => {
   })
 
   test('URL-restore: with /search?q=csv, fires GET /rectrace/api/v4/search/initial?keyword=csv on mount and renders SearchGrid with initialFilter', async () => {
-    const responseBody = { categoryResults: { fileName: { category: 'fileName', initialFilter: { column: 'file_name', values: ['a.csv'] } } } }
+    const responseBody = { categoryResults: { fileName: { key: 'fileName', label: 'File Name', values: ['a.csv'], count: 1, hasMore: false, columns: [] } } }
     apiFetchMock.mockResolvedValueOnce({ json: async () => responseBody })
 
     await act(async () => {
@@ -153,7 +153,7 @@ describe('SearchPage', () => {
 
   test('on successful submit, useRecentSearches.push is called with the trimmed term', async () => {
     apiFetchMock.mockResolvedValueOnce({
-      json: async () => ({ categoryResults: { fileName: { category: 'fileName', initialFilter: { column: 'file_name', values: ['a.csv'] } } } }),
+      json: async () => ({ categoryResults: { fileName: { key: 'fileName', label: 'File Name', values: ['a.csv'], count: 1, hasMore: false, columns: [] } } }),
     })
     await act(async () => {
       renderAt('/search?q=csv&cat=fileName')
@@ -181,7 +181,7 @@ describe('SearchPage', () => {
   })
 
   test('clicking "Try again" re-invokes apiFetch and renders SearchGrid on success', async () => {
-    const okBody = { categoryResults: { fileName: { category: 'fileName', initialFilter: { column: 'file_name', values: ['x'] } } } }
+    const okBody = { categoryResults: { fileName: { key: 'fileName', label: 'File Name', values: ['x'], count: 1, hasMore: false, columns: [] } } }
     apiFetchMock
       .mockRejectedValueOnce(Object.assign(new Error('boom'), { correlationId: 'cc'.repeat(16) }))
       .mockResolvedValueOnce({ json: async () => okBody })
@@ -205,7 +205,7 @@ describe('SearchPage', () => {
 
   test('Excel export: handleExport calls gridApi.exportDataAsExcel with rectrace-{cat}-{term}-YYYYMMDD.xlsx fileName and columnKeys excluding execution_order', async () => {
     apiFetchMock.mockResolvedValueOnce({
-      json: async () => ({ categoryResults: { fileName: { category: 'fileName', initialFilter: { column: 'file_name', values: ['a.csv'] } } } }),
+      json: async () => ({ categoryResults: { fileName: { key: 'fileName', label: 'File Name', values: ['a.csv'], count: 1, hasMore: false, columns: [] } } }),
     })
     // After onGridReady fires, the export closure uses getColumns(); return two columns.
     getColumnsMock.mockReturnValue([
@@ -244,7 +244,7 @@ describe('SearchPage', () => {
 
   test('result count: SearchGrid.onModelUpdated(3) sets resultCount → Toolbar Badge shows "3 results"', async () => {
     apiFetchMock.mockResolvedValueOnce({
-      json: async () => ({ categoryResults: { fileName: { category: 'fileName', initialFilter: { column: 'file_name', values: ['a.csv'] } } } }),
+      json: async () => ({ categoryResults: { fileName: { key: 'fileName', label: 'File Name', values: ['a.csv'], count: 1, hasMore: false, columns: [] } } }),
     })
 
     await act(async () => {

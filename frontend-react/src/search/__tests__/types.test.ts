@@ -147,13 +147,19 @@ describe('search/types Zod schemas', () => {
   })
 
   describe('CategoryResultV4Schema', () => {
-    test('accepts { category, initialFilter }', () => {
+    test('accepts the real /initial per-category shape (key, label, values, count, hasMore, columns)', () => {
       const result = CategoryResultV4Schema.parse({
-        category: 'fileName',
-        initialFilter: { column: 'file_name_pattern', values: ['x.csv'] },
+        key: 'fileName',
+        label: 'File Name',
+        values: ['x.csv'],
+        count: 1,
+        hasMore: false,
+        columns: [
+          { field: 'file_name_pattern', headerName: 'File Name Pattern' },
+        ],
       })
-      expect(result.category).toBe('fileName')
-      expect(result.initialFilter.values).toEqual(['x.csv'])
+      expect(result.key).toBe('fileName')
+      expect(result.values).toEqual(['x.csv'])
     })
   })
 
@@ -162,13 +168,19 @@ describe('search/types Zod schemas', () => {
       const result: InitialSearchResponseV4 = InitialSearchResponseV4Schema.parse({
         categoryResults: {
           fileName: {
-            category: 'fileName',
-            initialFilter: { column: 'file_name_pattern', values: ['x.csv'] },
+            key: 'fileName',
+            label: 'File Name',
+            values: ['x.csv'],
+            count: 1,
+            hasMore: false,
+            columns: [{ field: 'file_name_pattern', headerName: 'File Name Pattern' }],
           },
         },
+        searchTerm: 'csv',
+        timestamp: '2026-05-17T12:00:00Z',
       })
-      expect(result.categoryResults.fileName.category).toBe('fileName')
-      expect(result.categoryResults.fileName.initialFilter.values).toEqual(['x.csv'])
+      expect(result.categoryResults.fileName.key).toBe('fileName')
+      expect(result.categoryResults.fileName.values).toEqual(['x.csv'])
     })
   })
 

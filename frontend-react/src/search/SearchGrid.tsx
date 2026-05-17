@@ -60,6 +60,7 @@ export function _test_buildDatasource(
   q: string,
   cat: string,
   initialFilter: InitialSearchResponseV4,
+  searchColumn: string,
 ): IServerSideDatasource {
   // Silence the no-unused-vars lint hint — `q` is part of the dep tuple
   // (D-3.5) even though the body shape doesn't echo it; the keyword reaches
@@ -76,7 +77,7 @@ export function _test_buildDatasource(
       try {
         const body: SSRMRequestV4 = {
           category: cat,
-          initialFilter: extractInitialFilterForCategory(initialFilter, cat),
+          initialFilter: extractInitialFilterForCategory(initialFilter, cat, searchColumn),
           // params.request.rowGroupCols carries ColumnVO objects; the DTO
           // (and Angular parity, see search-v5-grid.component.ts:354) only
           // needs the field name.
@@ -122,11 +123,18 @@ export function _test_buildDatasource(
   }
 }
 
+// Builds the SSRM body's `initialFilter` from the `/initial` response and
+// the category's `searchColumn` (from `/config`). The `/initial` endpoint
+// only emits per-category `values`; the `column` must be derived from config
+// (Resolution to RESEARCH.md Open Question #1).
 function extractInitialFilterForCategory(
   resp: InitialSearchResponseV4,
   cat: string,
+  searchColumn: string,
 ): InitialFilter | null {
-  return resp.categoryResults[cat]?.initialFilter ?? null
+  const result = resp.categoryResults[cat]
+  if (!result || result.values.length === 0 || !searchColumn) return null
+  return { column: searchColumn, values: result.values }
 }
 
 /**
@@ -159,8 +167,8 @@ export function SearchGrid(props: SearchGridProps): ReactElement | null {
   // D-3.5. Combined with the `key={`${q}-${cat}`}` below, this guarantees
   // a clean SSRM cache + a fresh AbortController on every new search.
   const datasource = useMemo<IServerSideDatasource>(
-    () => _test_buildDatasource(q, cat, initialFilter),
-    [q, cat, initialFilter],
+    () => _test_buildDatasource(q, cat, initialFilter, category?.searchColumn ?? ''),
+    [q, cat, initialFilter, category],
   )
 
   // Fallback: while the config is loading or the requested category isn't

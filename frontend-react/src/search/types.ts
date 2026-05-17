@@ -24,19 +24,22 @@ import { z } from 'zod'
 // Column + Category configuration (response of GET /api/v4/search/config)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Many optional fields are serialized as JSON `null` (not omitted) by the
+// backend's CategoryColumnV4 DTO. Use `.nullish()` (accepts null OR undefined)
+// to match the on-the-wire shape.
 export const ColumnDefinitionV4Schema = z.object({
   field: z.string(),
   headerName: z.string(),
-  rowGroup: z.boolean().optional(),
-  hide: z.boolean().optional(),
-  sortable: z.boolean().optional(),
-  filter: z.boolean().optional(),
-  resizable: z.boolean().optional(),
-  width: z.number().optional(),
-  cellRenderer: z.string().optional(),
-  cellRendererParams: z.record(z.unknown()).optional(),
-  cellStyle: z.record(z.string()).optional(),
-  pinned: z.enum(['left', 'right']).nullable().optional(),
+  rowGroup: z.boolean().nullish(),
+  hide: z.boolean().nullish(),
+  sortable: z.boolean().nullish(),
+  filter: z.boolean().nullish(),
+  resizable: z.boolean().nullish(),
+  width: z.number().nullish(),
+  cellRenderer: z.string().nullish(),
+  cellRendererParams: z.record(z.unknown()).nullish(),
+  cellStyle: z.record(z.string()).nullish(),
+  pinned: z.enum(['left', 'right']).nullish(),
 })
 
 export const CategoryConfigV4Schema = z.object({
@@ -61,13 +64,26 @@ export const InitialFilterSchema = z.object({
   values: z.array(z.string()),
 })
 
+// CategoryResultV4 mirrors the per-category entry actually emitted by the
+// backend `/api/v4/search/initial` endpoint (SearchControllerV4 / CategoryResultV4).
+// The response does NOT contain a pre-built `{ column, values }` object — the
+// React client must combine `values` from this DTO with `searchColumn` from
+// the `/config` endpoint to produce the SSRM body's `initialFilter`. Resolves
+// RESEARCH.md Open Question #1.
 export const CategoryResultV4Schema = z.object({
-  category: z.string(),
-  initialFilter: InitialFilterSchema,
+  key: z.string(),
+  label: z.string(),
+  values: z.array(z.string()),
+  count: z.number(),
+  hasMore: z.boolean(),
+  columns: z.array(ColumnDefinitionV4Schema),
 })
 
 export const InitialSearchResponseV4Schema = z.object({
   categoryResults: z.record(CategoryResultV4Schema),
+  searchTerm: z.string().nullish(),
+  // Backend sends timestamp as epoch-ms number; accept any (we don't read it).
+  timestamp: z.unknown().optional(),
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

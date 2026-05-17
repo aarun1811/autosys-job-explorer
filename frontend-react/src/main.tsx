@@ -1,12 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { LicenseManager } from 'ag-grid-enterprise'
-import { ModuleRegistry } from 'ag-grid-community'
+import {
+  ModuleRegistry,
+  TextFilterModule,
+  CellStyleModule,
+  ColumnAutoSizeModule,
+  RowApiModule,
+} from 'ag-grid-community'
 import {
   ServerSideRowModelModule,
   ExcelExportModule,
   ColumnsToolPanelModule,
   FiltersToolPanelModule,
+  SideBarModule,
 } from 'ag-grid-enterprise'
 import './index.css'
 import App from './App'
@@ -14,14 +21,26 @@ import App from './App'
 // License MUST be set before any ModuleRegistry.registerModules() call (AG-Grid requirement)
 LicenseManager.setLicenseKey(import.meta.env.VITE_AG_GRID_LICENSE_KEY ?? '')
 
-// Register only the modules Phase 2 uses — no chart modules
-// Phase 3 adds ExcelExport (Plan 06 toolbar export), ColumnsToolPanel + FiltersToolPanel
-// (Plan 05 SearchGrid sideBar). License-set MUST precede registerModules (Pitfall 9).
+// AG-Grid v35 is fully modular — every grid feature must be explicitly
+// registered. License-set MUST precede registerModules (Pitfall 9).
+//
+// Server-side row model + Excel export + ToolPanels are the Phase 3 core.
+// TextFilterModule / CellStyleModule / ColumnAutoSizeModule / RowApiModule
+// are required by features the columns already use (default text filter,
+// kebab-converted cellStyle on Execution Order, autoSizeStrategy on the grid,
+// and api.getDisplayedRowCount() for the result-count Badge). SideBarModule
+// is what makes `sideBar={{ toolPanels: ['columns','filters'] }}` work in
+// v35 — previous versions bundled it with the tool-panel modules.
 ModuleRegistry.registerModules([
   ServerSideRowModelModule,
   ExcelExportModule,
   ColumnsToolPanelModule,
   FiltersToolPanelModule,
+  SideBarModule,
+  TextFilterModule,
+  CellStyleModule,
+  ColumnAutoSizeModule,
+  RowApiModule,
 ])
 
 const rootElement = document.getElementById('root')
