@@ -22,18 +22,16 @@ class ResizeObserverPolyfill {
   unobserve() {}
   disconnect() {}
 }
-if (typeof globalThis.ResizeObserver === 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(globalThis as any).ResizeObserver = ResizeObserverPolyfill
+const globalRef = globalThis as unknown as { ResizeObserver?: unknown }
+if (typeof globalRef.ResizeObserver === 'undefined') {
+  globalRef.ResizeObserver = ResizeObserverPolyfill
 }
 
 // jsdom does not implement Element.scrollIntoView — cmdk calls it on the
 // active CommandItem to keep it visible. No-op shim is sufficient for tests.
-if (
-  typeof Element !== 'undefined' &&
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  typeof (Element.prototype as any).scrollIntoView !== 'function'
-) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(Element.prototype as any).scrollIntoView = function () {}
+if (typeof Element !== 'undefined') {
+  const proto = Element.prototype as unknown as { scrollIntoView?: () => void }
+  if (typeof proto.scrollIntoView !== 'function') {
+    proto.scrollIntoView = () => {}
+  }
 }

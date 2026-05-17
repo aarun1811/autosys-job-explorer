@@ -32,9 +32,14 @@ describe('SearchToolbar', () => {
 
   test('Badge renders locale-formatted "1,000 results" when resultCount is 1000', () => {
     renderToolbar({ resultCount: 1000 })
-    // Allow comma, period, narrow no-break space, or no separator depending on
-    // the test runner locale.
-    const match = screen.getByText(/^1[,.   ]?000\s+results$/)
+    // Allow comma, period, regular space, no-break space (U+00A0), or narrow
+    // no-break space (U+202F) depending on the test runner locale. Built via
+    // RegExp constructor with escape sequences to satisfy eslint
+    // no-irregular-whitespace (the rule rejects literal NBSP in source).
+    const localeNumberRe = new RegExp(
+      `^1[,.\\u0020\\u00A0\\u202F]?000\\s+results$`,
+    )
+    const match = screen.getByText(localeNumberRe)
     expect(match).toBeInTheDocument()
   })
 
@@ -46,16 +51,21 @@ describe('SearchToolbar', () => {
     expect(trigger.querySelector('svg')).not.toBeNull()
   })
 
-  test('clicking the trigger opens a menu with "Download Excel (.xlsx)"', () => {
+  test('opening the trigger (keyboard Enter) reveals "Download Excel (.xlsx)"', () => {
     renderToolbar()
     const trigger = screen.getByRole('button', { name: /Export/ })
-    fireEvent.click(trigger)
+    // Radix DropdownMenu opens on pointerdown OR keyboard Enter/Space; in
+    // jsdom keyboard activation is the most reliable path.
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'Enter' })
     expect(screen.getByText('Download Excel (.xlsx)')).toBeInTheDocument()
   })
 
   test('clicking the "Download Excel (.xlsx)" menu item calls props.onExport()', () => {
     const { onExport } = renderToolbar()
-    fireEvent.click(screen.getByRole('button', { name: /Export/ }))
+    const trigger = screen.getByRole('button', { name: /Export/ })
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'Enter' })
     const item = screen.getByText('Download Excel (.xlsx)')
     fireEvent.click(item)
     expect(onExport).toHaveBeenCalledTimes(1)
