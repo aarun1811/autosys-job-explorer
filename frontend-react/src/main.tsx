@@ -7,6 +7,7 @@ import {
   CellStyleModule,
   ColumnAutoSizeModule,
   RowApiModule,
+  ColumnApiModule,
 } from 'ag-grid-community'
 import {
   ServerSideRowModelModule,
@@ -41,6 +42,7 @@ ModuleRegistry.registerModules([
   CellStyleModule,
   ColumnAutoSizeModule,
   RowApiModule,
+  ColumnApiModule,
 ])
 
 const rootElement = document.getElementById('root')
