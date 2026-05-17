@@ -3,7 +3,7 @@
     {
       "key": "reconSummary",
       "label": "Recon Summary (SQL)",
-      "query": "SELECT recon, file_name_pattern, app_id, support_email, job_name, box_name FROM rectrace_core WHERE recon IS NOT NULL FETCH FIRST 1000 ROWS ONLY",
+      "query": "SELECT recon, file_name_pattern, app_id, support_email, job_name, box_name FROM rectrace.rectrace_core WHERE recon IS NOT NULL FETCH FIRST 1000 ROWS ONLY",
       "columns": [
         {"field": "recon",             "headerName": "Recon Name",    "sortable": true, "filter": true},
         {"field": "file_name_pattern", "headerName": "File Name",     "sortable": true, "filter": true},
