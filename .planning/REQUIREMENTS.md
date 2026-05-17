@@ -93,9 +93,9 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### Hyphen / special-char search bug fix
 
-- [ ] **BUG-01**: ES `_analyze` diagnostic captured for the affected field(s); root-cause documented in `.planning/codebase/` or phase notes.
-- [ ] **BUG-02**: Fix landed — preferred path: add a `.keyword` subfield (additive, no reindex). Fallback: new analyzer + reindex via alias swap.
-- [ ] **BUG-03**: Regression test asserting `ABC-123` (and other documented hyphenated values) return the expected documents.
+- [x] **BUG-01**: ES `_analyze` diagnostic captured for the affected field(s); root-cause documented in `.planning/codebase/` or phase notes. (Plan 08-01: HYPHEN-DIAGNOSTIC.md with verbatim `_analyze` + `_search` curl outputs + root cause at `ElasticsearchServiceV4.java:35`)
+- [x] **BUG-02**: Fix landed — preferred path: add a `.keyword` subfield (additive, no reindex). Fallback: new analyzer + reindex via alias swap. (Plan 08-01: `caseInsensitive(true)` on `.keyword`-branch wildcards via `buildWildcard(field, pattern)` helper. Seed mapping already has the subfields; production-stack `PUT /_mapping` documented as deploy runbook in HYPHEN-DIAGNOSTIC.md.)
+- [x] **BUG-03**: Regression test asserting `ABC-123` (and other documented hyphenated values) return the expected documents. (Plan 08-01: `HyphenSearchRegressionTest` 4/4 PASS with `-Des.live=true` against `RID-XYZ-42`/`RECON-XYZ-42`/`SET-ABC-123` + mixed-case `recon-xyz-42`; `scripts/smoke-hyphen-search.sh` 6/6 PASS at the HTTP layer.)
 
 ### Design — shadcn × recviz consistency
 
@@ -222,9 +222,9 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | OBS-06 | Phase 7 — Observability Sweep | Complete |
 | OBS-07 | Phase 7 — Observability Sweep | Complete |
 | OBS-08 | Phase 7 — Observability Sweep | Complete |
-| BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| BUG-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| BUG-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
 | DESIGN-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | DESIGN-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | DESIGN-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |

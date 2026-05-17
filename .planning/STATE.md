@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-last_updated: "2026-05-17T15:34:44.006Z"
+stopped_at: Plan 08-01 complete (BUG-01/02/03); ready for Plan 08-02 (ops hardening)
+last_updated: "2026-05-17T21:38:00Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
   completed_phases: 7
   total_plans: 33
-  completed_plans: 33
-  percent: 64
+  completed_plans: 34
+  percent: 65
 ---
 
 # Project State
@@ -162,6 +162,10 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 07-05: maven-enforcer Micrometer pin (Option A) — bannedDependencies io.micrometer:*:[2.0.0,) + two scoped requireSameVersions (core 1.15.x train + tracing 1.5.x train); single-group spec split inline because the two Micrometer release trains have BOM-blessed separate versions (Rule 3)
 - [Phase ?]: Plan 07-05: smoke-observability.sh tolerates env-state DOWNs — Section 3 (loader group 404) is WARN not FAIL; Section 2 (health 503) reports the env gap honestly; Section 6 cleanly SKIPs when tlm-stats unreachable
 - [Phase ?]: Plan 07-05: synthetic-override proof done by tightening bannedDependencies ceiling to [1.15.0,) rather than pinning Micrometer 2.0.0 — Maven Central has no 2.x publication yet so BOM-import resolution fails before enforcer runs
+- [Phase 8 Plan 08-01]: D-8.2 locked in code — `ElasticsearchServiceV4` routes `.keyword`-suffixed wildcards through `caseInsensitive(true)` via a `buildWildcard(field, pattern)` helper. Additive only — no reindex, no `search-config-v4.json` edit. Production-stack mapping PUT documented in HYPHEN-DIAGNOSTIC.md as a deploy-phase runbook.
+- [Phase 8 Plan 08-01]: Test-input alignment with seed (Rule 1) — plan body referred to `RECON-XYZ-42` for `reconId`, but seed has `recon_id=RID-XYZ-42` while `RECON-XYZ-42` is in `job_name`. Tests/smoke use the seed's actual values mapped to the right categories: `reconId/RID-XYZ-42`, `jobName/RECON-XYZ-42`, `setId/SET-ABC-123`, mixed-case `jobName/recon-xyz-42`. Recorded in HYPHEN-DIAGNOSTIC.md "Test-input alignment".
+- [Phase 8 Plan 08-01]: Live-stack regression gate pattern — `@SpringBootTest` + `@ActiveProfiles("local")` + `@EnabledIfSystemProperty(named="es.live", matches="true")`. Re-usable for any future boot+live-infra test. CI without ES skips cleanly; locally runs with `-Des.live=true`. Backend suite now 86 tests / 4 skipped by design.
+- [Phase 8 Plan 08-01]: Smoke health-probe = `/actuator/health/readiness` (not aggregate `/actuator/health`) — aggregate is DOWN on laptop dev stack for reasons unrelated to search (Oracle DS, loader-run-age indicator); readiness reflects the contract the smoke actually cares about.
 
 ### Pending Todos
 
@@ -185,6 +189,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T15:34:06.379Z
-Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
+Last session: 2026-05-17T21:38:00Z
+Stopped at: Plan 08-01 complete (BUG-01/02/03 — hyphen-search fix + JUnit regression + 6/6 live-stack smoke); ready for Plan 08-02 (ops hardening)
 Resume file: None
