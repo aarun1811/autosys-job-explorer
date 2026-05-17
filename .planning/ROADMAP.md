@@ -123,7 +123,12 @@ Plans:
   3. Modals can render recviz iframes at parity with the existing execution-order / TLM-stats modal pattern.
   4. All `postMessage` traffic flows through a versioned Zod-validated envelope (auth handoff, height sync, navigation events), and every listener validates `event.origin` against a per-environment allow-list.
   5. A UAT smoke test against the real (non-localhost) recviz instance is recorded as evidence and committed.
-**Plans**: TBD
+**Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
+
+Plans:
+- [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
+- [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
+- [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
 **Research hint**: yes — recviz CSP/cookie/SSO posture, Citi network topology between the two apps, and iframe-resizer fork OSS-review outcome should be researched during phase planning.
 
@@ -197,7 +202,12 @@ Plans:
   3. The shadcn token set is audited against recviz tokens, gaps are closed in the canonical token file, and a visual regression test fails on drift at the recviz↔React boundary.
   4. `ops/rectrace-ops.sh` passes `shellcheck`, supports `start | stop | restart | status | logs` per-component or all, blocks `start` on an actuator health probe, manages PIDs in `run/` and logs in `logs/`, and a Linux CI job runs it on every push.
   5. Adding a new managed component to the ops surface is a one-line change in `ops/components.sh`.
-**Plans**: TBD
+**Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
+
+Plans:
+- [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
+- [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
+- [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
 
 ### Phase 9: Domain Security
@@ -210,7 +220,12 @@ Plans:
   3. ES SSL validation is enabled in all non-dev profiles, the dev-only bypass code path is excluded from production builds, and the internal Citi CA is installed in the JVM truststore with no in-code SSL trust manipulation outside dev.
   4. CORS is configured with an explicit per-environment allow-list (never `*` with credentials), and the Citi-network preflight checklist passes — internal Nexus/Verdaccio/Artifactory used, JVM proxy configured, zero external CDN URLs in the React bundle.
   5. All `CONCERNS.md` CRITICAL items are closed (column-name SQL injection in `OracleServiceV4.buildOrderByClause`, `printStackTrace`, `show_sql=true`, license placeholders).
-**Plans**: TBD
+**Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
+
+Plans:
+- [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
+- [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
+- [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **Research hint**: yes — the user-auth mechanism (CitiPortal / SiteMinder / SPNEGO) and service-auth mechanism (keytab+Kerberos / Vault) must be researched and locked during phase planning; also Citi-network preflight specifics (internal Nexus/npmrc, proxy at JVM level, internal CA truststore content).
 
 ## Progress
@@ -229,7 +244,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
 | 7. Observability Sweep | 5/5 | Complete   | 2026-05-17 |
-| 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |
+| 8. Hyphen Bug + Design Polish + Ops Hardening | 0/3 | In progress (BUG+OPS planned; DESIGN deferred) | - |
 | 9. Domain Security | 0/TBD | Not started | - |
 
 ---
