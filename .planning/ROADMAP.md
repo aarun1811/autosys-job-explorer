@@ -157,8 +157,15 @@ Plans:
   3. An operator can hit `LoaderAdminControllerV4` to list jobs, trigger a run-now, and view the last 20 runs per job with timestamp, status, row count, last-error message, and duration.
   4. A JVM signal during a run flushes in-flight bulk requests before exit — no partial-batch loss observed in a soak test.
   5. Bulk indexing uses `BulkProcessor` with sane defaults (5000 rows / 5 MB / 5 s) and is tunable per job in config.
-**Plans**: TBD
+**Plans**: 5 plans (4 waves)
 **Research hint**: yes — the **Quartz JDBC JobStore vs `@Scheduled` + ShedLock decision** must be locked during phase planning per the open decision in research/SUMMARY.md; also verify ShedLock 5.x or Quartz Oracle delegate compatibility with the installed driver.
+
+Plans:
+- [ ] 06-01-PLAN.md - Wave 1: Local-dev seed extensions (shedlock + loader_run_history tables; rectrace_core_alias bootstrap in apply.py) - LOADER-02/03/06 prerequisites
+- [ ] 06-02-PLAN.md - Wave 1: pom.xml ShedLock 7.7.0 deps + spring.lifecycle.timeout-per-shutdown-phase=60s + seven @Disabled JUnit 5 Wave-0 test scaffolds - LOADER-01..10 test contracts
+- [ ] 06-03-PLAN.md - Wave 2: DTOs + loader-config-v4.json + DocumentIdHasher + LoaderConfigService (boot-time alias check) + LoaderRunHistoryService (prune-to-20) - LOADER-01/04/05/06/07
+- [ ] 06-04-PLAN.md - Wave 3: LoaderShedLockConfig + LoaderJobRegistry (per-job BulkIngester, @PreDestroy flush) + OracleToEsLoaderJob (streamed query + alias writes) + LoaderTicker (fixedDelay PT30S + LockingTaskExecutor) - LOADER-02/03/05/09/10
+- [ ] 06-05-PLAN.md - Wave 4: LoaderAdminControllerV4 (GET /jobs, POST /jobs/{key}/run-now, GET /jobs/{key}/runs) + three smoke scripts (alias boot-fail, SIGTERM flush, admin shape) - LOADER-03/08/09
 
 ### Phase 7: Observability Sweep
 **Goal**: Both backend modules emit structured, correlation-ID-tagged JSON logs, expose locked-down actuator endpoints with custom health indicators, and publish Prometheus metrics plus slow-query timing — instrumented horizontally now that there are multiple subsystems to observe.
