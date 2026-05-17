@@ -137,7 +137,15 @@ Plans:
   3. All configured queries execute under a dedicated read-only Oracle account, with per-statement `setQueryTimeout`, `fetchSize`, and `maxRows` caps; the singleton `JdbcTemplate` is never globally mutated.
   4. Any configured query without a `WHERE` clause or `FETCH FIRST N ROWS ONLY` is rejected — runaway scans cannot reach Oracle.
   5. At least one example configured SELECT-tab is wired end-to-end as evidence and consumable by an existing grid.
-**Plans**: TBD
+**Plans**: 6 plans (5 waves)
+
+Plans:
+- [ ] 05-01-PLAN.md — Wave 1: Test scaffolding (5 JUnit 5 classes + scripts/smoke-sql-search.sh) — SQL-02/04/05/06/07 contracts as @Disabled tests
+- [ ] 05-02-PLAN.md — Wave 1: Local-dev DDL (rectrace_readonly Oracle user, SELECT-only grants) + backend/rectrace application-local.properties datasource.readonly.* keys — SQL-03
+- [ ] 05-03-PLAN.md — Wave 2: pom.xml JSqlParser 5.3 + ReadonlyDataSourceConfig (@Profile(!test), readonlyDataSource + readonlyJdbcTemplate beans, no setters on template) — SQL-03/04
+- [ ] 05-04-PLAN.md — Wave 3: DTOs + sql-search-config-v4.json + SqlShapeValidator (JSqlParser visitor) + SqlSearchConfigServiceV4 (@PostConstruct, boot-fails on shape violation) — SQL-01/02/05
+- [ ] 05-05-PLAN.md — Wave 4: SqlQueryServiceV4 (wrapped query + StatementCallback + whitelisted sort/filter) + SqlSearchControllerV4 (GET /config, POST /ssrm/{tabKey}) — SQL-04/05/06
+- [ ] 05-06-PLAN.md — Wave 5: 6-assertion smoke against live stack + ANGULAR-WIRING.md + parity-matrix update — SQL-07
 
 ### Phase 6: ES Loader Subsystem
 **Goal**: A configuration-driven, scheduled Oracle→Elasticsearch loader subsystem inside `backend/rectrace`, with run history, manual triggers, alias-only index access, and idempotent upserts.
