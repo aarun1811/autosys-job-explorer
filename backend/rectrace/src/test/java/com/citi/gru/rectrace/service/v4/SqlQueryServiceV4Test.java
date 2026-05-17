@@ -8,9 +8,11 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -18,39 +20,46 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 
+import com.citi.gru.rectrace.dto.v4.ColumnDefinition;
+import com.citi.gru.rectrace.dto.v4.SSRMRequestV4;
+import com.citi.gru.rectrace.dto.v4.SqlTabConfigV4;
+
 /**
  * Phase 5 / SQL-04 + SQL-05 (executor-side defense in depth): locks the SqlQueryServiceV4
  * contract — per-statement resource caps applied to the PreparedStatement (never the
  * singleton JdbcTemplate), and the executed SQL is always wrapped with the
  * {@code OFFSET ? ROWS FETCH NEXT ? ROWS ONLY} pagination clause.
  *
- * <p>Wave 0 scaffolding — both tests {@code @Disabled} with the literal {@code "Wave 4: ..."}
- * reason string.
- *
- * <p>TODO Wave 4: instantiate the real {@code SqlQueryServiceV4} (a no-op placeholder type
- * for now lives only inside this test class as comments) by passing the mocked
- * {@link JdbcTemplate} as the {@code readonlyJdbcTemplate} dependency, then invoke the
- * paged-query method that wraps the configured SELECT with OFFSET/FETCH and applies
- * per-statement caps via a {@link PreparedStatementCreator} +
- * {@link PreparedStatementCallback}.
+ * <p>Wave 4 (Plan 05): both tests enabled. SqlQueryServiceV4 instantiated with mocked
+ * {@link JdbcTemplate} + mocked {@link SqlSearchConfigServiceV4}; no live DB.
  */
 class SqlQueryServiceV4Test {
 
-    // TODO Wave 4: replace this placeholder with the real production class. For now the test
-    // captures the contract; the inline stub call below documents what Wave 4 must wire.
-    //
-    //   class SqlQueryServiceV4 {
-    //       SqlQueryServiceV4(JdbcTemplate readonlyJdbcTemplate, SqlSearchConfigServiceV4 cfg) { ... }
-    //       List<Map<String,Object>> fetchPage(String tabKey, int startRow, int endRow, ...) { ... }
-    //   }
+    private static SqlTabConfigV4 reconSummaryTab() {
+        SqlTabConfigV4 tab = new SqlTabConfigV4();
+        tab.setKey("reconSummary");
+        tab.setLabel("Recon Summary (SQL)");
+        tab.setQuery("SELECT recon, app_id FROM rectrace_core WHERE recon IS NOT NULL FETCH FIRST 1000 ROWS ONLY");
+        ColumnDefinition reconCol = new ColumnDefinition();
+        reconCol.setField("recon");
+        ColumnDefinition appIdCol = new ColumnDefinition();
+        appIdCol.setField("app_id");
+        tab.setColumns(List.of(reconCol, appIdCol));
+        return tab;
+    }
 
-    @Disabled("Wave 4: enabled when SqlQueryServiceV4 lands")
     @Test
     void perStatementCapsAppliedNotSingleton() throws Exception {
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        SqlSearchConfigServiceV4 configService = Mockito.mock(SqlSearchConfigServiceV4.class);
+        when(configService.getTab("reconSummary")).thenReturn(Optional.of(reconSummaryTab()));
+
         Connection conn = Mockito.mock(Connection.class);
         PreparedStatement ps = Mockito.mock(PreparedStatement.class);
+        ResultSet rs = Mockito.mock(ResultSet.class);
         when(conn.prepareStatement(any(String.class))).thenReturn(ps);
+        when(ps.executeQuery()).thenReturn(rs);
+        when(rs.next()).thenReturn(false);
 
         // Capture the PreparedStatementCreator lambda the service hands to JdbcTemplate.
         ArgumentCaptor<PreparedStatementCreator> creatorCaptor =
@@ -60,9 +69,14 @@ class SqlQueryServiceV4Test {
                 any(PreparedStatementCallback.class)))
             .thenReturn(Collections.emptyList());
 
-        // TODO Wave 4: invoke the real service.fetchPage(...) with caps {30s / 500 / 10000}
-        //              and a wrapped SQL containing OFFSET/FETCH NEXT.
-        //   new SqlQueryServiceV4(jdbcTemplate, configService).fetchPage("reconSummary", 0, 100, ...);
+        SqlQueryServiceV4 service = new SqlQueryServiceV4(jdbcTemplate, configService, 30, 500, 10_000);
+        SSRMRequestV4 req = SSRMRequestV4.builder()
+                .startRow(0)
+                .endRow(100)
+                .sortModel(Collections.emptyList())
+                .filterModel(Collections.emptyMap())
+                .build();
+        service.executeTab("reconSummary", req);
 
         // Drive the captured lambda so we can verify the per-statement setters were called.
         PreparedStatementCreator creator = creatorCaptor.getValue();
@@ -79,10 +93,12 @@ class SqlQueryServiceV4Test {
         verify(jdbcTemplate, never()).setMaxRows(anyInt());
     }
 
-    @Disabled("Wave 4: enabled when SqlQueryServiceV4 lands")
     @Test
     void injectsOffsetFetchWrapper() throws Exception {
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        SqlSearchConfigServiceV4 configService = Mockito.mock(SqlSearchConfigServiceV4.class);
+        when(configService.getTab("reconSummary")).thenReturn(Optional.of(reconSummaryTab()));
+
         Connection conn = Mockito.mock(Connection.class);
         PreparedStatement ps = Mockito.mock(PreparedStatement.class);
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
@@ -95,7 +111,15 @@ class SqlQueryServiceV4Test {
                 any(PreparedStatementCallback.class)))
             .thenReturn(Collections.emptyList());
 
-        // TODO Wave 4: invoke service.fetchPage("reconSummary", 0, 100, ...);
+        SqlQueryServiceV4 service = new SqlQueryServiceV4(jdbcTemplate, configService, 30, 500, 10_000);
+        SSRMRequestV4 req = SSRMRequestV4.builder()
+                .startRow(0)
+                .endRow(100)
+                .sortModel(Collections.emptyList())
+                .filterModel(Collections.emptyMap())
+                .build();
+        service.executeTab("reconSummary", req);
+
         creatorCaptor.getValue().createPreparedStatement(conn);
 
         String executedSql = sqlCaptor.getValue();
