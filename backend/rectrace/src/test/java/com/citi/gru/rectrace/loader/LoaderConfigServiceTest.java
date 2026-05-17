@@ -1,60 +1,98 @@
 package com.citi.gru.rectrace.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.indices.ElasticsearchIndicesClient;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
 
 /**
- * Phase 6 / LOADER-01 — Wave-0 contract scaffold for {@code LoaderConfigService}.
+ * Phase 6 / LOADER-01 — boot-time validation contract for {@code LoaderConfigService}.
  *
- * <p>Wave-0 scaffold per Plan 06-02. All methods @Disabled until Plan 06-03 enables this class.
- *
- * <p>The target class {@code com.citi.gru.rectrace.loader.LoaderConfigService} is introduced by
- * Plan 06-03 and is responsible for loading {@code loader-config.json} at boot via
- * {@code @PostConstruct}, exposing the list of {@code LoaderJobDefV4}, and failing fast on
- * malformed config (duplicate keys, blank schedule, unknown ES alias). The latter check is the
- * cross-cutting boundary that mitigates Pitfall L2 ("aliases declared in config but absent in
- * the ES cluster on boot").
- *
- * <p>Plan 06-03 enables these by (a) removing the class-level {@code @Disabled}, (b) providing
- * the bad-fixture JSON resources alongside {@code loader-config.json} on the test classpath,
- * (c) wiring up {@code @SpringBootTest} + {@code @ActiveProfiles("test")} or instantiating the
- * service directly with a {@code DefaultResourceLoader} (mirrors {@code SqlValidationBootFailureTest}).
+ * <p>Plain JUnit + ReflectionTestUtils — no Spring context. The service is instantiated
+ * directly, fields are injected, then {@code load()} is invoked. Each test runs in
+ * single-digit ms.
  */
-@Disabled("Wave 0 / Plan 06-02 — enabled when LoaderConfigService is implemented in Plan 06-03")
 class LoaderConfigServiceTest {
+
+    private LoaderConfigService newService(String classpathLocation, ElasticsearchClient esClient) {
+        LoaderConfigService svc = new LoaderConfigService();
+        ReflectionTestUtils.setField(svc, "configLocation", "classpath:" + classpathLocation);
+        ReflectionTestUtils.setField(svc, "objectMapper", new ObjectMapper());
+        ReflectionTestUtils.setField(svc, "resourceLoader", new DefaultResourceLoader());
+        ReflectionTestUtils.setField(svc, "esClient", esClient);
+        return svc;
+    }
+
+    private ElasticsearchClient esClientWhereAliasExists(boolean exists) {
+        ElasticsearchClient esClient = mock(ElasticsearchClient.class);
+        ElasticsearchIndicesClient indices = mock(ElasticsearchIndicesClient.class);
+        when(esClient.indices()).thenReturn(indices);
+        try {
+            when(indices.existsAlias(any(java.util.function.Function.class)))
+                    .thenReturn(new BooleanResponse(exists));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+        return esClient;
+    }
 
     @Test
     void loadsValidConfigAtBoot() {
-        // Plan 06-03: assertThat(svc.getJobs()).isNotEmpty();
-        // Contract: after @PostConstruct, the service exposes a non-empty list of
-        // LoaderJobDefV4 parsed from loader-config.json on the classpath.
-        fail("LOADER-01: LoaderConfigService.getJobs() must return non-empty list after @PostConstruct");
+        LoaderConfigService svc = newService("loader-config-good.json", esClientWhereAliasExists(true));
+
+        svc.load();
+
+        assertThat(svc.getJobs())
+                .as("LOADER-01: getJobs() must return non-empty list after @PostConstruct")
+                .hasSize(1);
+        assertThat(svc.getJob("good_job")).isPresent();
+        assertThat(svc.getJob("good_job").get().getTarget().getAlias()).isEqualTo("rectrace_core_alias");
     }
 
     @Test
     void rejectsDuplicateJobKeys() {
-        // Plan 06-03: load classpath:loader-config-bad-duplicates.json with two jobs sharing key.
-        // Contract: @PostConstruct throws IllegalStateException with message containing "duplicate".
-        fail("LOADER-01: duplicate job keys in loader-config must boot-fail with 'duplicate' in message");
+        LoaderConfigService svc = newService("loader-config-duplicate-keys.json",
+                esClientWhereAliasExists(true));
+
+        assertThatThrownBy(svc::load)
+                .as("LOADER-01: duplicate job keys in loader-config must boot-fail")
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("duplicate")
+                .hasMessageContaining("dupe");
     }
 
     @Test
     void rejectsBlankCron() {
-        // Plan 06-03: load classpath:loader-config-bad-blank-cron.json with empty schedule.
-        // Contract: @PostConstruct throws IllegalStateException with "schedule" or "cron" in message.
-        fail("LOADER-01: blank cron schedule must boot-fail with 'schedule'/'cron' in message");
+        LoaderConfigService svc = newService("loader-config-blank-schedule.json",
+                esClientWhereAliasExists(true));
+
+        assertThatThrownBy(svc::load)
+                .as("LOADER-01: blank cron schedule must boot-fail")
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("schedule");
     }
 
     @Test
     void failsBootIfAliasMissing() {
-        // Plan 06-03: load classpath:loader-config-bad-alias.json that references an unknown ES alias.
-        // Contract: @PostConstruct throws IllegalStateException with "alias" in message.
-        // This is the Pitfall L2 mitigation evaluated inside the config service boundary
-        // (LOADER-03 — full alias resolution lives in the loader job; the config service
-        // owns the static config-time check, the job owns the live-cluster check).
-        assertThat(false).as("LOADER-01 / Pitfall L2: missing alias must surface at boot").isTrue();
+        // Pitfall L2 mitigation: alias declared in config but absent in cluster → boot fails.
+        LoaderConfigService svc = newService("loader-config-missing-alias.json",
+                esClientWhereAliasExists(false));
+
+        assertThatThrownBy(svc::load)
+                .as("LOADER-01 / LOADER-03 / Pitfall L2: missing alias must surface at boot")
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("alias")
+                .hasMessageContaining("this_alias_does_not_exist");
     }
 }

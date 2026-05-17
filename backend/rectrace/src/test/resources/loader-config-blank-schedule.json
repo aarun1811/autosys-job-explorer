@@ -1,0 +1,18 @@
+{
+  "jobs": [
+    {
+      "key": "blank_sched_job",
+      "source": {
+        "datasource": "primary",
+        "query": "SELECT job_name FROM rectrace.rectrace_core",
+        "primaryKey": ["job_name"]
+      },
+      "target": {
+        "alias": "rectrace_core_alias",
+        "batch": { "rows": 5000, "bytes": 5242880, "flushMs": 5000 }
+      },
+      "schedule": "",
+      "timezone": "UTC"
+    }
+  ]
+}

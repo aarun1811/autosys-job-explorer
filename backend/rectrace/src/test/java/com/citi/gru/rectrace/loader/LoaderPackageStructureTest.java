@@ -6,21 +6,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
- * Phase 6 / LOADER-05 — Wave-0 contract scaffold for loader-subsystem class presence.
+ * Phase 6 / LOADER-05 — class-presence gate for the loader subsystem.
  *
- * <p>Wave-0 scaffold per Plan 06-02. All methods @Disabled until Plans 06-03 (4 classes) and
- * 06-04 (2 classes) enable this class progressively.
- *
- * <p>This is the cheapest possible LOADER-05 gate: pure {@code Class.forName} reflective
- * presence checks, no Spring, no instantiation. Plan 06-03 may enable the first four methods
- * (its 4 deliverable classes) and Plan 06-04 enables the remaining two — or both plans flip
- * the class-level {@code @Disabled} off only after all six classes exist. Either approach
- * leaves the contract pinned at compile time.
- *
- * <p>LOADER-05 deliverable: the {@code com.citi.gru.rectrace.loader} package exists and
- * contains the six named classes that together implement the ES loader subsystem.
+ * <p>Plan 06-03 enables the three Plan-03 deliverable classes
+ * ({@code LoaderConfigService}, {@code LoaderRunHistoryService}, {@code DocumentIdHasher}).
+ * Plan 06-04 will enable the remaining three ({@code LoaderJobRegistry},
+ * {@code OracleToEsLoaderJob}, {@code LoaderTicker}).
  */
-@Disabled("Wave 0 / Plan 06-02 — enabled when all six loader classes land (Plans 06-03, 06-04)")
 class LoaderPackageStructureTest {
 
     @Test
@@ -32,6 +24,7 @@ class LoaderPackageStructureTest {
     }
 
     @Test
+    @Disabled("Plan 06-04 — enable when LoaderJobRegistry is implemented")
     void loaderJobRegistryExists() {
         // Plan 06-04 deliverable.
         assertThatCode(() -> Class.forName("com.citi.gru.rectrace.loader.LoaderJobRegistry"))
@@ -40,6 +33,7 @@ class LoaderPackageStructureTest {
     }
 
     @Test
+    @Disabled("Plan 06-04 — enable when OracleToEsLoaderJob is implemented")
     void oracleToEsLoaderJobExists() {
         // Plan 06-04 deliverable.
         assertThatCode(() -> Class.forName("com.citi.gru.rectrace.loader.OracleToEsLoaderJob"))
@@ -64,6 +58,7 @@ class LoaderPackageStructureTest {
     }
 
     @Test
+    @Disabled("Plan 06-04 — enable when LoaderTicker is implemented")
     void loaderTickerExists() {
         // Plan 06-04 deliverable.
         assertThatCode(() -> Class.forName("com.citi.gru.rectrace.loader.LoaderTicker"))
