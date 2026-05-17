@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
 stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-last_updated: "2026-05-17T12:39:02.211Z"
+last_updated: "2026-05-17T12:52:29.083Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 28
-  completed_plans: 26
+  completed_plans: 27
   percent: 45
 ---
 
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [█████████░] 93%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -106,6 +106,7 @@ Progress: [█████████░] 93%
 | Phase 06 P01 | 16min | 3 tasks | 2 files |
 | Phase 06 P02 | 7min | 2 tasks | 9 files |
 | Phase 06 P03 | 22min | 2 tasks | 22 files |
+| Phase 06-es-loader-subsystem P04 | 22min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 06-03: DocumentIdHasher uses JSON-encoded PK array → SHA-256 → first 8 bytes → HexFormat 16-hex-char ID (Pitfall L5)
 - [Phase ?]: Plan 06-03: LoaderConfigService is @Profile('!test') + uses ReflectionTestUtils-based unit tests; ES alias check skipped when esClient is null with WARN
 - [Phase ?]: Plan 06-03: LoaderRunHistoryService prunes via Oracle ROW_NUMBER() analytic DELETE scoped to single job_key (LOADER-07 race-safety); last_error truncated to 8192 chars
+- [Phase ?]: Plan 06-04: Pattern 2 (programmatic LockingTaskExecutor.executeWithLock) over @SchedulerLock — lock name is runtime config-derived
+- [Phase ?]: Plan 06-04: @EnableScheduling co-located on LoaderShedLockConfig (not RectraceApplication) so scheduler stays dormant in test profile
+- [Phase ?]: Plan 06-04: runNow does NOT call markFired — manual triggers must not perturb cron schedule next-fire calculation
 
 ### Pending Todos
 
@@ -171,6 +175,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T12:39:02.205Z
+Last session: 2026-05-17T12:52:22.619Z
 Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-Resume file: .planning/phases/06-es-loader-subsystem/06-04-PLAN.md
+Resume file: None
