@@ -126,7 +126,7 @@ Plans:
 **Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
 
 Plans:
-- [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
+- [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
 - [x] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
 - [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
@@ -205,7 +205,7 @@ Plans:
 **Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
 
 Plans:
-- [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
+- [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits 03c91ea/3358296/4835e9d/21b0f73; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
 - [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
 - [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
@@ -223,7 +223,7 @@ Plans:
 **Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
 
 Plans:
-- [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
+- [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits 03c91ea/3358296/4835e9d/21b0f73; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
 - [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
 - [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **Research hint**: yes — the user-auth mechanism (CitiPortal / SiteMinder / SPNEGO) and service-auth mechanism (keytab+Kerberos / Vault) must be researched and locked during phase planning; also Citi-network preflight specifics (internal Nexus/npmrc, proxy at JVM level, internal CA truststore content).

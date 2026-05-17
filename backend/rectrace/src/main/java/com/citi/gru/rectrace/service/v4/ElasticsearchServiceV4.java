@@ -38,9 +38,23 @@ public class ElasticsearchServiceV4 {
         final String searchColumn = config.getSearchColumn();
         final int size = config.getElasticsearch().getMaxResults();
 
-        // Build wildcard `should` clauses for every configured search field
+        // Phase 8 / BUG-02 fix:
+        // Build wildcard `should` clauses for every configured search field. Two branches:
+        //   - `.keyword` subfields are case-preserving (e.g. `RID-XYZ-42`), so the lowercased
+        //     pattern would never match them with a default wildcard. We enable
+        //     case_insensitive=true on these clauses so hyphenated identifiers typed in any
+        //     case still match the case-preserved indexed term.
+        //   - Plain text fields keep the original (case-sensitive) WildcardQuery; their
+        //     analyzed tokens are already lowercased at index time, so the lowercased pattern
+        //     stays analyzer-aligned. (Hyphenated literals never match text-tokenised fields
+        //     anyway because the analyzer destroys the hyphen — see HYPHEN-DIAGNOSTIC.md.)
+        long keywordBranchCount = config.getElasticsearch().getSearchFields().stream()
+                .filter(f -> f.endsWith(".keyword")).count();
+        log.debug("Building {} wildcard should clauses ({} with caseInsensitive on .keyword) for category={}",
+                config.getElasticsearch().getSearchFields().size(), keywordBranchCount, config.getKey());
+
         List<Query> shoulds = config.getElasticsearch().getSearchFields().stream()
-                .map(field -> WildcardQuery.of(w -> w.field(field).value(pattern))._toQuery())
+                .map(field -> buildWildcard(field, pattern))
                 .collect(Collectors.toList());
 
         try {
@@ -71,6 +85,25 @@ public class ElasticsearchServiceV4 {
             log.error("Unexpected error during ES query for category: {}", config.getKey(), e);
             return new ArrayList<>();
         }
+    }
+
+    /**
+     * Phase 8 / BUG-02: case-insensitive wildcard for `.keyword`-subfield branches.
+     *
+     * <p>The `.keyword` subfield preserves the original (often uppercase) literal at index
+     * time. The pattern arrives lowercased to stay analyzer-aligned with the parallel text
+     * branch; without {@code caseInsensitive(true)} the lowercased pattern can never match
+     * the case-preserved indexed term, producing zero hits for hyphenated identifiers like
+     * {@code RECON-XYZ-42}, {@code RID-XYZ-42}, {@code SET-ABC-123}.
+     *
+     * <p>This branch is additive and does not change the text-field path.
+     */
+    private Query buildWildcard(String field, String pattern) {
+        if (field.endsWith(".keyword")) {
+            return WildcardQuery.of(w -> w.field(field).value(pattern).caseInsensitive(true))
+                    ._toQuery();
+        }
+        return WildcardQuery.of(w -> w.field(field).value(pattern))._toQuery();
     }
 
     private String extractValue(Map<String, Object> sourceMap) {
