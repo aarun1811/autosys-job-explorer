@@ -89,7 +89,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [x] **OBS-05**: Prometheus metrics via `micrometer-registry-prometheus` at `/actuator/prometheus`.
 - [x] **OBS-06**: Correlation ID propagated through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations (`ScriptExecutor`).
 - [x] **OBS-07**: Log aggregator forwarder wired (target — Splunk / ELK / Loki / OTel collector — locked during phase planning).
-- [ ] **OBS-08**: Micrometer (1.12+ post-BOOT-UPGRADE) pinned by the Boot BOM; CI guard rejects an override. Micrometer Tracing (Boot 3 native) replaces the hand-rolled correlation ID filter.
+- [x] **OBS-08**: Micrometer (1.12+ post-BOOT-UPGRADE) pinned by the Boot BOM; CI guard rejects an override. Micrometer Tracing (Boot 3 native) replaces the hand-rolled correlation ID filter.
 
 ### Hyphen / special-char search bug fix
 
@@ -221,7 +221,7 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | OBS-05 | Phase 7 — Observability Sweep | Complete |
 | OBS-06 | Phase 7 — Observability Sweep | Complete |
 | OBS-07 | Phase 7 — Observability Sweep | Complete |
-| OBS-08 | Phase 7 — Observability Sweep | Pending |
+| OBS-08 | Phase 7 — Observability Sweep | Complete |
 | BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | BUG-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |

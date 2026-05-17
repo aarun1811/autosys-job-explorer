@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
 stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-last_updated: "2026-05-17T14:39:04.497Z"
+last_updated: "2026-05-17T15:34:44.006Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 33
-  completed_plans: 32
-  percent: 55
+  completed_plans: 33
+  percent: 64
 ---
 
 # Project State
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [██████████] 97%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -109,6 +109,7 @@ Progress: [██████████] 97%
 | Phase 06-es-loader-subsystem P04 | 22min | 2 tasks | 9 files |
 | Phase 06-es-loader-subsystem P05 | 75min | 3 tasks | 9 files |
 | Phase 07-observability-sweep P04 | 40m | 2 tasks | 14 files |
+| Phase 07 P05 | 47min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -158,6 +159,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 06-05: recordRunStart truncates Instant to ChronoUnit.MILLIS to match loader_run_history TIMESTAMP(3) precision (fixes phantom RUNNING-status rows)
 - [Phase ?]: Plan 06-05: controller-slice tests for @Profile('!test') controllers use @ActiveProfiles('slice') + @AutoConfigureMockMvc(addFilters=false)
 - [Phase ?]: Phase 07-04: tlm-stats observability mirror lands as lean subset of backend/rectrace surface — byte-identical logback-spring.xml (diff=0), mirrored filter chain + actuator lockdown + ActuatorSecurityConfig, OracleHealthIndicator over reconmgmt DS only (per-TLM-instance datasources excluded — T-07-22), AsyncConfig with ContextPropagatingTaskDecorator created from scratch. Slow-query AOP intentionally NOT ported (A3). Six Wave-0 OBS contract tests un-disabled and green; tlm-stats suite 10/0/0; backend regression 82/0/0.
+- [Phase ?]: Plan 07-05: maven-enforcer Micrometer pin (Option A) — bannedDependencies io.micrometer:*:[2.0.0,) + two scoped requireSameVersions (core 1.15.x train + tracing 1.5.x train); single-group spec split inline because the two Micrometer release trains have BOM-blessed separate versions (Rule 3)
+- [Phase ?]: Plan 07-05: smoke-observability.sh tolerates env-state DOWNs — Section 3 (loader group 404) is WARN not FAIL; Section 2 (health 503) reports the env gap honestly; Section 6 cleanly SKIPs when tlm-stats unreachable
+- [Phase ?]: Plan 07-05: synthetic-override proof done by tightening bannedDependencies ceiling to [1.15.0,) rather than pinning Micrometer 2.0.0 — Maven Central has no 2.x publication yet so BOM-import resolution fails before enforcer runs
 
 ### Pending Todos
 
@@ -181,6 +185,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T14:38:39.893Z
+Last session: 2026-05-17T15:34:06.379Z
 Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
 Resume file: None

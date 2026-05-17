@@ -18,7 +18,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
 - [x] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses. (completed 2026-05-17)
 - [x] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown. (completed 2026-05-17)
-- [ ] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess.
+- [x] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess. (completed 2026-05-17)
 - [ ] **Phase 8: Hyphen Bug + Design Polish + Ops Hardening** — ES `_analyze` diagnostic + `.keyword` fix + regression test; shadcn↔recviz token audit + visual regression; `rectrace-ops.sh` passes `shellcheck` + Linux CI + readiness probe.
 - [ ] **Phase 9: Domain Security** — User-auth mechanism (CitiPortal / SiteMinder / SPNEGO) + service-auth (keytab / Vault) locked + implemented; ES SSL re-enabled; Citi CA truststore; CORS allow-list; Citi-network preflight; CONCERNS.md CRITICAL closure.
 
@@ -185,7 +185,7 @@ Plans:
 - [x] 07-02-PLAN.md — Wave 2: backend/rectrace logback-spring.xml profile-aware (Console / LogstashEncoder+Splunk HEC) + actuator exposure lockdown + UserIdMdcFilter + AccessLogFilter + ActuatorSecurityConfig stub — OBS-01/03/07
 - [x] 07-03-PLAN.md — Wave 2: backend/rectrace 4 HealthIndicators (Oracle + ES + LoaderRunAge in /loader group + SearchConfig) + SlowQueryLoggerAspect (concrete JdbcTemplate pointcut) + ScheduledTraceIdAspect + AsyncConfig ContextPropagatingTaskDecorator + ScriptExecutor RECTRACE_CORRELATION_ID env var — OBS-02/04/05/06
 - [x] 07-04-PLAN.md — Wave 3: rectrace-tlm-stats mirror (subset: logback + filters + ActuatorSecurityConfig + OracleHealthIndicator on reconmgmt DS + AsyncConfig with ContextPropagatingTaskDecorator; NO loader, NO ES, NO slow-query) — OBS-01/02/03/05/06/07
-- [ ] 07-05-PLAN.md — Wave 4: maven-enforcer-plugin (dependencyConvergence + bannedDependencies on Micrometer >=2.0.0) in both POMs + scripts/smoke-observability.sh live-stack smoke — OBS-08
+- [x] 07-05-PLAN.md — Wave 4: maven-enforcer-plugin (dependencyConvergence + bannedDependencies on Micrometer >=2.0.0) in both POMs + scripts/smoke-observability.sh live-stack smoke — OBS-08
 
 ### Phase 8: Hyphen Bug + Design Polish + Ops Hardening
 **Goal**: Close the daily hyphen-search complaint, eliminate visual drift between the React app and recviz, and harden the single-bash-script ops surface for both macOS and Linux.
@@ -228,7 +228,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
-| 7. Observability Sweep | 4/5 | In Progress|  |
+| 7. Observability Sweep | 5/5 | Complete   | 2026-05-17 |
 | 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |
 | 9. Domain Security | 0/TBD | Not started | - |
 
