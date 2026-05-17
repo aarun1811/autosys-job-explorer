@@ -19,7 +19,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses. (completed 2026-05-17)
 - [x] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown. (completed 2026-05-17)
 - [x] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess. (completed 2026-05-17)
-- [ ] **Phase 8: Hyphen Bug + Design Polish + Ops Hardening** — ES `_analyze` diagnostic + `.keyword` fix + regression test; shadcn↔recviz token audit + visual regression; `rectrace-ops.sh` passes `shellcheck` + Linux CI + readiness probe.
+- [x] **Phase 8: Hyphen Bug + Design Polish + Ops Hardening** — ES `_analyze` diagnostic + `.keyword` fix + regression test; shadcn↔recviz token audit + visual regression; `rectrace-ops.sh` passes `shellcheck` + Linux CI + readiness probe. (completed 2026-05-17)
 - [ ] **Phase 9: Domain Security** — User-auth mechanism (CitiPortal / SiteMinder / SPNEGO) + service-auth (keytab / Vault) locked + implemented; ES SSL re-enabled; Citi CA truststore; CORS allow-list; Citi-network preflight; CONCERNS.md CRITICAL closure.
 
 ## Phase Details
@@ -128,7 +128,7 @@ Plans:
 Plans:
 - [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
 - [x] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
-- [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
+- [x] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
 **Research hint**: yes — recviz CSP/cookie/SSO posture, Citi network topology between the two apps, and iframe-resizer fork OSS-review outcome should be researched during phase planning.
 
@@ -206,7 +206,7 @@ Plans:
 
 Plans:
 - [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits 03c91ea/3358296/4835e9d/21b0f73; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
-- [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
+- [x] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
 - [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
 
@@ -244,7 +244,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
 | 7. Observability Sweep | 5/5 | Complete   | 2026-05-17 |
-| 8. Hyphen Bug + Design Polish + Ops Hardening | 1/3 | In Progress|  |
+| 8. Hyphen Bug + Design Polish + Ops Hardening | 3/3 | Complete   | 2026-05-17 |
 | 9. Domain Security | 0/TBD | Not started | - |
 
 ---
