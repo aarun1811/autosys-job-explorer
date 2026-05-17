@@ -1,0 +1,53 @@
+# .github/workflows/ops-script.yml
+# [NEEDS USER REVIEW] — placeholder GitHub Actions workflow for OPS-04 (Phase 8).
+#
+# Per D-8.11: this is the Linux portability gate for ops/rectrace-ops.sh +
+# ops/components.sh. macOS-specific bash features (mapfile, declare -A,
+# `sed -i ''`) regress easily; this workflow catches them the moment they
+# land on the milestone branch.
+#
+# When Citi CI integration is known (Jenkins / GitLab CI / TeamCity /
+# Citi-hosted GHA runner), swap the `runs-on:` value or port this workflow's
+# two functional `run:` steps (shellcheck + ops/ci-smoke.sh) into the
+# equivalent pipeline YAML. The two steps are CI-agnostic: pure bash, no
+# GitHub-specific surface. Only the trigger block and the
+# `actions/checkout@v4` step are GitHub-specific.
+
+name: ops-script
+
+on:
+  push:
+    paths:
+      - 'ops/**'
+      - '.github/workflows/ops-script.yml'
+  pull_request:
+    paths:
+      - 'ops/**'
+      - '.github/workflows/ops-script.yml'
+  workflow_dispatch: {}
+
+jobs:
+  portability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends shellcheck
+
+      - name: Print toolchain
+        run: |
+          bash --version
+          shellcheck --version
+          python3 --version
+          curl --version | head -1
+
+      - name: shellcheck ops scripts
+        run: shellcheck -x ops/rectrace-ops.sh ops/components.sh ops/ci-smoke.sh
+
+      - name: ci-smoke (Linux portability + dispatch)
+        run: bash ops/ci-smoke.sh
