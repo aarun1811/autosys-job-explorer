@@ -1,6 +1,5 @@
 package com.citi.gru.rectrace.observability;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,9 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * OBS-02 contract — {@code /actuator/health} aggregates Oracle / Elasticsearch /
  * search-config indicators; the loader-run-age indicator sits in a separate
  * group (per Pitfall P-11 / D-7.12) reachable at {@code /actuator/health/loader}.
- * Plan 07-03 implements all four indicators and removes the {@link Disabled}.
+ * Plan 07-03 implements all four indicators and enables this test.
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-03")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

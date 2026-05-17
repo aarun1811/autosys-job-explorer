@@ -6,21 +6,17 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 
 /**
- * OBS-02 contract — {@code ElasticsearchHealthIndicator} pings the ES client and
- * reports UP on a true response, DOWN on a false response or IOException. Plan
- * 07-03 implements the indicator and removes the {@link Disabled}.
+ * OBS-02 contract — {@link ElasticsearchHealthIndicator} pings the ES client and
+ * reports UP on a true response, DOWN on a false response or IOException.
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-03")
 class ElasticsearchHealthIndicatorTest {
 
     @Test
@@ -28,10 +24,22 @@ class ElasticsearchHealthIndicatorTest {
         ElasticsearchClient client = mock(ElasticsearchClient.class);
         when(client.ping()).thenReturn(new BooleanResponse(true));
 
-        HealthIndicator indicator = new ElasticsearchHealthIndicator(client);
+        ElasticsearchHealthIndicator indicator = new ElasticsearchHealthIndicator(client);
         Health health = indicator.health();
 
         assertThat(health.getStatus()).isEqualTo(Status.UP);
+    }
+
+    @Test
+    void downWhenPingReturnsFalse() throws Exception {
+        ElasticsearchClient client = mock(ElasticsearchClient.class);
+        when(client.ping()).thenReturn(new BooleanResponse(false));
+
+        ElasticsearchHealthIndicator indicator = new ElasticsearchHealthIndicator(client);
+        Health health = indicator.health();
+
+        assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+        assertThat(health.getDetails()).containsEntry("reason", "ping returned false");
     }
 
     @Test
@@ -39,36 +47,21 @@ class ElasticsearchHealthIndicatorTest {
         ElasticsearchClient client = mock(ElasticsearchClient.class);
         when(client.ping()).thenThrow(new IOException("es unreachable"));
 
-        HealthIndicator indicator = new ElasticsearchHealthIndicator(client);
+        ElasticsearchHealthIndicator indicator = new ElasticsearchHealthIndicator(client);
         Health health = indicator.health();
 
         assertThat(health.getStatus()).isEqualTo(Status.DOWN);
         assertThat(health.getDetails()).containsKey("error");
+        assertThat(health.getDetails().get("error").toString()).contains("es unreachable");
     }
 
-    /**
-     * Forward declaration so this test compiles before Plan 07-03 lands the real
-     * implementation. Plan 07-03 deletes this inner stub and adds the import
-     * {@code com.citi.gru.rectrace.observability.health.ElasticsearchHealthIndicator}.
-     */
-    static class ElasticsearchHealthIndicator implements HealthIndicator {
-        private final ElasticsearchClient client;
+    @Test
+    void downWhenClientMissing() {
+        ElasticsearchHealthIndicator indicator = new ElasticsearchHealthIndicator(null);
+        Health health = indicator.health();
 
-        ElasticsearchHealthIndicator(ElasticsearchClient client) {
-            this.client = client;
-        }
-
-        @Override
-        public Health health() {
-            try {
-                BooleanResponse resp = client.ping();
-                return resp != null && resp.value() ? Health.up().build()
-                        : Health.down().withDetail("error", "ping returned false").build();
-            } catch (Exception e) {
-                return Health.down()
-                        .withDetail("error", e.getClass().getSimpleName() + ": " + e.getMessage())
-                        .build();
-            }
-        }
+        assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+        assertThat(health.getDetails()).containsEntry("reason",
+                "ElasticsearchClient not configured");
     }
 }

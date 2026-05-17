@@ -3,7 +3,6 @@ package com.citi.gru.rectrace.observability.aop;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 /**
  * OBS-06 contract — every {@code @Scheduled} fire receives a fresh 32-hex-char
- * {@code traceId} in MDC (D-7.10). Plan 07-03 wires the aspect and removes the
- * {@link Disabled}.
+ * {@code traceId} in MDC (D-7.10).
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-03")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(ScheduledTraceIdAspectTest.SyntheticScheduledConfig.class)
