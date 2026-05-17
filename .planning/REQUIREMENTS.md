@@ -108,7 +108,7 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [x] **OPS-01**: `rectrace-ops.sh` passes `shellcheck`; uses `#!/usr/bin/env bash`, `set -euo pipefail`; works on macOS bash 3.2 and Linux bash 4/5; no GNU-only flags.
 - [x] **OPS-02**: Subcommands: `start`, `stop`, `restart`, `status`, `logs` — each operates per-component or all. `start` blocks on a readiness probe (curl against actuator health, not just `kill -0`).
 - [x] **OPS-03**: PID files in `run/`, logs in `logs/`; signal handling correct; idempotent start (no zombie processes); component registry in `ops/components.sh` so adding a process is a one-line change.
-- [ ] **OPS-04**: CI job runs the script on Linux to catch portability regressions.
+- [x] **OPS-04**: CI job runs the script on Linux to catch portability regressions.
 
 ### Domain Security
 
@@ -231,7 +231,7 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | OPS-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
 | OPS-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
 | OPS-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
-| OPS-04 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OPS-04 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
 | SEC-01 | Phase 9 — Domain Security | Pending |
 | SEC-02 | Phase 9 — Domain Security | Pending |
 | SEC-03 | Phase 9 — Domain Security | Pending |

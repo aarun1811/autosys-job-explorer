@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: Phase 8 Wave 1 (Plans 08-01 + 08-02) complete; ready for Plan 08-03 (CI smoke)
-last_updated: "2026-05-17T21:38:00Z"
+stopped_at: "Plan 08-03 complete (OPS-04 — Linux CI gate: ops/ci-smoke.sh 11/11 + .github/workflows/ops-script.yml); Phase 8 ready for verification"
+last_updated: "2026-05-17T16:17:43.400Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 36
-  completed_plans: 35
-  percent: 67
+  completed_plans: 36
+  percent: 73
 ---
 
 # Project State
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -111,6 +111,7 @@ Progress: [█████████░] 94%
 | Phase 07-observability-sweep P04 | 40m | 2 tasks | 14 files |
 | Phase 07 P05 | 47min | 2 tasks | 3 files |
 | Phase 08 P02 | 156 | 2 tasks | 2 files |
+| Phase 08 P03 | 15m | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,9 @@ Recent decisions affecting current work:
 - [Phase 8 Plan 08-01]: Test-input alignment with seed (Rule 1) — plan body referred to `RECON-XYZ-42` for `reconId`, but seed has `recon_id=RID-XYZ-42` while `RECON-XYZ-42` is in `job_name`. Tests/smoke use the seed's actual values mapped to the right categories: `reconId/RID-XYZ-42`, `jobName/RECON-XYZ-42`, `setId/SET-ABC-123`, mixed-case `jobName/recon-xyz-42`. Recorded in HYPHEN-DIAGNOSTIC.md "Test-input alignment".
 - [Phase 8 Plan 08-01]: Live-stack regression gate pattern — `@SpringBootTest` + `@ActiveProfiles("local")` + `@EnabledIfSystemProperty(named="es.live", matches="true")`. Re-usable for any future boot+live-infra test. CI without ES skips cleanly; locally runs with `-Des.live=true`. Backend suite now 86 tests / 4 skipped by design.
 - [Phase 8 Plan 08-01]: Smoke health-probe = `/actuator/health/readiness` (not aggregate `/actuator/health`) — aggregate is DOWN on laptop dev stack for reasons unrelated to search (Oracle DS, loader-run-age indicator); readiness reflects the contract the smoke actually cares about.
+- [Phase ?]: Adopt RECTRACE_COMPONENTS_FILE env-hook for stub registries — one-line patch on the source line in ops/rectrace-ops.sh, zero risk to existing call sites (08-03).
+- [Phase ?]: Use python3 -m http.server as readiness target in ops/ci-smoke.sh — pre-installed on every ubuntu-latest runner, no extra Action needed (08-03).
+- [Phase ?]: Path-filter the GitHub Actions workflow to ops/** + the workflow file itself — keeps CI minutes minimal while preserving every regression signal (08-03).
 
 ### Pending Todos
 
@@ -193,6 +197,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T21:38:00Z
-Stopped at: Plan 08-01 complete (BUG-01/02/03 — hyphen-search fix + JUnit regression + 6/6 live-stack smoke); ready for Plan 08-02 (ops hardening)
+Last session: 2026-05-17T16:17:43.393Z
+Stopped at: Plan 08-03 complete (OPS-04 — Linux CI gate: ops/ci-smoke.sh 11/11 + .github/workflows/ops-script.yml); Phase 8 ready for verification
 Resume file: None

@@ -18,8 +18,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# RECTRACE_COMPONENTS_FILE — optional override for the component registry path.
+# Defaults to $SCRIPT_DIR/components.sh. ops/ci-smoke.sh uses this to point at
+# a stub registry for portability tests without booting the real stack (OPS-04).
 # shellcheck source=ops/components.sh
-source "$SCRIPT_DIR/components.sh"
+source "${RECTRACE_COMPONENTS_FILE:-$SCRIPT_DIR/components.sh}"
 
 RUN_DIR="$REPO_ROOT/run"
 LOG_DIR="$REPO_ROOT/logs"
