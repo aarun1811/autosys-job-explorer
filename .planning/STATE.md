@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
 stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-last_updated: "2026-05-17T13:12:25.889Z"
+last_updated: "2026-05-17T14:39:04.497Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
   completed_phases: 6
-  total_plans: 28
-  completed_plans: 28
+  total_plans: 33
+  completed_plans: 32
   percent: 55
 ---
 
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [██████████] 100%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -108,6 +108,7 @@ Progress: [██████████] 100%
 | Phase 06 P03 | 22min | 2 tasks | 22 files |
 | Phase 06-es-loader-subsystem P04 | 22min | 2 tasks | 9 files |
 | Phase 06-es-loader-subsystem P05 | 75min | 3 tasks | 9 files |
+| Phase 07-observability-sweep P04 | 40m | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -156,6 +157,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 06-05: loaderJdbcTemplate marked @Primary to restore type-autowire for legacy V4 search after Plan 06-03 introduced JdbcTemplate ambiguity
 - [Phase ?]: Plan 06-05: recordRunStart truncates Instant to ChronoUnit.MILLIS to match loader_run_history TIMESTAMP(3) precision (fixes phantom RUNNING-status rows)
 - [Phase ?]: Plan 06-05: controller-slice tests for @Profile('!test') controllers use @ActiveProfiles('slice') + @AutoConfigureMockMvc(addFilters=false)
+- [Phase ?]: Phase 07-04: tlm-stats observability mirror lands as lean subset of backend/rectrace surface — byte-identical logback-spring.xml (diff=0), mirrored filter chain + actuator lockdown + ActuatorSecurityConfig, OracleHealthIndicator over reconmgmt DS only (per-TLM-instance datasources excluded — T-07-22), AsyncConfig with ContextPropagatingTaskDecorator created from scratch. Slow-query AOP intentionally NOT ported (A3). Six Wave-0 OBS contract tests un-disabled and green; tlm-stats suite 10/0/0; backend regression 82/0/0.
 
 ### Pending Todos
 
@@ -179,6 +181,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T13:12:19.853Z
+Last session: 2026-05-17T14:38:39.893Z
 Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
 Resume file: None

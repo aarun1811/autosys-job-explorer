@@ -181,10 +181,10 @@ Plans:
 **Research hint**: yes — lock the log-aggregator target (Splunk / ELK / Loki / OTel collector) during phase planning before forwarder config is written.
 
 Plans:
-- [ ] 07-01-PLAN.md — Wave 1: pom.xml deps (logstash-logback-encoder 8.0 + micrometer-registry-prometheus + spring-boot-starter-aop) + 13 @Disabled Wave-0 test scaffolds in backend/rectrace + 6 in rectrace-tlm-stats — OBS-01/04/05 prerequisites
-- [ ] 07-02-PLAN.md — Wave 2: backend/rectrace logback-spring.xml profile-aware (Console / LogstashEncoder+Splunk HEC) + actuator exposure lockdown + UserIdMdcFilter + AccessLogFilter + ActuatorSecurityConfig stub — OBS-01/03/07
-- [ ] 07-03-PLAN.md — Wave 2: backend/rectrace 4 HealthIndicators (Oracle + ES + LoaderRunAge in /loader group + SearchConfig) + SlowQueryLoggerAspect (concrete JdbcTemplate pointcut) + ScheduledTraceIdAspect + AsyncConfig ContextPropagatingTaskDecorator + ScriptExecutor RECTRACE_CORRELATION_ID env var — OBS-02/04/05/06
-- [ ] 07-04-PLAN.md — Wave 3: rectrace-tlm-stats mirror (subset: logback + filters + ActuatorSecurityConfig + OracleHealthIndicator on reconmgmt DS + AsyncConfig with ContextPropagatingTaskDecorator; NO loader, NO ES, NO slow-query) — OBS-01/02/03/05/06/07
+- [x] 07-01-PLAN.md — Wave 1: pom.xml deps (logstash-logback-encoder 8.0 + micrometer-registry-prometheus + spring-boot-starter-aop) + 13 @Disabled Wave-0 test scaffolds in backend/rectrace + 6 in rectrace-tlm-stats — OBS-01/04/05 prerequisites
+- [x] 07-02-PLAN.md — Wave 2: backend/rectrace logback-spring.xml profile-aware (Console / LogstashEncoder+Splunk HEC) + actuator exposure lockdown + UserIdMdcFilter + AccessLogFilter + ActuatorSecurityConfig stub — OBS-01/03/07
+- [x] 07-03-PLAN.md — Wave 2: backend/rectrace 4 HealthIndicators (Oracle + ES + LoaderRunAge in /loader group + SearchConfig) + SlowQueryLoggerAspect (concrete JdbcTemplate pointcut) + ScheduledTraceIdAspect + AsyncConfig ContextPropagatingTaskDecorator + ScriptExecutor RECTRACE_CORRELATION_ID env var — OBS-02/04/05/06
+- [x] 07-04-PLAN.md — Wave 3: rectrace-tlm-stats mirror (subset: logback + filters + ActuatorSecurityConfig + OracleHealthIndicator on reconmgmt DS + AsyncConfig with ContextPropagatingTaskDecorator; NO loader, NO ES, NO slow-query) — OBS-01/02/03/05/06/07
 - [ ] 07-05-PLAN.md — Wave 4: maven-enforcer-plugin (dependencyConvergence + bannedDependencies on Micrometer >=2.0.0) in both POMs + scripts/smoke-observability.sh live-stack smoke — OBS-08
 
 ### Phase 8: Hyphen Bug + Design Polish + Ops Hardening
@@ -228,7 +228,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
-| 7. Observability Sweep | 0/5 | Not started | - |
+| 7. Observability Sweep | 4/5 | In Progress|  |
 | 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |
 | 9. Domain Security | 0/TBD | Not started | - |
 

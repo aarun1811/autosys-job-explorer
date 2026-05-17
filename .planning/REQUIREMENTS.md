@@ -82,13 +82,13 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### Observability sweep
 
-- [ ] **OBS-01**: `logstash-logback-encoder` (8.x post-BOOT-UPGRADE) configured in `logback-spring.xml` (NEVER `logback.xml`) for `backend/rectrace` and `rectrace-tlm-stats`; JSON logs with `traceId`, `userId`, `path`, `method`, `status`, `durationMs`.
-- [ ] **OBS-02**: Custom `HealthIndicator` beans — Oracle reachability, ES reachability, loader-run-age, search-config validity — exposed via `/actuator/health`.
-- [ ] **OBS-03**: Actuator endpoints locked down: `management.endpoints.web.exposure.include` is an explicit list (no wildcards); `show-details=when-authorized` or `never`.
+- [x] **OBS-01**: `logstash-logback-encoder` (8.x post-BOOT-UPGRADE) configured in `logback-spring.xml` (NEVER `logback.xml`) for `backend/rectrace` and `rectrace-tlm-stats`; JSON logs with `traceId`, `userId`, `path`, `method`, `status`, `durationMs`.
+- [x] **OBS-02**: Custom `HealthIndicator` beans — Oracle reachability, ES reachability, loader-run-age, search-config validity — exposed via `/actuator/health`.
+- [x] **OBS-03**: Actuator endpoints locked down: `management.endpoints.web.exposure.include` is an explicit list (no wildcards); `show-details=when-authorized` or `never`.
 - [ ] **OBS-04**: `@Timed`/AOP slow-query logger around `JdbcTemplate` and ES calls; threshold-driven log line emitted.
-- [ ] **OBS-05**: Prometheus metrics via `micrometer-registry-prometheus` at `/actuator/prometheus`.
-- [ ] **OBS-06**: Correlation ID propagated through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations (`ScriptExecutor`).
-- [ ] **OBS-07**: Log aggregator forwarder wired (target — Splunk / ELK / Loki / OTel collector — locked during phase planning).
+- [x] **OBS-05**: Prometheus metrics via `micrometer-registry-prometheus` at `/actuator/prometheus`.
+- [x] **OBS-06**: Correlation ID propagated through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations (`ScriptExecutor`).
+- [x] **OBS-07**: Log aggregator forwarder wired (target — Splunk / ELK / Loki / OTel collector — locked during phase planning).
 - [ ] **OBS-08**: Micrometer (1.12+ post-BOOT-UPGRADE) pinned by the Boot BOM; CI guard rejects an override. Micrometer Tracing (Boot 3 native) replaces the hand-rolled correlation ID filter.
 
 ### Hyphen / special-char search bug fix
@@ -214,13 +214,13 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | LOADER-08 | Phase 6 — ES Loader Subsystem | Complete |
 | LOADER-09 | Phase 6 — ES Loader Subsystem | Complete |
 | LOADER-10 | Phase 6 — ES Loader Subsystem | Complete |
-| OBS-01 | Phase 7 — Observability Sweep | Pending |
-| OBS-02 | Phase 7 — Observability Sweep | Pending |
-| OBS-03 | Phase 7 — Observability Sweep | Pending |
+| OBS-01 | Phase 7 — Observability Sweep | Complete |
+| OBS-02 | Phase 7 — Observability Sweep | Complete |
+| OBS-03 | Phase 7 — Observability Sweep | Complete |
 | OBS-04 | Phase 7 — Observability Sweep | Pending |
-| OBS-05 | Phase 7 — Observability Sweep | Pending |
-| OBS-06 | Phase 7 — Observability Sweep | Pending |
-| OBS-07 | Phase 7 — Observability Sweep | Pending |
+| OBS-05 | Phase 7 — Observability Sweep | Complete |
+| OBS-06 | Phase 7 — Observability Sweep | Complete |
+| OBS-07 | Phase 7 — Observability Sweep | Complete |
 | OBS-08 | Phase 7 — Observability Sweep | Pending |
 | BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
