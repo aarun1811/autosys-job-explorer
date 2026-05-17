@@ -22,3 +22,68 @@ This file logs every meaningful assumption, decision, or shortcut I made without
 ## Phase-by-phase entries
 
 _(populated as each phase runs — newest entry per phase top, oldest bottom)_
+
+---
+
+### Phase 5 — Config-driven SELECT  ✓  (~2.5 hours, 21 SQL tests green)
+
+**Status:** Complete. SQL-01..SQL-07 all marked complete in REQUIREMENTS.md, parity-matrix row flipped to `port`.
+
+**Wave structure:** 5 waves / 6 plans (`05-01` Wave-0 tests, `05-02` DDL+props, `05-03` JSqlParser+ReadonlyDS, `05-04` validator+config service, `05-05` query service+controller, `05-06` smoke+Angular doc+parity).
+
+**Key decisions I made WITHOUT user input** (every D-5.x judgment call from CONTEXT.md):
+
+| ID | Decision | Why I picked this |
+|----|----------|-------------------|
+| D-5.8 | Config file at `backend/rectrace/src/main/resources/sql-search-config-v4.json` | Sibling to existing `search-config-v4.json`; matches established naming |
+| D-5.9 | Read-only Oracle user = `rectrace_readonly`; local-dev account password follows the same `ScriptExecutor`/external-script pattern as primary DS | **`[NEEDS USER REVIEW]`** — Citi VM may mandate a different account name. Local-dev works. |
+| D-5.10 | WHERE-clause check accepts ANY presence of WHERE in the parsed AST (not just top-level) | Stricter false positives; can tighten if needed |
+| D-5.11 | FETCH FIRST cap = 10,000 rows. Configurable via `datasource.readonly.maxRows` | Defensive default; configurable so a future query needing more can override |
+| D-5.12 | `setQueryTimeout` default = 30 seconds | Sane web-request default; configurable |
+| D-5.13 | `fetchSize` default = 500 | Balances memory vs round-trips |
+| D-5.14 | Example SQL tab `reconSummary`: `SELECT recon, file_name_pattern, app_id, support_email, job_name, box_name FROM rectrace.rectrace_core WHERE recon IS NOT NULL FETCH FIRST 1000 ROWS ONLY` | Hyphen-friendly (Phase 8 dry-run-ready) + satisfies WHERE + FETCH FIRST |
+| D-5.15 | Endpoint paths: `GET /api/v4/sql-search/config`, `POST /api/v4/sql-search/ssrm/{tabKey}` | No collision with existing `/api/v4/search/...` |
+| D-5.16 | Boot-failure: `IllegalStateException` from `@PostConstruct` with clear cause chain | Spring's idiomatic fail-loud pattern |
+| D-5.18 | NO frontend changes — Angular consumption documented as a one-line URL constant swap in `ANGULAR-WIRING.md` | Phase 5 is backend-only per ROADMAP; React app's CategoryTabBar already has a Phase 4 TODO |
+
+**Decisions I had to make beyond CONTEXT.md** (review these):
+
+- **JSqlParser 5.3** pinned. Latest stable, JDK 17+ compat verified, Java 21 OK. If Citi has an internal Nexus mirror that doesn't carry 5.3, this needs swapping for an older version (5.x is required for the visitor signatures used).
+- **`@Profile("!test")`** applied to ALL new production beans (`ReadonlyDataSourceConfig`, `SqlSearchConfigServiceV4`, `SqlQueryServiceV4`, `SqlSearchControllerV4`). Matches Phase 0 convention. Without this, `ContextLoadsTest` would try to reach the local Oracle in CI.
+- **Wrapped-query injection** at request-time: `SELECT * FROM (<configured>) ORDER BY <whitelisted_col> OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`. Defense-in-depth on top of startup validation. `<whitelisted_col>` is validated against the configured `columns[].field` set — does NOT inherit `OracleServiceV4.buildOrderByClause`'s known SQL-injection bug (flagged for Phase 9).
+- **`StatementCallback` pattern** for per-statement caps (NOT global JdbcTemplate mutation) — strict SQL-04 compliance. Negative grep gate enforced: zero calls to `readonlyJdbcTemplate.setQueryTimeout/setFetchSize/setMaxRows` outside comments.
+- **Filter operators in Phase 5**: only `equals` and `contains` (parameterized binds). Stricter operators left for a later phase.
+- **Filter / sort acceptance**: page-size hard cap = 1000 per request body validation. Reject with 400 if exceeded.
+
+**Deviations from the plan during execution:**
+
+- **Plan 05-02** had to add `\n/\n` statement-separator in the appended DDL block (sibling-repo `schema/01-rectrace.sql`) to match `apply.py:apply_sql_file`'s split convention.
+- **Plan 05-06** schema-qualified `rectrace_core` → `rectrace.rectrace_core` in `sql-search-config-v4.json` to resolve an ORA-00942 surfaced in Plan 05's live smoke (Plan 02's `GRANT SELECT ON rectrace.rectrace_core` is correct, but the `rectrace_readonly` session's default schema is its own, not `rectrace`).
+- **Workflow noise**: two early executors did `git symbolic-ref` / `git reset --hard` on the main checkout when their worktrees were ancestor-of-target, accidentally moving the main checkout's HEAD. Recovered safely each time by re-pointing `milestone/modernization` to include the worktree work. No production code lost.
+
+**Open items deferred to later phases / for your review:**
+
+- `D-5.9 [NEEDS USER REVIEW]` — read-only Oracle account naming convention for Citi VM environments. Local-dev uses `rectrace_readonly`; production may differ.
+- Filter operators limited to `equals`/`contains` — `lessThan`/`greaterThan`/`between` deferred to a follow-up if needed.
+- Frontend consumption of SQL tabs — `ANGULAR-WIRING.md` documents the one-line change; not implemented in Phase 5.
+
+**Files added / modified (autosys-job-explorer repo):**
+- `backend/rectrace/pom.xml` (JSqlParser 5.3)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ReadonlyDataSourceConfig.java` (new)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/dto/v4/SqlTabConfigV4.java` (new)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/dto/v4/SqlSearchConfigV4.java` (new)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/SqlShapeValidator.java` (new)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/SqlSearchConfigServiceV4.java` (new)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/SqlQueryServiceV4.java` (new)
+- `backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/v4/SqlSearchControllerV4.java` (new)
+- `backend/rectrace/src/main/resources/sql-search-config-v4.json` (new)
+- `backend/rectrace/src/main/resources/application-local.properties` (+12 datasource.readonly.* keys)
+- 5 JUnit test classes under `backend/rectrace/src/test/java/com/citi/gru/rectrace/...` (21 tests total)
+- `scripts/smoke-sql-search.sh` (new)
+- `.planning/phases/05-config-driven-select/{05-01..06}-PLAN.md` + `{01..06}-SUMMARY.md` + CONTEXT/RESEARCH/deferred-items/ANGULAR-WIRING
+- `.planning/parity-matrix.md` (Config-driven SELECT row → port)
+
+**Files added / modified (rectrace-local-dev sibling repo):**
+- `init/01-create-schema-users.sql` (+ `CREATE USER rectrace_readonly`)
+- `schema/01-rectrace.sql` (+ `GRANT SELECT ON rectrace.rectrace_core TO rectrace_readonly`)
+
