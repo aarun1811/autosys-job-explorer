@@ -37,10 +37,14 @@ const validConfigPayload = {
   ],
 }
 
+function mockJsonResponse(payload: unknown): { json: () => Promise<unknown> } {
+  return { json: () => Promise.resolve(payload) }
+}
+
 function makeWrapper(): { wrapper: React.FC<{ children: React.ReactNode }>; client: QueryClient } {
   const onErrorSpy = reportRequestFailure as unknown as ReturnType<typeof vi.fn>
   const client = new QueryClient({
-    queryCache: new QueryCache({ onError: (err) => onErrorSpy(err) }),
+    queryCache: new QueryCache({ onError: (err) => { onErrorSpy(err) } }),
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   })
   const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
@@ -59,7 +63,7 @@ afterEach(() => {
 describe('useSearchConfig', () => {
   test('calls apiFetch with /rectrace/api/v4/search/config', async () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
-    mockApi.mockResolvedValue({ json: async () => validConfigPayload } as Response)
+    mockApi.mockResolvedValue(mockJsonResponse(validConfigPayload))
 
     const { wrapper } = makeWrapper()
     const { result } = renderHook(() => useSearchConfig(), { wrapper })
@@ -71,7 +75,7 @@ describe('useSearchConfig', () => {
 
   test('returns Zod-parsed SearchConfigurationV4 on success', async () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
-    mockApi.mockResolvedValue({ json: async () => validConfigPayload } as Response)
+    mockApi.mockResolvedValue(mockJsonResponse(validConfigPayload))
 
     const { wrapper } = makeWrapper()
     const { result } = renderHook(() => useSearchConfig(), { wrapper })
@@ -83,7 +87,7 @@ describe('useSearchConfig', () => {
 
   test('Zod-rejects malformed response and routes through QueryCache.onError → reportRequestFailure', async () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
-    mockApi.mockResolvedValue({ json: async () => ({ wrong: true }) } as Response)
+    mockApi.mockResolvedValue(mockJsonResponse({ wrong: true }))
 
     const { wrapper } = makeWrapper()
     const { result } = renderHook(() => useSearchConfig(), { wrapper })
@@ -98,7 +102,7 @@ describe('useSearchConfig', () => {
 
   test('uses queryKey ["search-config"]', async () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
-    mockApi.mockResolvedValue({ json: async () => validConfigPayload } as Response)
+    mockApi.mockResolvedValue(mockJsonResponse(validConfigPayload))
 
     const { wrapper, client } = makeWrapper()
     renderHook(() => useSearchConfig(), { wrapper })
@@ -111,7 +115,7 @@ describe('useSearchConfig', () => {
 
   test('uses staleTime: Infinity (config never goes stale until restart)', async () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
-    mockApi.mockResolvedValue({ json: async () => validConfigPayload } as Response)
+    mockApi.mockResolvedValue(mockJsonResponse(validConfigPayload))
 
     const { wrapper, client } = makeWrapper()
     renderHook(() => useSearchConfig(), { wrapper })
