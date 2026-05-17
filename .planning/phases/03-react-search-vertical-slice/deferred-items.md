@@ -20,3 +20,25 @@ Out-of-scope discoveries logged during plan execution (Scope Boundary rule).
 **Suggested ownership:** Plan 05 or a separate hardening task should fix the build pipeline:
 1. Ensure `routeTree.gen.ts` is generated as part of `npm run build` (e.g., via `vite build` running the router plugin in pre-emit mode, or a `prebuild` script).
 2. Update the Mock callable narrowing in useSearchConfig.test.ts to match vitest 4 typings.
+
+## From Plan 07 execution (2026-05-17)
+
+### 2. Pre-existing lint errors (25 total across 7 files)
+
+Discovered when running `eslint src/` during Plan 07 verification. All errors are in files NOT modified by Plan 07; per the executor SCOPE BOUNDARY rule, they are logged here rather than auto-fixed.
+
+These errors do not block the build (`vite build` succeeds), do not block typecheck (`tsc --noEmit` exits 0), and do not block the unit test suite. They are pre-existing technical debt inherited from earlier plans.
+
+| File | Rule | Line | Origin |
+|------|------|------|--------|
+| `frontend-react/src/components/layout/theme-provider.tsx` | `react-refresh/only-export-components` | 64 | Phase 2 — theme provider exports `useTheme` hook alongside the component |
+| `frontend-react/src/components/layout/theme-switch.tsx` | `react-hooks/set-state-in-effect` | 11 | Phase 2 — `setMounted(true)` inside useEffect (standard SSR mount-guard) |
+| `frontend-react/src/components/ui/badge.tsx` | `react-refresh/only-export-components` | 48 | Plan 03-04 — shadcn vendor file exports `badgeVariants` constant |
+| `frontend-react/src/components/ui/button.tsx` | `react-refresh/only-export-components` | 64 | Plan 03-04 — shadcn vendor file exports `buttonVariants` constant |
+| `frontend-react/src/components/ui/sonner.tsx` | `@typescript-eslint/no-unnecessary-type-assertion` | 16 | Phase 2 — Sonner Toaster theme cast |
+| `frontend-react/src/lib/queryClient.test.ts` | 3× `no-unsafe-assignment`/`no-unsafe-return` | 11, 20 | Phase 2 — test-fixture destructuring uses `any` |
+| `frontend-react/src/search/__tests__/SearchGrid.test.tsx` | 16× `no-unsafe-*`, `await-thenable`, `no-unused-vars` | 90, 134, 137-150, 175, 206 | Plan 03-05 — SearchGrid test fixtures use loose types around AG-Grid params mocks |
+
+**Total:** 25 lint errors in 7 files, none of which were touched in Plan 07.
+
+**Recommended owner:** Plan 08 (parity-matrix + smoke-script extension) is the natural place to fold in a lint pass, OR a dedicated Phase 3 housekeeping plan after the UAT checkpoint passes.
