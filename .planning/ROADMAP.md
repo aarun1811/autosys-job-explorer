@@ -99,7 +99,18 @@ Plans:
   3. URL fully encodes search state; pasting the URL into a new tab restores the exact view (deep linkable).
   4. Excel export from the React grid is at feature parity with Angular; recent searches (last 10) appear in a typeahead from `localStorage`.
   5. Any error in the React search flow surfaces the correlation ID as "Error — reference: <ID>" for the user to quote in a bug report.
-**Plans**: TBD
+**Plans**: 8 plans (6 waves)
+
+Plans:
+- [ ] 03-01-PLAN.md — Wave 1: Zod schemas (SearchConfigurationV4, SSRMRequestV4, InitialSearchResponseV4, ColumnDefinitionV4) + useSearchConfig TanStack Query hook (staleTime: Infinity)
+- [ ] 03-02-PLAN.md — Wave 1: useSearchState (TanStack Router URL ↔ {q, cat}) + useRecentSearches (localStorage LRU, 10-cap, case-sensitive dedupe per D-3.11)
+- [ ] 03-03-PLAN.md — Wave 2: Three renderers (AppID anchor, SupportEmail mailto, ExecutionOrder button + placeholder Dialog with TODO(Phase 4)) + renderer registry string→component map + shadcn Dialog vendored
+- [ ] 03-04-PLAN.md — Wave 3: configCategoryToColDefs adapter (kebab→camelCase cellStyle; graceful unknown-renderer fallback) + main.tsx registers ExcelExportModule/ColumnsToolPanelModule/FiltersToolPanelModule + 8 shadcn primitives vendored (input, badge, separator, command, popover, tooltip, dropdown-menu, skeleton) at pin 3.8.5
+- [ ] 03-05-PLAN.md — Wave 4: SearchGrid (config-driven columnDefs from adapter; remount-by-key on (q, cat); SSRM datasource useMemo([q, cat, initialFilter]); Sonner-mount setTimeout(0) workaround per D-3.6; no Date.now()+Math.random() — Pitfall 1)
+- [ ] 03-06-PLAN.md — Wave 4: SearchBar (Input + clear-X + Search button + recent-searches Popover via shadcn Command), SearchToolbar (locale-formatted result Badge + Excel export DropdownMenu), CategoryTabBar (single-tab seed for Phase 4+)
+- [ ] 03-07-PLAN.md — Wave 5: /search route (Zod validateSearch) + / → /search redirect + SearchPage orchestrator (URL-restore useEffect, /initial GET ?keyword= per Pitfall 4, Excel export filename + columnKeys filter, error-state card) + delete SmokeGrid (Pitfall 8) + human UAT checkpoint (13-step verification against local seed)
+- [ ] 03-08-PLAN.md — Wave 6: Extend scripts/smoke-ssrm.sh with /api/v4/search/config shape assertion (regression net for the three renderer keys) + update .planning/parity-matrix.md (flip 6 rows: File Name tab, 3 renderers, Excel, Recent → `port`)
+
 **UI hint**: yes
 
 ### Phase 4: recviz Integration
@@ -191,7 +202,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 0.1. Local Dev Seed Bootstrap (INSERTED) | 7/7 | Complete | 2026-05-12 |
 | 1. Backend Platform Upgrade | 8/8 | Complete | 2026-05-12 |
 | 2. React Foundation | 5/5 | Complete   | 2026-05-13 |
-| 3. React Search Vertical Slice | 0/TBD | Not started | - |
+| 3. React Search Vertical Slice | 0/8 | Not started | - |
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 0/TBD | Not started | - |
 | 6. ES Loader Subsystem | 0/TBD | Not started | - |
@@ -203,3 +214,4 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 *Roadmap created: 2026-05-12*
 *Phase 0 plans created: 2026-05-12*
 *Phase 2 plans created: 2026-05-13*
+*Phase 3 plans created: 2026-05-17*
