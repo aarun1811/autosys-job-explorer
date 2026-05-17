@@ -70,11 +70,11 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 ### ES Loader (Oracle → Elasticsearch, scheduled)
 
 - [ ] **LOADER-01**: Multi-job configuration: each job specifies source Oracle `SELECT`, target ES index (or alias), cron schedule, batch size.
-- [ ] **LOADER-02**: In-built scheduler — **Quartz JDBC JobStore OR `@Scheduled` + ShedLock** locked during phase planning (see open decision in research SUMMARY).
-- [ ] **LOADER-03**: ES indexes accessed via **aliases**, never literal names, from day one of this phase.
+- [x] **LOADER-02**: In-built scheduler — **Quartz JDBC JobStore OR `@Scheduled` + ShedLock** locked during phase planning (see open decision in research SUMMARY).
+- [x] **LOADER-03**: ES indexes accessed via **aliases**, never literal names, from day one of this phase.
 - [ ] **LOADER-04**: Idempotent upserts via deterministic `_id` derived from source primary key.
 - [ ] **LOADER-05**: New `loader/` package in `backend/rectrace`: `LoaderConfigService`, `LoaderJobRegistry`, `OracleToEsLoaderJob`, `LoaderRunHistoryService`.
-- [ ] **LOADER-06**: Per-job last-run state persisted: timestamp, status, row count, last-error message, duration.
+- [x] **LOADER-06**: Per-job last-run state persisted: timestamp, status, row count, last-error message, duration.
 - [ ] **LOADER-07**: Run-history view — last 20 runs per job, queryable via admin endpoint.
 - [ ] **LOADER-08**: `LoaderAdminControllerV4` endpoints: list jobs, run-now, run-history.
 - [ ] **LOADER-09**: Graceful shutdown on JVM signal — in-flight bulk requests flush before exit, no partial-batch loss.
@@ -205,11 +205,11 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | SQL-06 | Phase 5 — Config-driven SELECT | Pending |
 | SQL-07 | Phase 5 — Config-driven SELECT | Complete |
 | LOADER-01 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-02 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-03 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-02 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-03 | Phase 6 — ES Loader Subsystem | Complete |
 | LOADER-04 | Phase 6 — ES Loader Subsystem | Pending |
 | LOADER-05 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-06 | Phase 6 — ES Loader Subsystem | Pending |
+| LOADER-06 | Phase 6 — ES Loader Subsystem | Complete |
 | LOADER-07 | Phase 6 — ES Loader Subsystem | Pending |
 | LOADER-08 | Phase 6 — ES Loader Subsystem | Pending |
 | LOADER-09 | Phase 6 — ES Loader Subsystem | Pending |
