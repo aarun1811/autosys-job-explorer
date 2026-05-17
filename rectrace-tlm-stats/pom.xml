@@ -34,6 +34,26 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Phase 7 (OBS-01/04/05) — observability stack -->
+        <!-- logstash-logback-encoder 8.0 explicitly pinned (D-7.1); NOT BOM-managed.
+             Do NOT use 9.0 (Jackson 3 collision with Boot 3.5.14). -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>8.0</version>
+        </dependency>
+        <!-- micrometer-registry-prometheus — BOM-managed via Boot 3.5.14 parent. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <!-- spring-boot-starter-aop — BOM-managed. Required for @Timed/@Observed
+             annotation interception and the observability aspects in Plan 07-04. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>

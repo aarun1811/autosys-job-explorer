@@ -133,6 +133,29 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+
+		<!-- Phase 7 (OBS-01/04/05) — observability stack -->
+		<!-- logstash-logback-encoder 8.0 is explicitly pinned (D-7.1) because it is
+		     NOT part of the Spring Boot BOM and 9.0 migrated to Jackson 3 which
+		     would collide with Boot 3.5.14's Jackson 2 dependency tree. -->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>8.0</version>
+		</dependency>
+		<!-- micrometer-registry-prometheus is BOM-managed by spring-boot 3.5.14
+		     (pulls Micrometer 1.14.x line). Powers /actuator/prometheus. -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<!-- spring-boot-starter-aop is BOM-managed. Required for @Timed/@Observed
+		     annotation interception AND the slow-query / scheduled-trace-id aspects
+		     planned in 07-03. Brings in aspectjweaver transitively (proxy-based AOP). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
