@@ -1,28 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { SmokeGrid } from '@/grid/SmokeGrid'
-import { ThemeSwitch } from '@/components/layout/theme-switch'
-import { Footer } from '@/components/app-shell/footer'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+/**
+ * Root route `/` redirects to `/search` (SEARCH-07 / Phase 2 D-2.4).
+ *
+ * The full app shell (header + SearchBar + CategoryTabBar + SearchToolbar +
+ * SearchGrid + Footer) lives inside `SearchPage` (`routes/search.tsx`); this
+ * file is intentionally body-less so a deep-link to `/` never renders a flash
+ * of an obsolete layout before the redirect resolves. `beforeLoad` runs before
+ * the route component would render, so no UI is ever produced here.
+ */
 export const Route = createFileRoute('/')({
-  component: IndexPage,
+  beforeLoad: () => {
+    // TanStack Router's `redirect()` returns a Redirect error subclass that
+    // the router catches and converts into a navigation — the canonical
+    // pattern per its docs. eslint's only-throw-error rule doesn't recognize
+    // the Redirect class as an Error, so we silence it here.
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    throw redirect({ to: '/search' })
+  },
 })
-
-function IndexPage() {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <header
-        className="bg-background/40 sticky top-0 z-50 flex items-center justify-between px-4 border-b backdrop-blur-md"
-        style={{ height: 'var(--header-height, 2.5rem)' }}
-      >
-        <span className="text-sm font-semibold">Rectrace</span>
-        {/* future search slot — Phase 3 */}
-        <div className="flex-1" />
-        <ThemeSwitch />
-      </header>
-      <main className="flex-1 overflow-auto p-4">
-        <SmokeGrid />
-      </main>
-      <Footer />
-    </div>
-  )
-}
