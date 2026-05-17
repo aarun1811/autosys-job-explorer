@@ -162,7 +162,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md - Wave 1: Local-dev seed extensions (shedlock + loader_run_history tables; rectrace_core_alias bootstrap in apply.py) - LOADER-02/03/06 prerequisites
-- [ ] 06-02-PLAN.md - Wave 1: pom.xml ShedLock 7.7.0 deps + spring.lifecycle.timeout-per-shutdown-phase=60s + seven @Disabled JUnit 5 Wave-0 test scaffolds - LOADER-01..10 test contracts
+- [x] 06-02-PLAN.md - Wave 1: pom.xml ShedLock 7.7.0 deps + spring.lifecycle.timeout-per-shutdown-phase=60s + seven @Disabled JUnit 5 Wave-0 test scaffolds - LOADER-01..10 test contracts
 - [ ] 06-03-PLAN.md - Wave 2: DTOs + loader-config-v4.json + DocumentIdHasher + LoaderConfigService (boot-time alias check) + LoaderRunHistoryService (prune-to-20) - LOADER-01/04/05/06/07
 - [ ] 06-04-PLAN.md - Wave 3: LoaderShedLockConfig + LoaderJobRegistry (per-job BulkIngester, @PreDestroy flush) + OracleToEsLoaderJob (streamed query + alias writes) + LoaderTicker (fixedDelay PT30S + LockingTaskExecutor) - LOADER-02/03/05/09/10
 - [ ] 06-05-PLAN.md - Wave 4: LoaderAdminControllerV4 (GET /jobs, POST /jobs/{key}/run-now, GET /jobs/{key}/runs) + three smoke scripts (alias boot-fail, SIGTERM flush, admin shape) - LOADER-03/08/09
@@ -220,7 +220,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 3. React Search Vertical Slice | 8/8 | Complete   | 2026-05-17 |
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
-| 6. ES Loader Subsystem | 1/5 | In Progress|  |
+| 6. ES Loader Subsystem | 2/5 | In Progress|  |
 | 7. Observability Sweep | 0/TBD | Not started | - |
 | 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |
 | 9. Domain Security | 0/TBD | Not started | - |
