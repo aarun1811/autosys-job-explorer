@@ -2,7 +2,6 @@ package com.citi.gru.rectrace.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,12 +17,11 @@ import org.springframework.test.context.ActiveProfiles;
  * therefore asserts the bean is ABSENT — proving the profile guard is in place. Under
  * a non-test profile the bean must exist; that side is exercised by smoke / startup.
  *
- * <p>Wave 0 scaffolding — {@code @Disabled} until Wave 2 lands
- * {@code ReadonlyDataSourceConfig}.
+ * <p>Wave 2 (Plan 05-03): {@code @Disabled} removed — {@code ReadonlyDataSourceConfig}
+ * now ships under {@code @Profile("!test")} and this assertion proves the guard.
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Disabled("Wave 2: enabled when ReadonlyDataSourceConfig lands")
 class ReadonlyDataSourceConfigTest {
 
     @Autowired
