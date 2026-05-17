@@ -1,12 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OBS-01 / OBS-07 — Profile-aware structured logging.
+
+  In !prod profile: human-readable ConsoleAppender (CONSOLE) for laptop dev/UAT/test.
+  In  prod profile: STDOUT_JSON (LogstashEncoder via Console) AND SPLUNK_ASYNC
+                    (AsyncAppender wrapping LogstashTcpSocketAppender to Splunk HEC).
+                    STDOUT_JSON is the operator-recovery surface — it always emits
+                    even when Splunk is unreachable.
+
+  Filename pitfall P-1: this file MUST be logback-spring.xml (NOT logback.xml).
+  Logback evaluates logback.xml BEFORE Spring activates profiles, so <springProfile>
+  blocks would silently be ignored — every appender would attach unconditionally.
+
+  See .planning/phases/07-observability-sweep/07-RESEARCH.md §3.1 and
+      .planning/phases/07-observability-sweep/07-02-PLAN.md Task 1.
+-->
 <configuration>
   <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [traceId=%X{traceId:-}] %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
-  <root level="INFO">
-    <appender-ref ref="CONSOLE"/>
-  </root>
+
+  <!-- Local / dev / test / uat — human-readable console -->
+  <springProfile name="!prod">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder>
+        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [traceId=%X{traceId:-} userId=%X{userId:-}] %logger{36} - %msg%n</pattern>
+      </encoder>
+    </appender>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+  <!-- Production — Splunk HEC compatible JSON over TCP, plus STDOUT JSON fallback -->
+  <springProfile name="prod">
+    <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <springProperty scope="context" name="splunkHost" source="splunk.hec.host"
+                    defaultValue="splunk.citi.intra.example"/>
+    <springProperty scope="context" name="splunkPort" source="splunk.hec.port"
+                    defaultValue="9997"/>
+
+    <!-- Local recovery surface: JSON-encoded stdout. Captured by systemd/journald
+         on the VM so operators always have a log surface even if Splunk is down. -->
+    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <includeMdc>true</includeMdc>
+        <includeContext>false</includeContext>
+        <customFields>{"application":"${appName}","environment":"prod"}</customFields>
+        <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+        <timeZone>UTC</timeZone>
+      </encoder>
+    </appender>
+
+    <!-- Splunk HEC TCP destination. Raw-TCP HEC is auth-by-source-IP today
+         (D-7.14); the splunk.hec.token placeholder is reserved for a future
+         HTTPS-HEC migration and is unused by LogstashTcpSocketAppender. -->
+    <appender name="SPLUNK_HEC"
+              class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+      <destination>${splunkHost}:${splunkPort}</destination>
+      <reconnectionDelay>30 seconds</reconnectionDelay>
+      <writeTimeout>10 seconds</writeTimeout>
+      <keepAliveDuration>5 minutes</keepAliveDuration>
+      <ringBufferSize>8192</ringBufferSize>
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <includeMdc>true</includeMdc>
+        <includeContext>false</includeContext>
+        <customFields>{"application":"${appName}","environment":"prod"}</customFields>
+        <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+        <timeZone>UTC</timeZone>
+      </encoder>
+    </appender>
+
+    <!-- Async wrapper (Pitfall P-2): neverBlock=true trades message visibility
+         for app availability when Splunk is slow. STDOUT_JSON above is the
+         recovery surface for any dropped messages. -->
+    <appender name="SPLUNK_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+      <appender-ref ref="SPLUNK_HEC"/>
+      <queueSize>2048</queueSize>
+      <discardingThreshold>0</discardingThreshold>
+      <neverBlock>true</neverBlock>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="STDOUT_JSON"/>
+      <appender-ref ref="SPLUNK_ASYNC"/>
+    </root>
+  </springProfile>
 </configuration>
