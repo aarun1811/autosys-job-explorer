@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
 stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-last_updated: "2026-05-17T12:52:29.083Z"
+last_updated: "2026-05-17T13:12:25.889Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 28
-  completed_plans: 27
-  percent: 45
+  completed_plans: 28
+  percent: 55
 ---
 
 # Project State
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [██████████] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -107,6 +107,7 @@ Progress: [██████████] 96%
 | Phase 06 P02 | 7min | 2 tasks | 9 files |
 | Phase 06 P03 | 22min | 2 tasks | 22 files |
 | Phase 06-es-loader-subsystem P04 | 22min | 2 tasks | 9 files |
+| Phase 06-es-loader-subsystem P05 | 75min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 06-04: Pattern 2 (programmatic LockingTaskExecutor.executeWithLock) over @SchedulerLock — lock name is runtime config-derived
 - [Phase ?]: Plan 06-04: @EnableScheduling co-located on LoaderShedLockConfig (not RectraceApplication) so scheduler stays dormant in test profile
 - [Phase ?]: Plan 06-04: runNow does NOT call markFired — manual triggers must not perturb cron schedule next-fire calculation
+- [Phase ?]: Plan 06-05: loaderJdbcTemplate marked @Primary to restore type-autowire for legacy V4 search after Plan 06-03 introduced JdbcTemplate ambiguity
+- [Phase ?]: Plan 06-05: recordRunStart truncates Instant to ChronoUnit.MILLIS to match loader_run_history TIMESTAMP(3) precision (fixes phantom RUNNING-status rows)
+- [Phase ?]: Plan 06-05: controller-slice tests for @Profile('!test') controllers use @ActiveProfiles('slice') + @AutoConfigureMockMvc(addFilters=false)
 
 ### Pending Todos
 
@@ -175,6 +179,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T12:52:22.619Z
+Last session: 2026-05-17T13:12:19.853Z
 Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
 Resume file: None

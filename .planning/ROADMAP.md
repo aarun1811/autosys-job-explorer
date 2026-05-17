@@ -17,7 +17,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states. (completed 2026-05-17)
 - [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
 - [x] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses. (completed 2026-05-17)
-- [ ] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown.
+- [x] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown. (completed 2026-05-17)
 - [ ] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess.
 - [ ] **Phase 8: Hyphen Bug + Design Polish + Ops Hardening** — ES `_analyze` diagnostic + `.keyword` fix + regression test; shadcn↔recviz token audit + visual regression; `rectrace-ops.sh` passes `shellcheck` + Linux CI + readiness probe.
 - [ ] **Phase 9: Domain Security** — User-auth mechanism (CitiPortal / SiteMinder / SPNEGO) + service-auth (keytab / Vault) locked + implemented; ES SSL re-enabled; Citi CA truststore; CORS allow-list; Citi-network preflight; CONCERNS.md CRITICAL closure.
@@ -165,7 +165,7 @@ Plans:
 - [x] 06-02-PLAN.md - Wave 1: pom.xml ShedLock 7.7.0 deps + spring.lifecycle.timeout-per-shutdown-phase=60s + seven @Disabled JUnit 5 Wave-0 test scaffolds - LOADER-01..10 test contracts
 - [x] 06-03-PLAN.md - Wave 2: DTOs + loader-config-v4.json + DocumentIdHasher + LoaderConfigService (boot-time alias check) + LoaderRunHistoryService (prune-to-20) - LOADER-01/04/05/06/07
 - [x] 06-04-PLAN.md - Wave 3: LoaderShedLockConfig + LoaderJobRegistry (per-job BulkIngester, @PreDestroy flush) + OracleToEsLoaderJob (streamed query + alias writes) + LoaderTicker (fixedDelay PT30S + LockingTaskExecutor) - LOADER-02/03/05/09/10
-- [ ] 06-05-PLAN.md - Wave 4: LoaderAdminControllerV4 (GET /jobs, POST /jobs/{key}/run-now, GET /jobs/{key}/runs) + three smoke scripts (alias boot-fail, SIGTERM flush, admin shape) - LOADER-03/08/09
+- [x] 06-05-PLAN.md - Wave 4: LoaderAdminControllerV4 (GET /jobs, POST /jobs/{key}/run-now, GET /jobs/{key}/runs) + three smoke scripts (alias boot-fail, SIGTERM flush, admin shape) - LOADER-03/08/09
 
 ### Phase 7: Observability Sweep
 **Goal**: Both backend modules emit structured, correlation-ID-tagged JSON logs, expose locked-down actuator endpoints with custom health indicators, and publish Prometheus metrics plus slow-query timing — instrumented horizontally now that there are multiple subsystems to observe.
@@ -220,7 +220,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 3. React Search Vertical Slice | 8/8 | Complete   | 2026-05-17 |
 | 4. recviz Integration | 0/TBD | Not started | - |
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
-| 6. ES Loader Subsystem | 4/5 | In Progress|  |
+| 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
 | 7. Observability Sweep | 0/TBD | Not started | - |
 | 8. Hyphen Bug + Design Polish + Ops Hardening | 0/TBD | Not started | - |
 | 9. Domain Security | 0/TBD | Not started | - |
