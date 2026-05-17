@@ -1,7 +1,7 @@
 # React↔Angular Parity Matrix
 
-**Last updated:** 2026-05-12
-**Status:** Day-0 snapshot — target vocab in progress
+**Last updated:** 2026-05-17
+**Status:** Phase 3 closeout — File Name tab + 3 renderers + Excel export + Recent searches flipped to `port`
 
 > **Gate:** The React Foundation phase (Phase 2) can begin once every row in this table
 > has a non-`tbd` value in the **Target** column. Priority and Notes may remain `tbd`
@@ -20,7 +20,7 @@
 
 | Angular Feature | Type | Current Location | Renderers / Components | Target | Priority | Notes |
 |---|---|---|---|---|---|---|
-| File Name search tab | search-tab | search-config-v4.json#fileName | `appIDCellRenderer`, `supportEmailCellRenderer`, `executionOrderButtonRenderer` | tbd | tbd | tbd |
+| File Name search tab | search-tab | search-config-v4.json#fileName | `appIDCellRenderer`, `supportEmailCellRenderer`, `executionOrderButtonRenderer` | port | tbd | Phase 3 — fileName tab ported in `frontend-react/src/search/SearchPage.tsx` (config-driven via `/api/v4/search/config`); see `.planning/phases/03-react-search-vertical-slice/` plan summaries |
 | Recon Name search tab | search-tab | search-config-v4.json#reconName | `executionOrderButtonRenderer` | tbd | tbd | tbd |
 | Box Name search tab | search-tab | search-config-v4.json#boxName | `executionOrderButtonRenderer` | tbd | tbd | tbd |
 | Set ID search tab | search-tab | search-config-v4.json#setId | `executionOrderButtonRenderer` | tbd | tbd | tbd |
@@ -54,8 +54,8 @@
 
 | Angular Feature | Type | Current Location | Renderers / Components | Target | Priority | Notes |
 |---|---|---|---|---|---|---|
-| Excel export | toolbar-feature | search-v5-grid.component.ts | AG-Grid export API | port | tbd | tbd |
-| Recent searches / typeahead | toolbar-feature | search-v5.component.ts | `SearchV5Component` | port | tbd | Not present in Angular today — to be built natively in React using localStorage |
+| Excel export | toolbar-feature | search-v5-grid.component.ts | AG-Grid export API | port | tbd | Phase 3 — client-side `gridApi.exportDataAsExcel()` in `frontend-react/src/search/SearchToolbar.tsx` (D-3.10 — diverges from Angular backend export; SSRM cached-rows-only acknowledged) |
+| Recent searches / typeahead | toolbar-feature | search-v5.component.ts | `SearchV5Component` | port | tbd | Phase 3 — built natively in React: `frontend-react/src/search/hooks/useRecentSearches.ts` + `SearchBar` Popover (no Angular analog) |
 | Dark / light mode toggle | app-shell | services/theme.service.ts | `ThemeService` | port | tbd | tbd |
 
 ## Renderer Inventory (Registered, Not All Wired to V4 Config)
@@ -66,9 +66,9 @@ Assign `port` or `drop` during the React phase that covers their parent tab.
 
 | Renderer Key | Angular Component | Used By | Target |
 |---|---|---|---|
-| `appIDCellRenderer` | `AppIDCellRendererComponent` | fileName, jobName tabs (V4) | tbd — decide when porting those tabs |
-| `supportEmailCellRenderer` | `AppSupportCellRendererComponent` | fileName, jobName tabs (V4) | tbd — decide when porting those tabs |
-| `executionOrderButtonRenderer` | `ExecutionOrderButtonComponent` | 7 V4 search tabs | tbd — decide when porting those tabs |
+| `appIDCellRenderer` | `AppIDCellRendererComponent` | fileName, jobName tabs (V4) | port — Phase 3: fileName tab ported in `frontend-react/src/search/renderers/AppIDCellRenderer.tsx`; jobName remains tbd for Phase 4+ |
+| `supportEmailCellRenderer` | `AppSupportCellRendererComponent` | fileName, jobName tabs (V4) | port — Phase 3: fileName tab ported in `frontend-react/src/search/renderers/SupportEmailCellRenderer.tsx`; jobName remains tbd for Phase 4+ |
+| `executionOrderButtonRenderer` | `ExecutionOrderButtonComponent` | 7 V4 search tabs | port — Phase 3: fileName tab ported in `frontend-react/src/search/renderers/ExecutionOrderCellRenderer.tsx` with placeholder Dialog; other 6 tabs + full Cytoscape modal remain tbd for Phase 4+ |
 | `setIdV2Renderer` | `SetIdV2RendererComponent` | Not in V4 config | tbd — verify against V3 config; candidate for `drop` |
 | `reconV2Renderer` | `ReconV2RendererComponent` | Not in V4 config | tbd — verify against V3 config; candidate for `drop` |
 | `tlmInstanceV2Renderer` | `TlmInstanceV2RendererComponent` | TLM Instance tab (grid-registered, config-implicit) | tbd |
