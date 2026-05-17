@@ -127,7 +127,7 @@ Plans:
 
 Plans:
 - [ ] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh
-- [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
+- [x] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
 - [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
 **UI hint**: yes
 **Research hint**: yes — recviz CSP/cookie/SSO posture, Citi network topology between the two apps, and iframe-resizer fork OSS-review outcome should be researched during phase planning.
@@ -244,7 +244,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
 | 7. Observability Sweep | 5/5 | Complete   | 2026-05-17 |
-| 8. Hyphen Bug + Design Polish + Ops Hardening | 0/3 | In progress (BUG+OPS planned; DESIGN deferred) | - |
+| 8. Hyphen Bug + Design Polish + Ops Hardening | 1/3 | In Progress|  |
 | 9. Domain Security | 0/TBD | Not started | - |
 
 ---

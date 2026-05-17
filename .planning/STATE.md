@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
 stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
-last_updated: "2026-05-17T15:34:44.006Z"
+last_updated: "2026-05-17T15:51:37.330Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
   completed_phases: 7
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 36
+  completed_plans: 34
   percent: 64
 ---
 
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -110,6 +110,7 @@ Progress: [██████████] 100%
 | Phase 06-es-loader-subsystem P05 | 75min | 3 tasks | 9 files |
 | Phase 07-observability-sweep P04 | 40m | 2 tasks | 14 files |
 | Phase 07 P05 | 47min | 2 tasks | 3 files |
+| Phase 08 P02 | 156 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Plan 07-05: maven-enforcer Micrometer pin (Option A) — bannedDependencies io.micrometer:*:[2.0.0,) + two scoped requireSameVersions (core 1.15.x train + tracing 1.5.x train); single-group spec split inline because the two Micrometer release trains have BOM-blessed separate versions (Rule 3)
 - [Phase ?]: Plan 07-05: smoke-observability.sh tolerates env-state DOWNs — Section 3 (loader group 404) is WARN not FAIL; Section 2 (health 503) reports the env gap honestly; Section 6 cleanly SKIPs when tlm-stats unreachable
 - [Phase ?]: Plan 07-05: synthetic-override proof done by tightening bannedDependencies ceiling to [1.15.0,) rather than pinning Micrometer 2.0.0 — Maven Central has no 2.x publication yet so BOM-import resolution fails before enforcer runs
+- [Phase ?]: Phase 8 Plan 02: registry field separator is pipe (start_cmd contains colon)
+- [Phase ?]: Phase 8 Plan 02: eval $C_CMD scoped + sourced from version-controlled registry only (T-08-05)
+- [Phase ?]: Phase 8 Plan 02: start all spawns then probes — wall-clock bounded by slowest component
 
 ### Pending Todos
 
@@ -185,6 +189,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T15:34:06.379Z
+Last session: 2026-05-17T15:51:22.453Z
 Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
 Resume file: None
