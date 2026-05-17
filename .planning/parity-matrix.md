@@ -1,7 +1,7 @@
 # React↔Angular Parity Matrix
 
 **Last updated:** 2026-05-17
-**Status:** Phase 3 closeout — File Name tab + 3 renderers + Excel export + Recent searches flipped to `port`
+**Status:** Phase 5 closeout — reconSummary SQL tab added; backend ready, frontend deferred per D-5.18 (see `.planning/phases/05-config-driven-select/ANGULAR-WIRING.md`)
 
 > **Gate:** The React Foundation phase (Phase 2) can begin once every row in this table
 > has a non-`tbd` value in the **Target** column. Priority and Notes may remain `tbd`
@@ -33,6 +33,7 @@
 | TLM Instance search tab | search-tab | search-config-v4.json#tlmInstance | `tlmInstanceV2Renderer` (registered in grid, not referenced by config) | tbd | tbd | tbd |
 | Recon ID search tab | search-tab | search-config-v4.json#reconId | `reconIdRenderer` (registered in grid, not referenced by config) | tbd | tbd | tbd |
 | Recon Portal ID search tab | search-tab | search-config-v4.json#reconPortalId | `recPortalIdRenderer` (registered in grid, not referenced by config) | tbd | tbd | tbd |
+| reconSummary (Phase 5 SQL example) | sql-tab | sql-search-config-v4.json#reconSummary | plain text (no custom cellRenderer) | port | tbd | Phase 5 — configured SELECT via `sql-search-config-v4.json`, served by `/api/v4/sql-search/{config,ssrm/{tabKey}}`. Backend ready and smoke-tested (`scripts/smoke-sql-search.sh` — 6 assertions green); frontend deferred per D-5.18. Angular wiring documented in `.planning/phases/05-config-driven-select/ANGULAR-WIRING.md`. Future React plan mirrors the Angular consumption against `/api/v4/sql-search/...`. |
 
 ## Modals
 
@@ -79,3 +80,7 @@ Assign `port` or `drop` during the React phase that covers their parent tab.
 
 *Phase 0 — Day-0 snapshot created: 2026-05-12*
 *Matrix is a living document — updated as React phases land.*
+
+## Update log
+
+- 2026-05-17 — Phase 5: reconSummary SQL tab added; backend ready, frontend deferred per D-5.18.
