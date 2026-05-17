@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: Plan 06-02 complete; ready for Plan 06-03
-last_updated: "2026-05-17T12:26:57.192Z"
+stopped_at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
+last_updated: "2026-05-17T12:39:02.211Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 28
-  completed_plans: 25
+  completed_plans: 26
   percent: 45
 ---
 
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -105,6 +105,7 @@ Progress: [█████████░] 89%
 | Phase 05-config-driven-select P06 | 25min | 2 tasks | 5 files |
 | Phase 06 P01 | 16min | 3 tasks | 2 files |
 | Phase 06 P02 | 7min | 2 tasks | 9 files |
+| Phase 06 P03 | 22min | 2 tasks | 22 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,9 @@ Recent decisions affecting current work:
 - [Phase ?]: ShedLock 7.7.0 pinned inline (no Maven property variable) — mirrors Phase 5 jsqlparser:5.3 pattern
 - [Phase ?]: Wave-0 scaffold uses class-level @Disabled, not per-method — Plans 06-03/04/05 enable by removing one annotation
 - [Phase ?]: spring.lifecycle.timeout-per-shutdown-phase=60s mitigates Pitfall L3 (default 30s force-kills BulkIngester mid-flush)
+- [Phase ?]: Plan 06-03: DocumentIdHasher uses JSON-encoded PK array → SHA-256 → first 8 bytes → HexFormat 16-hex-char ID (Pitfall L5)
+- [Phase ?]: Plan 06-03: LoaderConfigService is @Profile('!test') + uses ReflectionTestUtils-based unit tests; ES alias check skipped when esClient is null with WARN
+- [Phase ?]: Plan 06-03: LoaderRunHistoryService prunes via Oracle ROW_NUMBER() analytic DELETE scoped to single job_key (LOADER-07 race-safety); last_error truncated to 8192 chars
 
 ### Pending Todos
 
@@ -167,6 +171,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T12:26:46.153Z
-Stopped at: Plan 06-02 complete; ready for Plan 06-03
-Resume file: None
+Last session: 2026-05-17T12:39:02.205Z
+Stopped at: Plan 06-03 complete; ready for Plan 06-04 (scheduler + per-job execution)
+Resume file: .planning/phases/06-es-loader-subsystem/06-04-PLAN.md
