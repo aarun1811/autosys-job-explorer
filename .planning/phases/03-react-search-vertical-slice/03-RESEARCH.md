@@ -1025,42 +1025,54 @@ Apply inside the adapter. Verify in unit test: `configToColDefs.test.ts` should 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **`InitialFilter` shape from `/initial` response.**
+> All 7 open questions are resolved by either a locked decision in CONTEXT.md or an explicit implementation choice in the Phase 3 plans (03-01 .. 03-08). Resolution map:
+>
+> | # | Question | Resolution | Implemented in |
+> |---|----------|------------|---------------|
+> | 1 | `InitialFilter` shape from `/initial` | Zod schema locks the shape; live curl verifies during planning (already covered by CONTEXT.md D-3.7) | 03-01 (types.ts + Zod schema + useSearchConfig) |
+> | 2 | `cellStyle` kebab-case handling | Adopt camelCase adapter (safe path) with Vitest coverage on `align-items` → `alignItems` | 03-04 (configToColDefs adapter + unit test) |
+> | 3 | AG-Grid module registration site | Register once in `main.tsx` (matches Phase 2 ordering for `ServerSideRowModelModule`) | 03-04 (ExcelExport, ColumnsToolPanel, FiltersToolPanel in `main.tsx`) |
+> | 4 | `SmokeGrid` deletion timing | Same wave as `SearchGrid` introduction into the route, to avoid transient broken state | 03-07 (Wave 5, replaces SmokeGrid in `routes/index.tsx` redirect + deletes file) |
+> | 5 | TanStack Router `routeTree.gen.ts` CI regeneration | `vite build` already invokes the router plugin which regenerates the tree before tsc — current `build` script is sufficient | 03-07 (build/CI check; smoke covers it indirectly) |
+> | 6 | Excel export rows scope | Client-side `gridApi.exportDataAsExcel()` exports SSRM cached rows; for 5-row Phase 0.1 seed, one cache block covers everything — documented as known divergence from Angular server export | 03-08 (parity-matrix note); behavior wired in 03-06 / 03-07 |
+> | 7 | `useSearchConfig` `enabled` flag | Do not gate — fetch on mount; small payload + `staleTime: Infinity` + columns required at submit time make prefetching a net win | 03-01 (no `enabled` flag in the hook) |
+
+1. **RESOLVED — `InitialFilter` shape from `/initial` response.**
    - What we know: Backend DTO `SSRMRequestV4.initialFilter` is `InitialFilter { column, values }`; frontend Angular service defines `InitialFilter = { column: string; values: string[] }`.
    - What's unclear: The `/initial` response's `categoryResults[cat]` provides `key`, `label`, `values`, `count`, `hasMore`, `columns` — but no `column` field. The mapping is: `column = category.searchColumn` (e.g., `file_name_pattern` for `fileName`), `values = categoryResults[cat].values`.
-   - Recommendation: Planner verifies by hitting the live `/initial` endpoint with curl in plan-phase and capturing the response shape in a fixture. Zod schema in `types.ts` then locks it. If the actual response includes a `column` field per category, simplify the reshape.
+   - Resolution: Planner verifies by hitting the live `/initial` endpoint with curl in plan-phase and capturing the response shape in a fixture. Zod schema in `types.ts` then locks it. If the actual response includes a `column` field per category, simplify the reshape. **Implemented in 03-01 (Zod schema + useSearchConfig).**
 
-2. **`cellStyle` kebab-case handling.**
+2. **RESOLVED — `cellStyle` kebab-case handling.**
    - What we know: `search-config-v4.json` uses kebab-case (`align-items`, `justify-content`). React style objects are camelCase. AG-Grid `cellStyle` is passed through to React's `style` prop.
    - What's unclear: Whether AG-Grid v35 happens to coerce kebab-case → camelCase internally.
-   - Recommendation: Write the camelCase adapter (safe path). Add a Vitest test asserting the conversion. If a future AG-Grid version drops the coercion (or never had it), the adapter is forward-compatible.
+   - Resolution: Write the camelCase adapter (safe path). Add a Vitest test asserting the conversion. If a future AG-Grid version drops the coercion (or never had it), the adapter is forward-compatible. **Implemented in 03-04 (configToColDefs adapter + unit test on `align-items` → `alignItems`).**
 
-3. **Whether to register AG-Grid modules in `main.tsx` (once) vs `SearchGrid.tsx` (lazily).**
+3. **RESOLVED — Whether to register AG-Grid modules in `main.tsx` (once) vs `SearchGrid.tsx` (lazily).**
    - What we know: `main.tsx` already registers `ServerSideRowModelModule` once at app bootstrap.
    - What's unclear: Whether ColumnsToolPanel/FiltersToolPanel/ExcelExport should register at the same site or lazily inside `SearchGrid.tsx`.
-   - Recommendation: Once in `main.tsx` (consistent with Phase 2). Lazy registration is for code-split routes — Phase 3 doesn't code-split.
+   - Resolution: Once in `main.tsx` (consistent with Phase 2). Lazy registration is for code-split routes — Phase 3 doesn't code-split. **Implemented in 03-04 (register `ExcelExportModule`, `ColumnsToolPanelModule`, `FiltersToolPanelModule` in `main.tsx`).**
 
-4. **`SmokeGrid` deletion timing.**
+4. **RESOLVED — `SmokeGrid` deletion timing.**
    - What we know: D-3.x and CONTEXT.md mark `SmokeGrid.tsx` + `SmokeGrid.test.tsx` for deletion.
    - What's unclear: Should the delete happen in the same wave that introduces `SearchGrid`, or in a final cleanup wave?
-   - Recommendation: Delete in the wave that introduces `SearchGrid` to keep `routes/index.tsx` clean. The redirect from `/` to `/search` and the SmokeGrid delete should be the same wave to avoid a transient broken state.
+   - Resolution: Delete in the wave that introduces `SearchGrid` to keep `routes/index.tsx` clean. The redirect from `/` to `/search` and the SmokeGrid delete should be the same wave to avoid a transient broken state. **Implemented in 03-07 (Wave 5: route + redirect + SmokeGrid deletion all in one wave).**
 
-5. **TanStack Router `routeTree.gen.ts` regeneration on CI.**
+5. **RESOLVED — TanStack Router `routeTree.gen.ts` regeneration on CI.**
    - What we know: Local `pnpm dev` regenerates via the plugin.
    - What's unclear: Whether CI (which doesn't run `pnpm dev`) needs an explicit `pnpm build` step that the plugin hooks into, or whether `tsc -b && vite build` (the current `build` script) suffices.
-   - Recommendation: The current `build` script invokes `vite build`, which loads the plugin, which regenerates `routeTree.gen.ts` before tsc validates. The plugin docs (Context7 source: `/tanstack/router`) confirm `vite build` is sufficient. If CI fails on missing generated file, the fix is adding `--watch=false` or `--write` flag — planner verifies during integration.
+   - Resolution: The current `build` script invokes `vite build`, which loads the plugin, which regenerates `routeTree.gen.ts` before tsc validates. The plugin docs (Context7 source: `/tanstack/router`) confirm `vite build` is sufficient. If CI fails on missing generated file, the fix is adding `--watch=false` or `--write` flag — planner verifies during integration. **Implemented in 03-07 (build verification in plan acceptance criteria).**
 
-6. **Excel export "include all rows or only cached"?**
+6. **RESOLVED — Excel export "include all rows or only cached"?**
    - What we know: D-3.10 acknowledges SSRM-cached-rows-only limitation.
    - What's unclear: Whether for a 5-row seed the entire dataset fits in one cache block (`cacheBlockSize: 100` default) and thus the export is complete.
-   - Recommendation: For Phase 0.1 seed (5 rows), one fetch caches everything — export is complete. Document this caveat in the parity matrix row note: "Excel export → port (client-side; SSRM cached rows only — sufficient for current 1k-row ES collapseField ceiling)."
+   - Resolution: For Phase 0.1 seed (5 rows), one fetch caches everything — export is complete. Document this caveat in the parity matrix row note: "Excel export → port (client-side; SSRM cached rows only — sufficient for current 1k-row ES collapseField ceiling)." **Implemented in 03-08 (parity matrix note); behavior wired in 03-06 / 03-07.**
 
-7. **Whether to add a `useSearchConfig` `enabled` flag.**
+7. **RESOLVED — Whether to add a `useSearchConfig` `enabled` flag.**
    - What we know: `useSearchConfig` fires on `SearchPage` mount.
    - What's unclear: Whether to delay until `q` is non-empty to avoid an unnecessary call on the empty-state page.
-   - Recommendation: Don't gate — the config is small (~5KB), `staleTime: Infinity` means one call per session, and the columns are needed the moment the user submits, so prefetching is a net win.
+   - Resolution: Don't gate — the config is small (~5KB), `staleTime: Infinity` means one call per session, and the columns are needed the moment the user submits, so prefetching is a net win. **Implemented in 03-01 (hook fires unconditionally on mount; no `enabled` flag).**
 
 ---
 
