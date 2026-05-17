@@ -17,6 +17,7 @@
 # Exit 0 = PASS, Exit 1 = FAIL
 
 BACKEND_URL="${RECTRACE_URL:-http://localhost:6088}"
+CONFIG_ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/config"
 INITIAL_ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/initial"
 SSRM_ENDPOINT="$BACKEND_URL/rectrace/api/v4/search/ssrm/fileName"
 
@@ -33,6 +34,50 @@ echo "=== SSRM Smoke Test ==="
 echo "Backend: $BACKEND_URL"
 echo "Keyword: $KEYWORD"
 echo "X-Correlation-Id: $SMOKE_CORR_ID"
+
+# ---- Step 0: config endpoint shape (Phase 3 — config-driven principle) ---------
+# Verify /api/v4/search/config returns a fileName category whose `columns`
+# reference the three Phase 3 renderer string keys. If a future
+# search-config-v4.json edit removes any of these keys, the React renderer
+# registry will silently fall back to the default text renderer for that
+# column — this smoke catches that regression at the ops gate.
+
+echo ""
+echo "Step 0: GET $CONFIG_ENDPOINT"
+CONFIG_RAW=$(curl -s -w '\n%{http_code}' "$CONFIG_ENDPOINT" \
+  -H "X-Correlation-Id: $SMOKE_CORR_ID" 2>&1)
+CONFIG_CURL_EXIT=$?
+
+# Portable split (BSD/macOS-compatible — same idiom as Step 1).
+CONFIG_CODE="${CONFIG_RAW##*$'\n'}"
+CONFIG_BODY="${CONFIG_RAW%$'\n'*}"
+
+if [ "$CONFIG_CURL_EXIT" -ne 0 ]; then
+  echo "FAIL: /config curl failed (exit $CONFIG_CURL_EXIT). Is the backend running?"
+  exit 1
+fi
+if [ "$CONFIG_CODE" != "200" ]; then
+  echo "FAIL: /config returned HTTP $CONFIG_CODE. Body: $CONFIG_BODY"
+  exit 1
+fi
+
+# Assert fileName category exists in the config response.
+if ! printf '%s' "$CONFIG_BODY" | grep -q '"key"[[:space:]]*:[[:space:]]*"fileName"'; then
+  echo "FAIL: /config response missing fileName category"
+  exit 1
+fi
+
+# Assert the three Phase 3 renderer string keys appear in the config response.
+# A grep across the whole response is sufficient — search-config-v4.json only
+# references each renderer key inside category column definitions.
+for KEY in appIDCellRenderer supportEmailCellRenderer executionOrderButtonRenderer; do
+  if ! printf '%s' "$CONFIG_BODY" | grep -q "\"cellRenderer\"[[:space:]]*:[[:space:]]*\"$KEY\""; then
+    echo "FAIL: /config response missing cellRenderer \"$KEY\" — Phase 3 React registry expects this string key"
+    exit 1
+  fi
+done
+
+echo "Step 0 PASS — /config exposes fileName with the 3 Phase 3 renderer keys"
 
 # ---- Step 1: keyword search → harvest fileName values --------------------------
 
