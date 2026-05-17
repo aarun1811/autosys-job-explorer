@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -96,7 +97,12 @@ public class LoaderRunHistoryService {
      *         callers must pass this back to {@link #recordRunSuccess} / {@link #recordRunFailure}.
      */
     public Instant recordRunStart(String jobKey) {
-        Instant now = Instant.now();
+        // Pitfall L? — the loader_run_history.started_at column is TIMESTAMP(3); Instant.now()
+        // carries nanosecond precision. Binding a sub-millisecond Instant on INSERT and the
+        // SAME Instant on the WHERE clause of the UPDATE causes a phantom mismatch because
+        // Oracle truncates to milliseconds on store but JDBC binds the full nanos for compare.
+        // Truncate to millis here so the returned Instant exactly matches what Oracle stores.
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         jdbc.update(INSERT_RUNNING_SQL, jobKey, Timestamp.from(now));
         return now;
     }

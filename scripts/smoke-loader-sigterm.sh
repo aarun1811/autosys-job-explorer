@@ -11,7 +11,8 @@
 #   - Docker stack up (Oracle + Elasticsearch healthy).
 #   - Seed applied: cd ../rectrace-local-dev && .venv/bin/python apply.py
 #   - Backend NOT running on :6088 (this smoke owns the JVM lifecycle).
-#   - rectrace-local-dev/.venv with oracledb + python-dotenv installed.
+#   - /Users/aarun/Workspace/Projects/rectrace-local-dev/.venv with oracledb installed.
+#   - RECTRACE_PWD + ORACLE_DSN env vars (defaults match rectrace-local-dev/.env.example).
 #
 # Exit codes:
 #   0 — clean shutdown observed; loader_run_history has zero RUNNING rows for the test job.
@@ -24,6 +25,10 @@ ES_URL="${ES_URL:-http://localhost:9200}"
 JOB_KEY="rectrace_core_loader"
 ALIAS="rectrace_core_alias"
 LOG_PATH="/tmp/loader-sigterm-$$.log"
+
+# Oracle creds — match the local-dev defaults (rectrace-local-dev/.env.example).
+export RECTRACE_PWD="${RECTRACE_PWD:-rectrace_pwd}"
+export ORACLE_DSN="${ORACLE_DSN:-localhost:1521/FREEPDB1}"
 
 # 1) Pre-flight — port :6088 must be free.
 if lsof -i:6088 -sTCP:LISTEN >/dev/null 2>&1; then
@@ -73,8 +78,18 @@ sleep 1
 # 4) Send SIGTERM to the backend mid-run. The OracleToEsLoaderJob @Scheduled task is
 #    inside ShedLock's executeWithLock; @PreDestroy on LoaderJobRegistry closes the
 #    BulkIngester which flushes any queued docs.
-echo "INFO: sending SIGTERM to backend pid $BACKEND_PID"
-kill -TERM "$BACKEND_PID"
+#
+#    mvn spring-boot:run forks a child JVM — signalling the maven wrapper causes it to
+#    forcibly kill the child before the JVM can flush its @PreDestroy banner. We therefore
+#    locate the child JVM and signal it directly so Spring's graceful-shutdown lifecycle
+#    runs to completion and emits the LoaderJobRegistry banner.
+JVM_PID=$(pgrep -P "$BACKEND_PID" -f java | head -1)
+if [ -z "$JVM_PID" ]; then
+  echo "INFO: no JVM child found under pid $BACKEND_PID — signalling maven wrapper instead"
+  JVM_PID="$BACKEND_PID"
+fi
+echo "INFO: sending SIGTERM to JVM pid $JVM_PID (mvn wrapper pid $BACKEND_PID)"
+kill -TERM "$JVM_PID"
 
 # 5) Wait for the backend to exit (90s budget).
 SHUTDOWN_OK=0
@@ -106,10 +121,8 @@ if ! grep -qE "Loader (shutting down|shutdown complete|closing BulkIngester)" "$
 fi
 
 # 7) Oracle assertion — zero RUNNING rows for the test job.
-RUNNING_COUNT=$( cd "$REPO_ROOT/../rectrace-local-dev" && .venv/bin/python -c "
+RUNNING_COUNT=$( /Users/aarun/Workspace/Projects/rectrace-local-dev/.venv/bin/python -c "
 import os, oracledb
-from dotenv import load_dotenv
-load_dotenv()
 c = oracledb.connect(user='rectrace', password=os.environ['RECTRACE_PWD'], dsn=os.environ['ORACLE_DSN'])
 cur = c.cursor()
 cur.execute(\"SELECT COUNT(*) FROM loader_run_history WHERE job_key = '${JOB_KEY}' AND status = 'RUNNING'\")

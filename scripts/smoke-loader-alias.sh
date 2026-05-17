@@ -57,24 +57,43 @@ if [ "$ALIAS_CODE" != "404" ]; then
 fi
 
 # 3) Boot the backend with the bad config and the local profile. A successful boot keeps
-#    running forever — we use `timeout 60` to bound that. If timeout returns 124, the JVM
-#    DID boot (unexpected); any other non-zero is a JVM failure (expected).
+#    running forever — we bound that with a shell-native timeout (macOS lacks `timeout`).
+#    Strategy: spawn maven in background, poll for exit up to 90s; if still alive, SIGTERM.
+BOOT_DEADLINE_SEC="${BOOT_DEADLINE_SEC:-90}"
 set +e
-( cd "$REPO_ROOT/backend/rectrace" && timeout 60 mvn -q spring-boot:run \
+( cd "$REPO_ROOT/backend/rectrace" && mvn -q spring-boot:run \
     -Dspring-boot.run.profiles=local \
     -Dspring-boot.run.arguments="--loader-config.location=file:${CONFIG_PATH}" \
-    >"$BOOT_LOG" 2>&1 )
-BOOT_EXIT=$?
+    >"$BOOT_LOG" 2>&1 ) &
+MVN_PID=$!
+ELAPSED=0
+BOOT_EXIT=""
+while [ "$ELAPSED" -lt "$BOOT_DEADLINE_SEC" ]; do
+  if ! kill -0 "$MVN_PID" 2>/dev/null; then
+    wait "$MVN_PID"
+    BOOT_EXIT=$?
+    break
+  fi
+  sleep 2
+  ELAPSED=$((ELAPSED + 2))
+done
+if [ -z "$BOOT_EXIT" ]; then
+  # JVM still alive past deadline — kill the whole process group of the maven wrapper
+  # (mvn forks a child JVM) and treat as a deadline failure.
+  pkill -TERM -P "$MVN_PID" 2>/dev/null || true
+  kill -TERM "$MVN_PID" 2>/dev/null || true
+  sleep 3
+  pkill -KILL -P "$MVN_PID" 2>/dev/null || true
+  kill -KILL "$MVN_PID" 2>/dev/null || true
+  echo "FAIL: backend did not exit within ${BOOT_DEADLINE_SEC}s — boot did not fail fast"
+  tail -60 "$BOOT_LOG"
+  exit 1
+fi
 set -e
 
 if [ "$BOOT_EXIT" -eq 0 ]; then
   echo "FAIL: backend boot returned 0 — expected JVM failure"
-  tail -40 "$BOOT_LOG"
-  exit 1
-fi
-if [ "$BOOT_EXIT" -eq 124 ]; then
-  echo "FAIL: backend did not exit within 60s — boot did not fail fast"
-  tail -40 "$BOOT_LOG"
+  tail -60 "$BOOT_LOG"
   exit 1
 fi
 
