@@ -25,6 +25,43 @@ _(populated as each phase runs — newest entry per phase top, oldest bottom)_
 
 ---
 
+### Phase 6 — ES Loader Subsystem  ✓  (~2 hours, 23 Loader* tests green, all 3 smoke scripts green)
+
+**Status:** Complete. LOADER-01..10 covered. Smokes pass against live local-dev stack (Oracle + ES + backend).
+
+**Wave structure:** 4 waves / 5 plans (`06-01` DDL+alias bootstrap, `06-02` ShedLock dep+test scaffolds, `06-03` data layer, `06-04` scheduler engine, `06-05` admin API+smokes).
+
+**Locked decisions (all from CONTEXT.md D-6.x; research corrected two of them):**
+- D-6.0 Scheduler: **`@Scheduled + ShedLock 7.7.0`** (research bumped from 5.16 — 7.x is required for SB 3.5 / JVM 17+).
+- ES client: `co.elastic.clients` Java API + `BulkIngester` (research confirmed: Phase 1 already migrated away from RestHighLevelClient).
+- Dynamic cron via single `@Scheduled(fixedDelayString="PT30S")` ticker + `LockingTaskExecutor.executeWithLock(...)` per due job.
+- All new scheduling beans `@Profile("!test")`.
+- Bootstrap DDL added to sibling `rectrace-local-dev` repo: `shedlock` table + `loader_run_history` table + `rectrace_core_alias` ES alias.
+
+**Decisions I made (Claude's Discretion — review on return):**
+- **D-6.11**: SHA-256 first 16 chars for `_id` (NOT full SHA-256). Internal data + low row counts make 16 chars sufficient.
+- **D-6.12**: ShedLock locks in the SAME Oracle DB as `rectrace_core` (existing primary datasource). Simpler than a separate DB/schema.
+- **D-6.13**: Admin endpoint authZ deferred to Phase 9. Currently relies on `x-citiportal-loginid` header convention but doesn't validate against an allow-list.
+- **D-6.14**: Run-now returns 200 on first acquire, 409 Conflict when ShedLock cannot acquire (scheduled run in flight).
+- **D-6.15**: Example loader job `rectrace_core_loader` copies Oracle `rectrace_core` → ES `rectrace_core_alias`, every 5 minutes via `0 */5 * * * *`.
+- **D-6.16**: Source datasource = existing PRIMARY (NOT readonly DS from Phase 5). Loader queries may benefit from larger pool.
+
+**Real bugs caught during live smoke (commit `db5102b`):**
+- `LoaderJdbcConfig.loaderJdbcTemplate` needed `@Primary` to disambiguate with Phase 5's `readonlyJdbcTemplate`. Without it, Spring couldn't autowire `JdbcTemplate` in `OracleServiceV4` and backend wouldn't boot.
+- `LoaderRunHistoryService.recordRunStart` truncated `Instant` to ms (matches `loader_run_history.started_at TIMESTAMP(3)`). Nanosecond Instants left every run stuck in `RUNNING` due to UPDATE WHERE-clause mismatches.
+- `smoke-loader-alias.sh` used a shell-native deadline loop instead of GNU `timeout` (missing on macOS).
+- `smoke-loader-sigterm.sh` signals the JVM child via `pgrep -P` instead of the maven wrapper so `@PreDestroy` banners actually flush.
+
+**Open items deferred:**
+- AuthZ on `/api/v4/loader-admin/**` — Phase 9.
+- Multi-instance horizontal scaling — single-instance VM today; ShedLock supports HA when needed.
+
+**Files added (autosys-job-explorer):** ~20 files across `loader/` package + `config/LoaderShedLockConfig.java` + `config/LoaderJdbcConfig.java` + `controller/v4/LoaderAdminControllerV4.java` + `dto/v4/Loader*.java` + 7 test files + 3 smoke scripts + `loader-config-v4.json`.
+
+**Files added (rectrace-local-dev sibling):** `shedlock` table DDL + `loader_run_history` table DDL + `rectrace_core_alias` bootstrap in `apply.py`.
+
+---
+
 ### Phase 5 — Config-driven SELECT  ✓  (~2.5 hours, 21 SQL tests green)
 
 **Status:** Complete. SQL-01..SQL-07 all marked complete in REQUIREMENTS.md, parity-matrix row flipped to `port`.
