@@ -1,49 +1,84 @@
 package com.citi.gru.rectrace.service.v4;
 
-import org.junit.jupiter.api.Disabled;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Phase 5 / SQL-02 + SQL-05 (defense-in-depth): asserts the Spring application context
- * fails to start when {@code sql-search-config-v4.json} contains a malformed query.
+ * Phase 5 / SQL-02 + SQL-05 — boot-failure path proof for the
+ * {@code @PostConstruct} validation gate.
  *
- * <p>Wave 0 scaffolding — all tests {@code @Disabled} with the literal {@code "Wave 4: ..."}
- * reason string.
- *
- * <p>TODO Wave 4: split into {@code @Nested} per fixture (or per-test {@code @SpringBootTest}
- * classes) with {@code @TestPropertySource(properties = "sql-search-config.location=classpath:test-sql-config-bad-insert.json")}
- * etc. Each fixture exercises one rejection reason; the test asserts
- * {@code IllegalStateException} bubbles out of the failed bean creation with a message
- * containing the offending tab key.
+ * <p>Wave 4 (Plan 05-04): enabled. We deliberately instantiate
+ * {@link SqlSearchConfigServiceV4} directly with a {@link DefaultResourceLoader} and call
+ * {@code init()} so the assertion targets the raw {@link IllegalStateException} message
+ * without {@code @SpringBootTest} wrapping it in {@code BeanCreationException}. This
+ * mirrors the production cause-chain — Spring would re-throw this exact exception during
+ * context init.
  */
-@SpringBootTest
-@ActiveProfiles("test")
 class SqlValidationBootFailureTest {
 
-    @Disabled("Wave 4: enabled when SqlSearchConfigServiceV4 lands")
+    private static SqlSearchConfigServiceV4 newServiceWithConfig(String classpathLocation) {
+        SqlSearchConfigServiceV4 svc = new SqlSearchConfigServiceV4(
+            new DefaultResourceLoader(),
+            new ObjectMapper());
+        ReflectionTestUtils.setField(svc, "configLocation", classpathLocation);
+        return svc;
+    }
+
     @Test
     void rejectsInsertStatement() {
-        // Wave 4: @TestPropertySource pointing at test-sql-config-bad-insert.json
-        // (a fixture whose single tab's query is "INSERT INTO foo VALUES (1)"). Assert
-        // the SpringBoot context init fails with IllegalStateException whose cause-chain
-        // message contains the offending tab key + "not a SELECT".
+        SqlSearchConfigServiceV4 svc =
+            newServiceWithConfig("classpath:sql-search-config-bad-insert.json");
+
+        assertThatThrownBy(svc::init)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("bad")
+            .hasMessageContaining("not a SELECT");
     }
 
-    @Disabled("Wave 4: enabled when SqlSearchConfigServiceV4 lands")
     @Test
     void rejectsUnboundedSelect() {
-        // Wave 4: @TestPropertySource pointing at test-sql-config-bad-unbounded.json
-        // (a tab whose query is "SELECT * FROM rectrace_core" — no WHERE, no FETCH).
-        // Assert IllegalStateException with message containing "missing both WHERE and FETCH".
+        SqlSearchConfigServiceV4 svc =
+            newServiceWithConfig("classpath:sql-search-config-bad-unbounded.json");
+
+        assertThatThrownBy(svc::init)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("unbounded")
+            .hasMessageContaining("missing both WHERE and FETCH");
     }
 
-    @Disabled("Wave 4: enabled when SqlSearchConfigServiceV4 lands")
     @Test
     void acceptsValidCte() {
-        // Wave 4: @TestPropertySource pointing at test-sql-config-good-cte.json
-        // (a tab whose query is "WITH cte AS (SELECT 1 FROM dual WHERE 1=1) SELECT * FROM cte WHERE 1=1").
-        // Assert context loads cleanly — no exception, getTabs() exposes the CTE tab.
+        SqlSearchConfigServiceV4 svc =
+            newServiceWithConfig("classpath:sql-search-config-cte.json");
+
+        svc.init(); // must not throw
+        assertThat(svc.getTabs()).hasSize(1);
+        assertThat(svc.getTabs().get(0).getKey()).isEqualTo("cte");
+    }
+
+    @Test
+    void acceptsProductionConfig() {
+        SqlSearchConfigServiceV4 svc =
+            newServiceWithConfig("classpath:sql-search-config-v4.json");
+
+        svc.init(); // must not throw — production config must always satisfy the gate
+        assertThat(svc.getTabs())
+            .extracting(t -> t.getKey())
+            .contains("reconSummary");
+    }
+
+    @Test
+    void toleratesMissingConfigFile() {
+        SqlSearchConfigServiceV4 svc =
+            newServiceWithConfig("classpath:sql-search-config-does-not-exist.json");
+
+        svc.init(); // missing file is non-fatal — empty tabs list
+        assertThat(svc.getTabs()).isEmpty();
     }
 }

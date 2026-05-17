@@ -1,0 +1,10 @@
+{
+  "tabs": [
+    {
+      "key": "bad",
+      "label": "Bad",
+      "query": "INSERT INTO foo VALUES (1)",
+      "columns": []
+    }
+  ]
+}

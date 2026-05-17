@@ -1,0 +1,10 @@
+{
+  "tabs": [
+    {
+      "key": "cte",
+      "label": "CTE",
+      "query": "WITH x AS (SELECT 1 FROM dual WHERE 1=1) SELECT * FROM x WHERE 1=1",
+      "columns": []
+    }
+  ]
+}
