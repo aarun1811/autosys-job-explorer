@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +24,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * OBS-01 contract test — verifies that the "access" logger emits each HTTP
  * request with the canonical MDC key set (traceId / userId / path / method /
- * status / durationMs). Plan 07-02 implements the access-log filter and removes
- * the {@link Disabled} annotation.
+ * status / durationMs). Plan 07-02 enabled this test by wiring
+ * AccessLogFilter and UserIdMdcFilter into the request chain.
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-02")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")

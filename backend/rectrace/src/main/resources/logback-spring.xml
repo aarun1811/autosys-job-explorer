@@ -3,10 +3,11 @@
   OBS-01 / OBS-07 — Profile-aware structured logging.
 
   In !prod profile: human-readable ConsoleAppender (CONSOLE) for laptop dev/UAT/test.
-  In  prod profile: STDOUT_JSON (LogstashEncoder via Console) AND SPLUNK_ASYNC
-                    (AsyncAppender wrapping LogstashTcpSocketAppender to Splunk HEC).
-                    STDOUT_JSON is the operator-recovery surface — it always emits
-                    even when Splunk is unreachable.
+  In  prod profile: STDOUT_JSON (LogstashEncoder via Console) AND SPLUNK_HEC
+                    (LogstashTcpSocketAppender to Splunk HEC, inherently async
+                    via its built-in <ringBufferSize>). STDOUT_JSON is the
+                    operator-recovery surface — it always emits even when
+                    Splunk is unreachable.
 
   Filename pitfall P-1: this file MUST be logback-spring.xml (NOT logback.xml).
   Logback evaluates logback.xml BEFORE Spring activates profiles, so <springProfile>
@@ -52,7 +53,14 @@
 
     <!-- Splunk HEC TCP destination. Raw-TCP HEC is auth-by-source-IP today
          (D-7.14); the splunk.hec.token placeholder is reserved for a future
-         HTTPS-HEC migration and is unused by LogstashTcpSocketAppender. -->
+         HTTPS-HEC migration and is unused by LogstashTcpSocketAppender.
+
+         Pitfall P-2 — back-pressure: LogstashTcpSocketAppender is INHERENTLY
+         asynchronous. Its <ringBufferSize> field below configures the LMAX
+         disruptor buffer that decouples log producers from the TCP writer
+         thread. We attach it DIRECTLY to root rather than wrapping it in
+         a Logback AsyncAppender to avoid double-buffering and to keep the
+         appender chain inspectable by LogbackProdProfileTest. -->
     <appender name="SPLUNK_HEC"
               class="net.logstash.logback.appender.LogstashTcpSocketAppender">
       <destination>${splunkHost}:${splunkPort}</destination>
@@ -69,19 +77,9 @@
       </encoder>
     </appender>
 
-    <!-- Async wrapper (Pitfall P-2): neverBlock=true trades message visibility
-         for app availability when Splunk is slow. STDOUT_JSON above is the
-         recovery surface for any dropped messages. -->
-    <appender name="SPLUNK_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
-      <appender-ref ref="SPLUNK_HEC"/>
-      <queueSize>2048</queueSize>
-      <discardingThreshold>0</discardingThreshold>
-      <neverBlock>true</neverBlock>
-    </appender>
-
     <root level="INFO">
       <appender-ref ref="STDOUT_JSON"/>
-      <appender-ref ref="SPLUNK_ASYNC"/>
+      <appender-ref ref="SPLUNK_HEC"/>
     </root>
   </springProfile>
 </configuration>

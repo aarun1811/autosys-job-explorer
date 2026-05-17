@@ -1,6 +1,5 @@
 package com.citi.gru.rectrace.observability;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,10 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * OBS-03 contract — actuator exposure list is the explicit allow-list defined
  * in D-7.3: {@code health, info, prometheus, loggers, metrics}. Sensitive
  * endpoints ({@code env, heapdump, shutdown, beans, configprops, threaddump})
- * MUST NOT appear in the {@code _links} envelope. Plan 07-02 sets the
- * application.properties exposure config and removes the {@link Disabled}.
+ * MUST NOT appear in the {@code _links} envelope. Plan 07-02 set the
+ * application.properties exposure config and enabled this test.
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-02")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
