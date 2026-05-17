@@ -1,52 +1,129 @@
 package com.citi.gru.rectrace.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Disabled;
+import java.time.Duration;
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.citi.gru.rectrace.loader.dto.LoaderBatchConfigV4;
+import com.citi.gru.rectrace.loader.dto.LoaderJobDefV4;
+import com.citi.gru.rectrace.loader.dto.LoaderTargetConfigV4;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
 
 /**
- * Phase 6 / LOADER-10 — Wave-0 contract scaffold for ES BulkIngester construction + tuning.
+ * Phase 6 / LOADER-10 — verifies that {@code LoaderJobRegistry.init()} builds a per-job
+ * {@link BulkIngester} with the configured batch knobs (rows / bytes / flush-ms).
  *
- * <p>Wave-0 scaffold per Plan 06-02. All methods @Disabled until Plan 06-04 enables this class.
+ * <p>The Elasticsearch Java API 8.x exposes accessors on {@code BulkIngester}
+ * ({@code maxOperations()}, {@code maxSize()}, {@code flushInterval()}, {@code maxConcurrentRequests()})
+ * so this test reads those directly — option (a) in the Wave-0 scaffold notes.
  *
- * <p>The target class (likely {@code BulkIngesterFactory} or a {@code @Bean} method on
- * {@code OracleToEsLoaderJob}) is introduced by Plan 06-04 and produces an Elasticsearch
- * {@code BulkIngester<Void>} (java-client) with batching parameters drawn from the per-job
- * config in {@code loader-config.json}.
- *
- * <p>Default batching (LOADER-10 contract per 06-RESEARCH.md):
- * <ul>
- *   <li>{@code maxOperations = 5000} — soft cap on per-batch row count.</li>
- *   <li>{@code maxSize = 5 MiB} — hard cap on per-batch byte size.</li>
- *   <li>{@code flushInterval = 5s} — time-based flush to bound staleness on idle jobs.</li>
- *   <li>{@code maxConcurrentRequests = 1} — serialize per loader (LOADER-02 already serializes
- *       at the job level; this prevents intra-batch interleaving).</li>
- * </ul>
- *
- * <p>BulkIngester does not expose getters for its config. Plan 06-04 must choose between:
- * (a) capturing the config in a {@code BulkIngesterSettings} record exposed for testing, or
- * (b) testing observable behavior — push N+1 ops and assert the listener fires N flushes.
+ * <p>The {@code ElasticsearchClient} is mocked (the ingester only stores the reference at
+ * build time; nothing is dispatched in this test because no operations are added). The
+ * registry is instantiated directly to avoid booting a Spring context (Pitfall L4 — the
+ * production registry is {@code @Profile("!test")}-gated).
  */
-@Disabled("Wave 0 / Plan 06-02 — enabled when BulkIngester wiring lands in Plan 06-04")
 class BulkIngesterFactoryTest {
+
+    private LoaderJobRegistry registry;
+
+    @AfterEach
+    void tearDown() {
+        if (registry != null) {
+            // Close any built ingesters so the test does not leak schedulers.
+            registry.shutdown();
+        }
+    }
 
     @Test
     void defaultBatchSettingsAre5000Rows5MB5Seconds() {
-        // Plan 06-04 option (a): assertThat(settings.maxOperations()).isEqualTo(5000);
-        //                        assertThat(settings.maxSize().toBytes()).isEqualTo(5L * 1024 * 1024);
-        //                        assertThat(settings.flushInterval()).isEqualTo(Duration.ofSeconds(5));
-        // Plan 06-04 option (b): push 5001 ops, observe exactly one flush from the listener.
-        assertThat(0).as("LOADER-10: default BulkIngester settings must be 5000 ops / 5 MiB / 5s").isEqualTo(0);
-        fail("LOADER-10: default settings assertion pending Plan 06-04 implementation choice");
+        LoaderJobDefV4 def = jobDef("test-key", 5000, 5L * 1024L * 1024L, 5000L);
+        registry = buildRegistry(List.of(def));
+
+        BulkIngester<String> ingester = registry.ingesterFor("test-key");
+        assertThat(ingester)
+                .as("LOADER-10: registry.init() must build a BulkIngester for each configured job")
+                .isNotNull();
+
+        assertThat(ingester.maxOperations())
+                .as("LOADER-10: default maxOperations is 5000 rows")
+                .isEqualTo(5000);
+        assertThat(ingester.maxSize())
+                .as("LOADER-10: default maxSize is 5 MiB")
+                .isEqualTo(5L * 1024L * 1024L);
+        assertThat(ingester.flushInterval())
+                .as("LOADER-10: default flushInterval is 5 seconds")
+                .isEqualTo(Duration.ofMillis(5000L));
+        assertThat(ingester.maxConcurrentRequests())
+                .as("LOADER-10: maxConcurrentRequests is pinned at 1 to serialize intra-job flushes")
+                .isEqualTo(1);
     }
 
     @Test
     void perJobOverridesAreHonored() {
-        // Plan 06-04: a LoaderJobDefV4 with batch.rows=100 must produce an ingester whose
-        // effective maxOperations is 100. Concrete behavioral assertion (option b above):
-        // push 100 ops, observe exactly one flush invocation on the BulkListener.
-        fail("LOADER-10: per-job batch overrides from loader-config.json must propagate to BulkIngester");
+        LoaderJobDefV4 jobA = jobDef("jobA", 100, 1L * 1024L * 1024L, 1000L);
+        LoaderJobDefV4 jobB = jobDef("jobB", 10_000, 10L * 1024L * 1024L, 10_000L);
+        registry = buildRegistry(List.of(jobA, jobB));
+
+        BulkIngester<String> ingesterA = registry.ingesterFor("jobA");
+        BulkIngester<String> ingesterB = registry.ingesterFor("jobB");
+
+        assertThat(ingesterA).as("jobA ingester must exist").isNotNull();
+        assertThat(ingesterB).as("jobB ingester must exist").isNotNull();
+
+        assertThat(ingesterA.maxOperations()).as("jobA override: 100 rows").isEqualTo(100);
+        assertThat(ingesterA.maxSize()).as("jobA override: 1 MiB").isEqualTo(1L * 1024L * 1024L);
+        assertThat(ingesterA.flushInterval()).as("jobA override: 1s").isEqualTo(Duration.ofMillis(1000L));
+
+        assertThat(ingesterB.maxOperations()).as("jobB override: 10 000 rows").isEqualTo(10_000);
+        assertThat(ingesterB.maxSize()).as("jobB override: 10 MiB").isEqualTo(10L * 1024L * 1024L);
+        assertThat(ingesterB.flushInterval()).as("jobB override: 10s").isEqualTo(Duration.ofMillis(10_000L));
+
+        assertThat(registry.listenerFor("jobA")).as("per-job listener must be wired").isNotNull();
+        assertThat(registry.listenerFor("jobB")).as("per-job listener must be wired").isNotNull();
+        assertThat(registry.listenerFor("jobA"))
+                .as("listener instances must NOT be shared across jobs")
+                .isNotSameAs(registry.listenerFor("jobB"));
+    }
+
+    // --- helpers ---
+
+    private static LoaderJobDefV4 jobDef(String key, int rows, long bytes, long flushMs) {
+        LoaderBatchConfigV4 batch = new LoaderBatchConfigV4();
+        batch.setRows(rows);
+        batch.setBytes(bytes);
+        batch.setFlushMs(flushMs);
+
+        LoaderTargetConfigV4 target = new LoaderTargetConfigV4();
+        target.setAlias(key + "-alias");
+        target.setBatch(batch);
+
+        LoaderJobDefV4 def = new LoaderJobDefV4();
+        def.setKey(key);
+        def.setTarget(target);
+        def.setSchedule("0 0 * * * *"); // every hour — never fires in the test
+        return def;
+    }
+
+    private static LoaderJobRegistry buildRegistry(List<LoaderJobDefV4> jobs) {
+        LoaderConfigService cfg = mock(LoaderConfigService.class);
+        when(cfg.getJobs()).thenReturn(jobs);
+        // BulkIngester.of(...) reads esClient._transport().options() at build time, so a
+        // plain mock NPEs. RETURNS_DEEP_STUBS lets Mockito synthesize the chain. The
+        // ingester never actually dispatches in this test because no ops are added.
+        ElasticsearchClient esClient = mock(ElasticsearchClient.class, RETURNS_DEEP_STUBS);
+
+        LoaderJobRegistry r = new LoaderJobRegistry(cfg, esClient);
+        ReflectionTestUtils.invokeMethod(r, "init");
+        return r;
     }
 }

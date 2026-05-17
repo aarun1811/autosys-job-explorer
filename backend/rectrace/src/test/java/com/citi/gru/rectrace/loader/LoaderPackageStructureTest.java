@@ -24,7 +24,6 @@ class LoaderPackageStructureTest {
     }
 
     @Test
-    @Disabled("Plan 06-04 — enable when LoaderJobRegistry is implemented")
     void loaderJobRegistryExists() {
         // Plan 06-04 deliverable.
         assertThatCode(() -> Class.forName("com.citi.gru.rectrace.loader.LoaderJobRegistry"))

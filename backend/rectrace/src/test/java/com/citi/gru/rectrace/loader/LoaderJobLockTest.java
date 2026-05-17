@@ -1,47 +1,91 @@
 package com.citi.gru.rectrace.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.jupiter.api.Disabled;
+import java.time.Duration;
+import java.time.Instant;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import net.javacrumbs.shedlock.core.DefaultLockingTaskExecutor;
+import net.javacrumbs.shedlock.core.LockConfiguration;
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.core.LockingTaskExecutor;
+import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskResult;
+import net.javacrumbs.shedlock.provider.inmemory.InMemoryLockProvider;
+
 /**
- * Phase 6 / LOADER-02 — Wave-0 contract scaffold for ShedLock-backed loader job mutex.
+ * Phase 6 / LOADER-02 — verifies that {@link LockingTaskExecutor#executeWithLock} provides
+ * mutual exclusion within a single JVM.
  *
- * <p>Wave-0 scaffold per Plan 06-02. All methods @Disabled until Plan 06-04 enables this class.
- *
- * <p>The target wiring ({@code LoaderShedLockConfig}, {@code @SchedulerLock} on each loader job
- * method) is introduced by Plan 06-04. The {@code LockProvider} bean lives in a
- * {@code @Profile("!test")}-gated config, mirroring the dual-datasource pattern used by
- * {@code DataSourceConfig}/{@code AutosysDataSourceConfig}/{@code ReadonlyDataSourceConfig}.
- *
- * <p>When Plan 06-04 enables this test, it must additionally provide a {@code @TestConfiguration}
- * exposing an in-memory {@code LockProvider} (e.g. {@code DefaultLockManager} backed by an
- * {@code InMemoryStorageAccessor}) — the production JDBC-template provider is profile-excluded
- * during tests. Without that wiring, ShedLock's spring-aspect autowire would fail context init,
- * so the Wave-0 scaffold is correctly @Disabled until Plan 06-04 lands the @TestConfiguration.
- *
- * <p>Contract: a {@code LockingTaskExecutor} bean is available; calling {@code executeWithLock}
- * with the same {@code LockConfiguration} name twice (within {@code lockAtLeastFor}) results in
- * the second call returning {@code wasExecuted() == false} (LOADER-02 mutual exclusion).
+ * <p>This test uses the in-memory {@link InMemoryLockProvider} so it never touches Oracle —
+ * the production {@code JdbcTemplateLockProvider} bean is {@code @Profile("!test")}-gated
+ * and Plan 06 explicitly defers live-Oracle smoke verification to the smoke scripts.
+ * The contract being asserted here is ShedLock's own (we trust the library) plus the wrapper
+ * call shape that {@code LoaderTicker} uses (we own this).
  */
-@Disabled("Wave 0 / Plan 06-02 — enabled when LoaderShedLockConfig + @SchedulerLock land in Plan 06-04")
 class LoaderJobLockTest {
 
-    @Test
-    void lockingTaskExecutorAcquiresLock() {
-        // Plan 06-04: inject LockingTaskExecutor, build LockConfiguration("loader:test", 30s, 1s),
-        // call executeWithLock(Runnable, LockConfiguration), assertThat(result.wasExecuted()).isTrue();
-        fail("LOADER-02: first executeWithLock call with a fresh lock name must succeed");
+    private LockingTaskExecutor executor;
+
+    @BeforeEach
+    void setUp() {
+        LockProvider provider = new InMemoryLockProvider();
+        executor = new DefaultLockingTaskExecutor(provider);
     }
 
     @Test
-    void secondAcquisitionWithSameNameReturnsNotExecuted() {
-        // Plan 06-04: invoke executeWithLock twice sequentially with the same lock name,
-        // second call is within lockAtLeastFor of the first. Contract: second returns
-        // wasExecuted() == false. This is the core LOADER-02 mutual-exclusion contract
-        // (one VM process, two concurrent threads — never two concurrent loader runs).
-        assertThat(false).as("LOADER-02: re-entrant lock acquisition must report not-executed").isTrue();
+    void lockingTaskExecutorAcquiresLock() throws Throwable {
+        LockConfiguration cfg = new LockConfiguration(
+                Instant.now(),
+                "loader:test",
+                Duration.ofMinutes(55),
+                Duration.ZERO);
+
+        TaskResult<String> result = executor.executeWithLock(
+                (LockingTaskExecutor.TaskWithResult<String>) () -> "ran",
+                cfg);
+
+        assertThat(result.wasExecuted())
+                .as("LOADER-02: first executeWithLock with a fresh lock name must succeed")
+                .isTrue();
+        assertThat(result.getResult())
+                .as("the task body must have produced its return value")
+                .isEqualTo("ran");
+    }
+
+    @Test
+    void secondAcquisitionWithSameNameReturnsNotExecuted() throws Throwable {
+        // First acquisition holds the lock for 5 s (lockAtLeastFor), so an immediate
+        // re-acquire must report not-executed.
+        LockConfiguration first = new LockConfiguration(
+                Instant.now(),
+                "loader:dup-test",
+                Duration.ofMinutes(55),
+                Duration.ofSeconds(5));
+
+        TaskResult<String> r1 = executor.executeWithLock(
+                (LockingTaskExecutor.TaskWithResult<String>) () -> "first",
+                first);
+
+        assertThat(r1.wasExecuted())
+                .as("first acquisition must succeed")
+                .isTrue();
+
+        // Same name, same lockAtLeastFor — InMemoryLockProvider deterministically honors it.
+        LockConfiguration second = new LockConfiguration(
+                Instant.now(),
+                "loader:dup-test",
+                Duration.ofMinutes(55),
+                Duration.ofSeconds(5));
+
+        TaskResult<String> r2 = executor.executeWithLock(
+                (LockingTaskExecutor.TaskWithResult<String>) () -> "second",
+                second);
+
+        assertThat(r2.wasExecuted())
+                .as("LOADER-02: re-entrant acquisition within lockAtLeastFor must return not-executed")
+                .isFalse();
     }
 }
