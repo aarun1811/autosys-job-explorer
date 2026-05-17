@@ -6,7 +6,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +20,8 @@ import org.springframework.test.context.ActiveProfiles;
 /**
  * OBS-06 contract — the {@code taskExecutor} {@code @Async} pool must copy the
  * MDC from the calling thread to the worker thread via a
- * {@code ContextPropagatingTaskDecorator} (Pitfall A4). Plan 07-03 wires the
- * decorator into {@code AsyncConfig} and removes the {@link Disabled}.
+ * {@code ContextPropagatingTaskDecorator} (Pitfall A4).
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-03")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(AsyncMdcPropagationTest.TraceEchoConfig.class)

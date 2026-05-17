@@ -2,27 +2,54 @@ package com.citi.gru.rectrace.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.MDC;
 
 /**
  * OBS-06 contract — when {@code MDC.get("traceId")} is set, the subprocess
  * launched by {@link ScriptExecutor} must inherit it via the
  * {@code RECTRACE_CORRELATION_ID} environment variable. When the MDC has no
- * traceId, the env var must be ABSENT (not blank-string). Plan 07-03 wires the
- * env-var injection and removes the {@link Disabled}.
+ * traceId, the env var must be ABSENT (not blank-string).
+ *
+ * <p>This test invokes the REAL {@link ScriptExecutor} against a temporary
+ * shell script that simply echoes {@code $RECTRACE_CORRELATION_ID} (or a
+ * sentinel when unset). The returned first-line-of-stdout is the assertion
+ * surface. No subclass / capture-helper required — the verification path is
+ * end-to-end through the real {@link ProcessBuilder}.
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-03")
 class ScriptExecutorEnvVarTest {
 
-    private CapturingScriptExecutor executor;
+    @TempDir
+    Path tempDir;
+
+    private ScriptExecutor executor;
+    private Path script;
 
     @BeforeEach
-    void newExecutor() {
-        executor = new CapturingScriptExecutor();
+    void newExecutor() throws IOException {
+        executor = new ScriptExecutor();
+        script = tempDir.resolve("echo-correlation-id.sh");
+        // The script ignores its positional args and prints either the env-var
+        // value or the literal "__ABSENT__" sentinel when the var is not set.
+        Files.writeString(script,
+                "#!/bin/sh\n"
+                        + "if [ -z \"${RECTRACE_CORRELATION_ID+x}\" ]; then\n"
+                        + "  echo __ABSENT__\n"
+                        + "else\n"
+                        + "  echo \"$RECTRACE_CORRELATION_ID\"\n"
+                        + "fi\n");
+        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-xr-x");
+        Files.setPosixFilePermissions(script, perms);
     }
 
     @AfterEach
@@ -34,40 +61,30 @@ class ScriptExecutorEnvVarTest {
     void mdcTraceIdInjectedAsEnvVar() {
         MDC.put("traceId", "abc123def4567890abc123def4567890");
 
-        executor.executeScript("/bin/true", "SVC", "SCHEMA");
+        String output = executor.executeScript(script.toString(), "SVC", "SCHEMA");
 
-        String captured = executor.capturedEnv.get("RECTRACE_CORRELATION_ID");
-        assertThat(captured).isEqualTo("abc123def4567890abc123def4567890");
+        assertThat(output).isEqualTo("abc123def4567890abc123def4567890");
     }
 
     @Test
     void envVarAbsentWhenNoMdcTraceId() {
         MDC.clear();
 
-        executor.executeScript("/bin/true", "SVC", "SCHEMA");
+        String output = executor.executeScript(script.toString(), "SVC", "SCHEMA");
 
-        assertThat(executor.capturedEnv.containsKey("RECTRACE_CORRELATION_ID"))
+        assertThat(output)
                 .as("env var must be ABSENT (not blank-string) when MDC has no traceId")
-                .isFalse();
+                .isEqualTo("__ABSENT__");
     }
 
-    /**
-     * Test-only subclass that captures the {@link ProcessBuilder#environment()}
-     * map without actually launching a subprocess. Plan 07-03 may relocate this
-     * helper or replace it with a spy on the real {@link ProcessBuilder}.
-     */
-    static class CapturingScriptExecutor extends ScriptExecutor {
-        final java.util.Map<String, String> capturedEnv = new java.util.HashMap<>();
+    @Test
+    void emptyMdcTraceIdTreatedAsAbsent() {
+        MDC.put("traceId", "");
 
-        @Override
-        public String executeScript(String scriptPath, String serviceName, String dbSchema) {
-            ProcessBuilder pb = new ProcessBuilder(scriptPath, "@" + serviceName, dbSchema);
-            String trace = MDC.get("traceId");
-            if (trace != null && !trace.isEmpty()) {
-                pb.environment().put("RECTRACE_CORRELATION_ID", trace);
-            }
-            capturedEnv.putAll(pb.environment());
-            return "";
-        }
+        String output = executor.executeScript(script.toString(), "SVC", "SCHEMA");
+
+        assertThat(output)
+                .as("blank traceId must not surface as RECTRACE_CORRELATION_ID")
+                .isEqualTo("__ABSENT__");
     }
 }
