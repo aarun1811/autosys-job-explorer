@@ -6,21 +6,18 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * OBS-02 contract — {@code OracleHealthIndicator} runs {@code SELECT 1 FROM DUAL}
- * against the primary datasource and reports UP on success, DOWN with the
- * exception class+message on failure. Plan 07-03 implements the indicator and
- * removes the {@link Disabled}.
+ * OBS-02 contract — {@link OracleHealthIndicator} runs {@code SELECT 1 FROM DUAL}
+ * against the dedicated {@code healthCheckJdbcTemplate} and reports UP on success,
+ * DOWN with the exception class+message on failure (via
+ * {@code AbstractHealthIndicator}'s standard exception handling — Pitfall P-4).
  */
-@Disabled("Wave 0 scaffold — enabled by Plan 07-03")
 class OracleHealthIndicatorTest {
 
     @Test
@@ -29,10 +26,11 @@ class OracleHealthIndicatorTest {
         when(jdbc.queryForObject(eq("SELECT 1 FROM DUAL"), any(Class.class)))
                 .thenReturn(Integer.valueOf(1));
 
-        HealthIndicator indicator = newIndicator(jdbc);
+        OracleHealthIndicator indicator = new OracleHealthIndicator(jdbc);
         Health health = indicator.health();
 
         assertThat(health.getStatus()).isEqualTo(Status.UP);
+        assertThat(health.getDetails()).containsEntry("query", "SELECT 1 FROM DUAL");
     }
 
     @Test
@@ -41,7 +39,7 @@ class OracleHealthIndicatorTest {
         when(jdbc.queryForObject(eq("SELECT 1 FROM DUAL"), any(Class.class)))
                 .thenThrow(new DataAccessResourceFailureException("oracle down"));
 
-        HealthIndicator indicator = newIndicator(jdbc);
+        OracleHealthIndicator indicator = new OracleHealthIndicator(jdbc);
         Health health = indicator.health();
 
         assertThat(health.getStatus()).isEqualTo(Status.DOWN);
@@ -49,37 +47,13 @@ class OracleHealthIndicatorTest {
         assertThat(health.getDetails().get("error").toString()).contains("oracle down");
     }
 
-    /**
-     * Plan 07-03 will provide the production constructor. For now this helper is
-     * a placeholder that the implementing plan rewires to {@code new OracleHealthIndicator(jdbc)}.
-     */
-    private HealthIndicator newIndicator(JdbcTemplate jdbc) {
-        return new OracleHealthIndicator(jdbc);
-    }
+    @Test
+    void downWhenJdbcTemplateMissing() {
+        OracleHealthIndicator indicator = new OracleHealthIndicator((JdbcTemplate) null);
+        Health health = indicator.health();
 
-    /**
-     * Forward declaration so the test class compiles before Plan 07-03 lands the
-     * real implementation in main sources. Plan 07-03 deletes this inner stub and
-     * imports {@code com.citi.gru.rectrace.observability.health.OracleHealthIndicator}
-     * from {@code main/java/} instead.
-     */
-    static class OracleHealthIndicator implements HealthIndicator {
-        private final JdbcTemplate jdbc;
-
-        OracleHealthIndicator(JdbcTemplate jdbc) {
-            this.jdbc = jdbc;
-        }
-
-        @Override
-        public Health health() {
-            try {
-                jdbc.queryForObject("SELECT 1 FROM DUAL", Integer.class);
-                return Health.up().build();
-            } catch (Exception e) {
-                return Health.down()
-                        .withDetail("error", e.getClass().getSimpleName() + ": " + e.getMessage())
-                        .build();
-            }
-        }
+        assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+        assertThat(health.getDetails()).containsEntry("reason",
+                "healthCheckJdbcTemplate not configured");
     }
 }
