@@ -97,6 +97,70 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- OBS-08 — Micrometer pin guard (Option A: scoped requireSameVersions).
+                 Mirror of backend/rectrace/pom.xml. Three-execution defence per D-7.8:
+                   (1) enforce-micrometer-ceiling: bannedDependencies caps EVERY
+                       Micrometer artifact below 2.0.0 (PRIMARY OBS-08 guard).
+                   (2) enforce-micrometer-core-convergence: scoped requireSameVersions
+                       on the micrometer-core release train (1.15.x under Boot 3.5.14).
+                   (3) enforce-micrometer-tracing-convergence: scoped requireSameVersions
+                       on the micrometer-tracing release train (1.5.x under Boot 3.5.14).
+                 Why split: micrometer-core and micrometer-tracing are two independent
+                 release trains with separate version cadences (Boot 3.5.14 BOM blesses
+                 core 1.15.11 alongside tracing 1.5.11). A single requireSameVersions
+                 group of four would falsely trip on this BOM-blessed reality. See
+                 backend POM comment and 07-05-SUMMARY.md "Deviations from Plan".
+                 Version omitted — Boot BOM-managed. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-micrometer-ceiling</id>
+                        <phase>validate</phase>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>io.micrometer:*:[2.0.0,)</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-micrometer-core-convergence</id>
+                        <phase>validate</phase>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireSameVersions>
+                                    <dependencies>
+                                        <dependency>io.micrometer:micrometer-core</dependency>
+                                        <dependency>io.micrometer:micrometer-registry-prometheus</dependency>
+                                    </dependencies>
+                                </requireSameVersions>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-micrometer-tracing-convergence</id>
+                        <phase>validate</phase>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireSameVersions>
+                                    <dependencies>
+                                        <dependency>io.micrometer:micrometer-tracing</dependency>
+                                        <dependency>io.micrometer:micrometer-tracing-bridge-brave</dependency>
+                                    </dependencies>
+                                </requireSameVersions>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
