@@ -25,6 +25,33 @@ _(populated as each phase runs — newest entry per phase top, oldest bottom)_
 
 ---
 
+### Phase 8 — Hyphen Bug + Ops Hardening  ✓ (DESIGN deferred per user)  (~1.5 hours)
+
+**Status:** BUG-01..03 + OPS-01..04 complete. DESIGN-01/02/03 deferred to user as documented in `08-DESIGN-DEFERRED.md`.
+
+**Plans:** 08-01 (hyphen-search fix), 08-02 (ops/rectrace-ops.sh v2 + components.sh registry), 08-03 (ops/ci-smoke.sh + GitHub Actions workflow).
+
+**Key discovery during planning:** The hyphen-search bug was much smaller than expected. `search-config-v4.json` and the ES mapping already had `.keyword` subfields from Phase 0.1. The actual bug was `pattern.toLowerCase()` in `ElasticsearchServiceV4.java:35` running against case-preserving `.keyword` fields. Fix: 3-line code change — route `.keyword` wildcards through `caseInsensitive(true)` via a new `buildWildcard(field, pattern)` helper. No reindex, no mapping mutation.
+
+**Smoke results (live):** `bash scripts/smoke-hyphen-search.sh` exits 0 with 6/6 assertions PASS against `RECON-XYZ-42` / `RID-XYZ-42` / `SET-ABC-123` + mixed-case `recon-xyz-42`. Negative control returns 0 hits. Backend suite: **86/86 green, 4 designed skips** (the 4 skips are gated by `-Des.live=true` for CI environments without ES).
+
+**Ops script v2:**
+- shellcheck-clean on both `ops/rectrace-ops.sh` and `ops/components.sh`.
+- Bash 3.2 compatible (macOS native) AND bash 4/5 (Linux).
+- Component registry in `ops/components.sh` uses pipe-delimited indexed array (associative arrays require bash 4 → not portable).
+- New env hook `RECTRACE_COMPONENTS_FILE` for CI to point at a sandboxed registry.
+- Actuator readiness probe on `start` (curl with timeout + retry).
+- `ops/ci-smoke.sh` runs 11 syntactic + status-only assertions on macOS bash 3.2 — confirmed locally exit 0.
+- `.github/workflows/ops-script.yml` ubuntu-latest job runs on push/PR.
+- `[NEEDS USER REVIEW]` header comment on the workflow file for Citi-CI swap (per D-8.11).
+
+**Open items deferred:**
+- **DESIGN-01..03**: User-deferred visual polish. Run `/gsd-ui-review 3` or create a dedicated polish phase when ready. Details in `.planning/phases/08-hyphen-bug-design-polish-ops-hardening/08-DESIGN-DEFERRED.md`.
+- **`.github/workflows/ops-script.yml`**: Generic GitHub Actions placeholder. Citi CI integration requires a one-line action invocation swap.
+- **Phase 4 (recviz integration)** and **Phase 9 (Domain Security)**: hard-stopped per user instruction.
+
+---
+
 ### Phase 7 — Observability Sweep  ✓  (~3 hours, 82 backend + 10 tlm-stats tests green, enforcer locks Micrometer)
 
 **Status:** Complete. OBS-01..08 all covered across 5 plans / 4 waves.
