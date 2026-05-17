@@ -2,41 +2,48 @@ package com.citi.gru.rectrace.service.v4;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+
+import com.citi.gru.rectrace.dto.v4.SqlTabConfigV4;
 
 /**
- * Phase 5 / SQL-01: locks the SqlSearchConfigServiceV4 contract — at least one tab loaded
- * from the happy-path config fixture, including the example {@code reconSummary} tab.
+ * Phase 5 / SQL-01: end-to-end Spring context test — boots with the good fixture
+ * config and asserts the service exposes the expected tabs.
  *
- * <p>Wave 0 scaffolding — {@code @Disabled} until Wave 4 lands {@code SqlSearchConfigServiceV4}.
- *
- * <p>TODO Wave 4: remove the inline {@link StubTabConfig} record and the local {@code loadTabs()}
- * helper; inject the real service via {@code @Autowired SqlSearchConfigServiceV4 service;} and
- * call {@code service.getTabs()}.
+ * <p>Wave 4 (Plan 05-04): enabled, real {@link SqlSearchConfigServiceV4} autowired.
  */
+@SpringBootTest
+@ActiveProfiles("test")
+@TestPropertySource(properties = "sql-search-config.location=classpath:sql-search-config-good.json")
 class SqlSearchConfigServiceV4Test {
 
-    /**
-     * TODO Wave 4: delete. Placeholder type so this file compiles standalone.
-     * The real config DTO will be {@code com.citi.gru.rectrace.dto.v4.SqlTabConfigV4}.
-     */
-    private record StubTabConfig(String key, String label) {}
+    @Autowired
+    private SqlSearchConfigServiceV4 service;
 
-    /**
-     * TODO Wave 4: delete; replace with {@code service.getTabs()}.
-     */
-    private static List<StubTabConfig> loadTabs() {
-        return List.of();
-    }
-
-    @Disabled("Wave 4: enabled when SqlSearchConfigServiceV4 lands")
     @Test
     void loadsTabs() {
-        List<StubTabConfig> tabs = loadTabs();
-        assertThat(tabs).isNotEmpty();
-        assertThat(tabs).extracting(StubTabConfig::key).contains("reconSummary");
+        assertThat(service.getTabs()).isNotEmpty();
+        assertThat(service.getTabs())
+            .extracting(SqlTabConfigV4::getKey)
+            .contains("reconSummary");
+    }
+
+    @Test
+    void getTabByKeyReturnsConfiguredTab() {
+        assertThat(service.getTab("reconSummary"))
+            .isPresent()
+            .hasValueSatisfying(tab -> {
+                assertThat(tab.getLabel()).isEqualTo("Recon Summary (SQL)");
+                assertThat(tab.getColumns()).hasSize(6);
+            });
+    }
+
+    @Test
+    void getTabByUnknownKeyReturnsEmpty() {
+        assertThat(service.getTab("nonexistent")).isEmpty();
     }
 }
