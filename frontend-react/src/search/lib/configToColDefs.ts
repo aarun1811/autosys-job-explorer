@@ -1,0 +1,72 @@
+import type { ColDef } from 'ag-grid-community'
+
+import type { CategoryConfigV4, ColumnDefinitionV4 } from '@/search/types'
+import { cellRenderers } from '@/search/renderers/registry'
+
+/**
+ * configCategoryToColDefs — the JSON-vs-AG-Grid impedance adapter.
+ *
+ * Translates a single `CategoryConfigV4` (parsed from
+ * `/rectrace/api/v4/search/config`) into an array of AG-Grid `ColDef`s.
+ *
+ * This is the ONLY place that touches the impedance — keeping it isolated
+ * preserves the config-driven principle (D-3.3): adding/changing a column
+ * means editing `search-config-v4.json` and restarting the backend, not
+ * touching React code.
+ *
+ * Responsibilities (and only these):
+ *   1. Map declarative column attributes (field, headerName, width, hide…)
+ *      with sensible defaults — sortable defaults to true, filter defaults
+ *      to AG-Grid's text filter, resizable defaults to true.
+ *   2. Resolve `cellRenderer` string keys through the renderer registry
+ *      (Plan 03). Unknown keys fall back to `undefined`, letting AG-Grid
+ *      use its default text renderer (Pitfall 6 — never crash on a config
+ *      typo or a renderer key the React app hasn't caught up to yet).
+ *   3. Convert `cellStyle` keys from kebab-case (JSON-friendly, what the
+ *      Angular code wrote) to camelCase (what React's CSSProperties type
+ *      expects) — see Pitfall 2 in 03-PATTERNS.md.
+ *
+ * Plan 05 (SearchGrid) consumes this as:
+ *   const colDefs = configCategoryToColDefs(
+ *     config.categories.find((c) => c.key === activeCategory)!
+ *   )
+ */
+export function configCategoryToColDefs(cat: CategoryConfigV4): ColDef[] {
+  return cat.columns.map((c: ColumnDefinitionV4): ColDef => ({
+    field: c.field,
+    headerName: c.headerName,
+    width: c.width,
+    hide: c.hide ?? false,
+    sortable: c.sortable ?? true,
+    // filter: true → AG-Grid's built-in text filter; false → no filter at all.
+    // Omitted → default to text filter (preserves backward-compatible behavior
+    // with categories that don't enumerate every flag).
+    filter: c.filter === false ? false : 'agTextColumnFilter',
+    resizable: c.resizable ?? true,
+    rowGroup: c.rowGroup ?? false,
+    pinned: c.pinned ?? undefined,
+    // Registry lookup; `?? undefined` makes the fallback explicit for the
+    // unknown-key case even though the bare bracket access already yields
+    // undefined — the explicit form documents the Pitfall 6 contract.
+    cellRenderer: c.cellRenderer ? cellRenderers[c.cellRenderer] ?? undefined : undefined,
+    cellRendererParams: c.cellRendererParams,
+    cellStyle: c.cellStyle ? toCamelCaseStyle(c.cellStyle) : undefined,
+  }))
+}
+
+/**
+ * Converts CSS property names from kebab-case to camelCase so AG-Grid
+ * (which forwards `cellStyle` straight into React's `style` prop) sees
+ * keys that match `React.CSSProperties`. Without this, `align-items: center`
+ * silently disappears because React drops unknown style keys.
+ *
+ * Exported for direct unit testing — also called inline by the adapter.
+ */
+export function toCamelCaseStyle(style: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(style)) {
+    const camel = key.replace(/-([a-z])/g, (_match, char: string) => char.toUpperCase())
+    out[camel] = value
+  }
+  return out
+}
