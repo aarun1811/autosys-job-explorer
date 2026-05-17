@@ -81,6 +81,22 @@
 			<version>5.3</version>
 		</dependency>
 
+		<!-- Phase 6 / LOADER-02: ShedLock 7.7.0 for @Scheduled mutual exclusion.
+		     Pinned to 7.7.0 exactly (no version variable, no range) per 06-RESEARCH.md
+		     Standard Stack. 7.x line explicitly tested against Spring Boot 3.5 / JVM 17+.
+		     The shedlock table DDL lives in ../rectrace-local-dev/schema/01-rectrace.sql
+		     (Plan 06-01). Boot fails (Pitfall L1) if the table is missing. -->
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-spring</artifactId>
+			<version>7.7.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-jdbc-template</artifactId>
+			<version>7.7.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
