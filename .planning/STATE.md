@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: Phase 3 context gathered
-last_updated: "2026-05-17T12:17:22.149Z"
+stopped_at: Plan 06-02 complete; ready for Plan 06-03
+last_updated: "2026-05-17T12:26:57.192Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 28
-  completed_plans: 24
+  completed_plans: 25
   percent: 45
 ---
 
@@ -65,7 +65,7 @@ Plan: 5 of 5 — final.
 
 Last activity: 2026-05-17
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -104,6 +104,7 @@ Progress: [█████████░] 86%
 | Phase 03 P08 | 15min | 2 tasks | 2 files |
 | Phase 05-config-driven-select P06 | 25min | 2 tasks | 5 files |
 | Phase 06 P01 | 16min | 3 tasks | 2 files |
+| Phase 06 P02 | 7min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 3 close: smoke-ssrm Step 0 asserts /config exposes the 3 Phase 3 renderer keys; parity-matrix flipped 6 deliverables to port
 - [Phase ?]: D-5.06.1: Schema-qualify configured SELECT (rectrace.rectrace_core) to resolve Plan 05 deferred ORA-00942 without touching sibling seed repo.
 - [Phase ?]: D-5.06.2: Ship ANGULAR-WIRING.md (file:line citation) rather than Angular code edits — strangler-fig + D-5.18 + SQL-07 satisfied by green smoke.
+- [Phase ?]: ShedLock 7.7.0 pinned inline (no Maven property variable) — mirrors Phase 5 jsqlparser:5.3 pattern
+- [Phase ?]: Wave-0 scaffold uses class-level @Disabled, not per-method — Plans 06-03/04/05 enable by removing one annotation
+- [Phase ?]: spring.lifecycle.timeout-per-shutdown-phase=60s mitigates Pitfall L3 (default 30s force-kills BulkIngester mid-flush)
 
 ### Pending Todos
 
@@ -163,6 +167,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-17T12:17:04.092Z
-Stopped at: Phase 3 context gathered
+Last session: 2026-05-17T12:26:46.153Z
+Stopped at: Plan 06-02 complete; ready for Plan 06-03
 Resume file: None
