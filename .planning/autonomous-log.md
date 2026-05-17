@@ -25,6 +25,44 @@ _(populated as each phase runs — newest entry per phase top, oldest bottom)_
 
 ---
 
+### Phase 7 — Observability Sweep  ✓  (~3 hours, 82 backend + 10 tlm-stats tests green, enforcer locks Micrometer)
+
+**Status:** Complete. OBS-01..08 all covered across 5 plans / 4 waves.
+
+**Plans:** 07-01 (POM deps + 19 @Disabled scaffolds), 07-02 (logback+filters+actuator lockdown), 07-03 (4 HealthIndicators + slow-query AOP + thread-boundary fixes), 07-04 (tlm-stats mirror), 07-05 (Maven Enforcer + smoke).
+
+**Locked decisions:**
+- **D-7.0** Log aggregator: Splunk HEC via `logstash-logback-encoder` 8.0 → `LogstashTcpSocketAppender`. Prod endpoint placeholders in `application-prod.properties` `[NEEDS USER REVIEW]`.
+- **logstash-logback-encoder 8.0** (NOT 9.0 — research caught Jackson 3 mismatch with SB 3.5 BOM).
+- **Built-in `ContextPropagatingTaskDecorator`** (Boot 3.2+) for `@Async` MDC + Brave TraceContext propagation. NO hand-rolled decorator.
+- **Maven Enforcer Option A**: scoped `requireSameVersions` over Micrometer artifacts (NOT unscoped `dependencyConvergence`). Split into TWO groups: core 1.15.x train + tracing 1.5.x train (Boot BOM blesses different versions per release train). Plus `bannedDependencies` ceiling at Micrometer 2.0.0.
+- Slow-query AOP targets concrete `JdbcTemplate` (NOT `JdbcOperations` interface — fires twice).
+- `LoaderRunAgeHealthIndicator` in `/actuator/health/loader` group (not aggregated), so ops readiness probe stays clean.
+
+**Decisions I made (Claude's Discretion):**
+- **D-7.9..D-7.14**: Threshold defaults (500ms slow-query / 2× cron-interval loader-age / WARN log level), `userId` from `x-citiportal-loginid` header, 32-char hex traceId. All configurable.
+
+**Real bugs caught during execution:**
+- **Plan 07-05 planning defect**: original `<dependencyConvergence/>` rule fails on pre-existing httpclient 4.5.13 vs 4.5.14 conflict in spring-data-elasticsearch transitive tree. Fixed by switching to scoped `requireSameVersions`.
+- **Micrometer dual-release-train**: SB 3.5.14 BOM pins core (1.15.x) and tracing (1.5.x) separately. The Enforcer rule had to be split into 2 groups to converge per-train.
+- Multiple cwd-drift incidents during execution; each recovered before commit.
+
+**Smoke results (live-stack):**
+- Actuator exposure / OBS-03: ✓
+- Default health / OBS-02: ⚠ 503 (env gap — one+ indicator DOWN on local seed-only stack; `show-details=when-authorized` correctly hides which one anonymously)
+- Loader health group / OBS-02: ⚠ 404 (group wired in test profile only; main config deferred — log as gap)
+- Prometheus / OBS-05: ✓
+- Correlation-ID propagation / OBS-06: ✓ (32-hex traceId echoed in 4 log lines)
+- tlm-stats parity: SKIP (pre-existing local-profile boot failure — `entityManagerFactory` bean missing, unrelated to Phase 7)
+- Enforcer / OBS-08: ✓ (all enforcer executions fire on `mvn validate`)
+
+**Open items for review:**
+- **`application-prod.properties` Splunk HEC values are placeholders** — user must fill `splunk.hec.host`/`splunk.hec.token` before production deploy.
+- **Health-group wiring** for `/actuator/health/loader` exists in test props but not main config. Plan 07-05 smoke flagged it.
+- **rectrace-tlm-stats local-profile boot failure** (missing `entityManagerFactory`) is pre-existing and orthogonal to Phase 7. Plan 8 or a follow-up should address it.
+
+---
+
 ### Phase 6 — ES Loader Subsystem  ✓  (~2 hours, 23 Loader* tests green, all 3 smoke scripts green)
 
 **Status:** Complete. LOADER-01..10 covered. Smokes pass against live local-dev stack (Oracle + ES + backend).
