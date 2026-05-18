@@ -11,7 +11,8 @@
 #   - Docker stack up (Oracle + Elasticsearch healthy).
 #   - Seed applied: cd ../rectrace-local-dev && .venv/bin/python apply.py
 #   - Backend NOT running on :6088 (this smoke owns the JVM lifecycle).
-#   - /Users/aarun/Workspace/Projects/rectrace-local-dev/.venv with oracledb installed.
+#   - Python with `oracledb` installed. Resolution order: $RECTRACE_PYTHON env var,
+#     then the sibling repo venv ../rectrace-local-dev/.venv/bin/python, then python3 on PATH.
 #   - RECTRACE_PWD + ORACLE_DSN env vars (defaults match rectrace-local-dev/.env.example).
 #
 # Exit codes:
@@ -29,6 +30,21 @@ LOG_PATH="/tmp/loader-sigterm-$$.log"
 # Oracle creds — match the local-dev defaults (rectrace-local-dev/.env.example).
 export RECTRACE_PWD="${RECTRACE_PWD:-rectrace_pwd}"
 export ORACLE_DSN="${ORACLE_DSN:-localhost:1521/FREEPDB1}"
+
+# Resolve Python interpreter (must have `oracledb` installed) — repo-relative discovery
+# replaces a previously hardcoded user-specific path.
+SIBLING_VENV_PYTHON="$REPO_ROOT/../rectrace-local-dev/.venv/bin/python"
+if [ -n "${RECTRACE_PYTHON:-}" ] && [ -x "$RECTRACE_PYTHON" ]; then
+  PYTHON_BIN="$RECTRACE_PYTHON"
+elif [ -x "$SIBLING_VENV_PYTHON" ]; then
+  PYTHON_BIN="$SIBLING_VENV_PYTHON"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+else
+  echo "FAIL: no Python interpreter found — install the sibling repo venv, set RECTRACE_PYTHON, or install python3"
+  exit 1
+fi
+echo "INFO: using Python interpreter: $PYTHON_BIN"
 
 # 1) Pre-flight — port :6088 must be free.
 if lsof -i:6088 -sTCP:LISTEN >/dev/null 2>&1; then
@@ -121,7 +137,7 @@ if ! grep -qE "Loader (shutting down|shutdown complete|closing BulkIngester)" "$
 fi
 
 # 7) Oracle assertion — zero RUNNING rows for the test job.
-RUNNING_COUNT=$( /Users/aarun/Workspace/Projects/rectrace-local-dev/.venv/bin/python -c "
+RUNNING_COUNT=$( "$PYTHON_BIN" -c "
 import os, oracledb
 c = oracledb.connect(user='rectrace', password=os.environ['RECTRACE_PWD'], dsn=os.environ['ORACLE_DSN'])
 cur = c.cursor()
