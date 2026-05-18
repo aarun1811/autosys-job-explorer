@@ -42,7 +42,6 @@ import lombok.extern.slf4j.Slf4j;
 @Profile("!test")
 @RestController
 @RequestMapping("/api/v4/sql-search")
-@CrossOrigin(origins = "*")
 @Slf4j
 public class SqlSearchControllerV4 {
 

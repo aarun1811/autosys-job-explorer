@@ -17,7 +17,6 @@ import java.util.Map;
 @Profile("!test")
 @RestController
 @RequestMapping("/api/v4/search")
-@CrossOrigin(origins = "*")
 @Slf4j
 public class SearchControllerV4 {
     

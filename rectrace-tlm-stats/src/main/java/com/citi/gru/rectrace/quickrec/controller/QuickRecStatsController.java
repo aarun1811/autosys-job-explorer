@@ -28,7 +28,6 @@ import com.citi.gru.rectrace.quickrec.service.QuickRecStatsService;
  */
 @RestController
 @RequestMapping("/api/quickrec-stats")
-@CrossOrigin(origins = "*")
 public class QuickRecStatsController {
     
     private static final Logger logger = LoggerFactory.getLogger(QuickRecStatsController.class);

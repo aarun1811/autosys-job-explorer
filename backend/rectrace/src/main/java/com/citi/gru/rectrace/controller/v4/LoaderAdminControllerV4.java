@@ -54,7 +54,6 @@ import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskResult;
 @Profile("!test")
 @RestController
 @RequestMapping("/api/v4/loader-admin")
-@CrossOrigin(origins = "*")
 @Slf4j
 public class LoaderAdminControllerV4 {
 
