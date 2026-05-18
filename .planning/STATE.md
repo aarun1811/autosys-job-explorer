@@ -1,17 +1,11 @@
 ---
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: ready_for_next_phase
-stopped_at: "Plan 08-03 complete (OPS-04 — Linux CI gate: ops/ci-smoke.sh 11/11 + .github/workflows/ops-script.yml); Phase 8 ready for verification"
-last_updated: "2026-05-17T16:17:43.400Z"
-last_activity: 2026-05-17
+milestone: v1.0 — Modernization
+status: in_progress
+last_updated: 2026-05-18
 progress:
   total_phases: 11
   completed_phases: 8
-  total_plans: 36
-  completed_plans: 36
-  percent: 73
+  open_phases: ["4 (recviz)", "8 DESIGN-01/02/03", "9 (security)"]
 ---
 
 # Project State
