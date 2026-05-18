@@ -28,7 +28,7 @@ public class OracleServiceV4 {
     
     public SSRMResponseV4 fetchSSRMData(CategoryConfigV4 config, SSRMRequestV4 request) {
         // Validate request
-        if (request.getInitialFilter() == null || request.getInitialFilter().getValues() == null || 
+        if (request.getInitialFilter() == null || request.getInitialFilter().getValues() == null ||
             request.getInitialFilter().getValues().isEmpty()) {
             log.warn("No initial filter values provided");
             return SSRMResponseV4.builder()
@@ -36,29 +36,40 @@ public class OracleServiceV4 {
                     .lastRow(0)
                     .build();
         }
-        
+
+        // Build the per-category column whitelist and validate every client-supplied
+        // column name UP-FRONT, before any string concatenation reaches SQL. Closes the
+        // ORDER BY / WHERE / SELECT / GROUP BY column-name injection surface.
+        ColumnNameWhitelist whitelist = ColumnNameWhitelist.forCategory(config);
+        validateGroupColumns(request.getRowGroupCols(), whitelist);
+
         // Determine query type based on grouping state
         boolean isGrouped = request.getRowGroupCols() != null && !request.getRowGroupCols().isEmpty();
         int groupingDepth = request.getGroupKeys() != null ? request.getGroupKeys().size() : 0;
         int totalGroupLevels = request.getRowGroupCols() != null ? request.getRowGroupCols().size() : 0;
-        
-        log.debug("SSRM Request - isGrouped: {}, groupingDepth: {}, totalGroupLevels: {}, rowGroupCols: {}, groupKeys: {}", 
+
+        log.debug("SSRM Request - isGrouped: {}, groupingDepth: {}, totalGroupLevels: {}, rowGroupCols: {}, groupKeys: {}",
                 isGrouped, groupingDepth, totalGroupLevels, request.getRowGroupCols(), request.getGroupKeys());
-        
+
         try {
             if (!isGrouped) {
                 // No grouping - fetch flat data
-                return fetchFlatData(config, request);
+                return fetchFlatData(config, request, whitelist);
             } else if (groupingDepth == 0) {
                 // Root level - fetch first level groups
-                return fetchGroupedData(config, request);
+                return fetchGroupedData(config, request, whitelist);
             } else if (groupingDepth < totalGroupLevels) {
                 // Intermediate level - fetch next level groups
-                return fetchNextLevelGroups(config, request);
+                return fetchNextLevelGroups(config, request, whitelist);
             } else {
                 // All groups expanded - fetch detail rows
-                return fetchDetailRows(config, request);
+                return fetchDetailRows(config, request, whitelist);
             }
+        } catch (IllegalArgumentException e) {
+            // Whitelist rejection: surface as a clean error rather than empty rows so the
+            // caller (controller) can return 400 Bad Request and the smoke test can pick it up.
+            log.warn("Rejected SSRM request due to disallowed column input: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("Failed to fetch SSRM data", e);
             return SSRMResponseV4.builder()
@@ -68,13 +79,13 @@ public class OracleServiceV4 {
         }
     }
     
-    private SSRMResponseV4 fetchGroupedData(CategoryConfigV4 config, SSRMRequestV4 request) {
+    private SSRMResponseV4 fetchGroupedData(CategoryConfigV4 config, SSRMRequestV4 request, ColumnNameWhitelist whitelist) {
         String groupColumn = request.getRowGroupCols().get(0);
         List<String> filterValues = request.getInitialFilter().getValues();
-        
+
         // Build parameters for subquery
         List<Object> subqueryParams = new ArrayList<>(filterValues);
-        
+
         // Build SQL for grouped view with count check to exclude empty groups
         StringBuilder sqlBuilder = new StringBuilder(String.format(
             "SELECT %s as group_value FROM (SELECT %s, COUNT(*) as cnt FROM %s WHERE %s IN (%s)",
@@ -84,9 +95,9 @@ public class OracleServiceV4 {
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?"))
         ));
-        
+
         // Add filter clauses to subquery
-        String filterClause = buildFilterClause(request.getFilterModel(), subqueryParams);
+        String filterClause = buildFilterClause(request.getFilterModel(), subqueryParams, whitelist);
         sqlBuilder.append(filterClause);
         
         // Complete subquery with GROUP BY and HAVING to exclude empty groups
@@ -129,7 +140,7 @@ public class OracleServiceV4 {
             .build();
     }
     
-    private SSRMResponseV4 fetchNextLevelGroups(CategoryConfigV4 config, SSRMRequestV4 request) {
+    private SSRMResponseV4 fetchNextLevelGroups(CategoryConfigV4 config, SSRMRequestV4 request, ColumnNameWhitelist whitelist) {
         // Fetch groups for the next level of hierarchy
         List<String> filterValues = request.getInitialFilter().getValues();
         List<String> groupColumns = request.getRowGroupCols();
@@ -159,11 +170,11 @@ public class OracleServiceV4 {
         ));
         
         // Add filter clauses
-        String filterClause = buildFilterClause(request.getFilterModel(), queryParams);
+        String filterClause = buildFilterClause(request.getFilterModel(), queryParams, whitelist);
         sqlBuilder.append(filterClause);
-        
+
         // Complete subquery with GROUP BY and HAVING to exclude empty groups
-        sqlBuilder.append(String.format(" GROUP BY %s HAVING COUNT(*) > 0) subq ORDER BY %s", 
+        sqlBuilder.append(String.format(" GROUP BY %s HAVING COUNT(*) > 0) subq ORDER BY %s",
             nextGroupColumn, nextGroupColumn));
         
         // Add pagination
@@ -202,7 +213,7 @@ public class OracleServiceV4 {
             .build();
     }
     
-    private SSRMResponseV4 fetchDetailRows(CategoryConfigV4 config, SSRMRequestV4 request) {
+    private SSRMResponseV4 fetchDetailRows(CategoryConfigV4 config, SSRMRequestV4 request, ColumnNameWhitelist whitelist) {
         // This method fetches actual detail rows when all groups are expanded
         List<String> filterValues = request.getInitialFilter().getValues();
         List<String> groupColumns = request.getRowGroupCols();
@@ -217,8 +228,8 @@ public class OracleServiceV4 {
         }
         
         // Build SELECT clause based on visible columns
-        String selectClause = buildSelectClause(request.getVisibleColumns(), groupColumns);
-        
+        String selectClause = buildSelectClause(request.getVisibleColumns(), groupColumns, whitelist);
+
         // For count query with DISTINCT, we need to count distinct combinations
         List<Object> countParams = new ArrayList<>(filterValues);
         for (String groupValue : groupValues) {
@@ -238,7 +249,7 @@ public class OracleServiceV4 {
                 whereClause.toString()
             );
             // Add filter clauses to count query
-            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams, whitelist);
             countSql += filterClause + ")";
         } else {
             countSql = String.format(
@@ -249,20 +260,20 @@ public class OracleServiceV4 {
                 whereClause.toString()
             );
             // Add filter clauses to count query
-            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams, whitelist);
             countSql += filterClause;
         }
-        
+
         Integer totalCount = jdbcTemplate.queryForObject(countSql, countParams.toArray(), Integer.class);
-        
+
         // Build data query with sorting and pagination
         List<Object> dataParams = new ArrayList<>(filterValues);
-        
+
         // Add group values as parameters
         for (String groupValue : groupValues) {
             dataParams.add(groupValue);
         }
-        
+
         StringBuilder dataSql = new StringBuilder(String.format(
             "SELECT %s FROM %s WHERE %s IN (%s)%s",
             selectClause,
@@ -271,24 +282,24 @@ public class OracleServiceV4 {
             String.join(",", Collections.nCopies(filterValues.size(), "?")),
             whereClause.toString()
         ));
-        
+
         // Add filter clauses to data query
-        dataSql.append(buildFilterClause(request.getFilterModel(), dataParams));
-        
+        dataSql.append(buildFilterClause(request.getFilterModel(), dataParams, whitelist));
+
         // Add sorting if specified
-        String orderByClause = buildOrderByClause(request);
+        String orderByClause = buildOrderByClause(request, whitelist);
         if (!orderByClause.isEmpty()) {
             dataSql.append(" ").append(orderByClause);
         }
-        
+
         // Add pagination
         dataSql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-        
+
         dataParams.add(request.getStartRow());
         // For export requests (large row ranges), don't apply BATCH_SIZE limit
         int rowsToFetch = request.getEndRow() - request.getStartRow();
         dataParams.add(rowsToFetch > 1000 ? rowsToFetch : Math.min(BATCH_SIZE, rowsToFetch));
-        
+
         log.debug("Executing detail query for groups: {}", groupValues);
         
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(dataSql.toString(), dataParams.toArray());
@@ -302,11 +313,11 @@ public class OracleServiceV4 {
             .build();
     }
     
-    private SSRMResponseV4 fetchFlatData(CategoryConfigV4 config, SSRMRequestV4 request) {
+    private SSRMResponseV4 fetchFlatData(CategoryConfigV4 config, SSRMRequestV4 request, ColumnNameWhitelist whitelist) {
         List<String> filterValues = request.getInitialFilter().getValues();
-        
+
         // Build SELECT clause based on visible columns
-        String selectClause = buildSelectClause(request.getVisibleColumns(), request.getRowGroupCols());
+        String selectClause = buildSelectClause(request.getVisibleColumns(), request.getRowGroupCols(), whitelist);
         
         // Prepare parameters for count query
         List<Object> countParams = new ArrayList<>(filterValues);
@@ -324,7 +335,7 @@ public class OracleServiceV4 {
                 String.join(",", Collections.nCopies(filterValues.size(), "?"))
             );
             // Add filter clauses to count query
-            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams, whitelist);
             countSql += filterClause + ")";
         } else {
             countSql = String.format(
@@ -334,12 +345,12 @@ public class OracleServiceV4 {
                 String.join(",", Collections.nCopies(filterValues.size(), "?"))
             );
             // Add filter clauses to count query
-            String filterClause = buildFilterClause(request.getFilterModel(), countParams);
+            String filterClause = buildFilterClause(request.getFilterModel(), countParams, whitelist);
             countSql += filterClause;
         }
-        
+
         Integer totalCount = jdbcTemplate.queryForObject(countSql, countParams.toArray(), Integer.class);
-        
+
         // Build data query
         List<Object> dataParams = new ArrayList<>(filterValues);
         StringBuilder dataSql = new StringBuilder(String.format(
@@ -349,12 +360,12 @@ public class OracleServiceV4 {
             config.getSearchColumn(),
             String.join(",", Collections.nCopies(filterValues.size(), "?"))
         ));
-        
+
         // Add filter clauses to data query
-        dataSql.append(buildFilterClause(request.getFilterModel(), dataParams));
-        
+        dataSql.append(buildFilterClause(request.getFilterModel(), dataParams, whitelist));
+
         // Add sorting if specified
-        String orderByClause = buildOrderByClause(request);
+        String orderByClause = buildOrderByClause(request, whitelist);
         if (!orderByClause.isEmpty()) {
             dataSql.append(" ").append(orderByClause);
         }
@@ -381,27 +392,32 @@ public class OracleServiceV4 {
             .build();
     }
     
-    private String buildOrderByClause(SSRMRequestV4 request) {
+    static String buildOrderByClause(SSRMRequestV4 request, ColumnNameWhitelist whitelist) {
         if (request.getSortModel() == null || request.getSortModel().isEmpty()) {
             return "";
         }
-        
+
         String orderBy = request.getSortModel().stream()
-            .map(sort -> sort.getColId() + " " + sort.getSort().toUpperCase())
+            .map(sort -> {
+                whitelist.requireAllowed(sort.getColId());
+                String direction = ColumnNameWhitelist.requireSortDirection(sort.getSort());
+                return sort.getColId() + " " + direction;
+            })
             .collect(Collectors.joining(", "));
-        
+
         return "ORDER BY " + orderBy;
     }
     
-    private String buildFilterClause(Map<String, Object> filterModel, List<Object> params) {
+    static String buildFilterClause(Map<String, Object> filterModel, List<Object> params, ColumnNameWhitelist whitelist) {
         if (filterModel == null || filterModel.isEmpty()) {
             return "";
         }
-        
+
         List<String> filterClauses = new ArrayList<>();
-        
+
         for (Map.Entry<String, Object> entry : filterModel.entrySet()) {
             String column = entry.getKey();
+            whitelist.requireAllowed(column);
             Map<String, Object> filterDef = (Map<String, Object>) entry.getValue();
             
             if (filterDef != null && filterDef.get("filter") != null) {
@@ -459,36 +475,54 @@ public class OracleServiceV4 {
             .collect(Collectors.toList());
     }
     
-    private String buildSelectClause(List<String> visibleColumns, List<String> groupColumns) {
+    static String buildSelectClause(List<String> visibleColumns, List<String> groupColumns, ColumnNameWhitelist whitelist) {
         if (visibleColumns == null || visibleColumns.isEmpty()) {
             return "*";  // Default to all columns if none specified
         }
-        
+
         // Create a set of columns to select (removes duplicates)
         Set<String> columnsToSelect = new LinkedHashSet<>();
-        
-        // Add visible columns (excluding frontend-only columns)
+
+        // Add visible columns (excluding frontend-only columns); validate the rest.
         for (String col : visibleColumns) {
-            if (!FRONTEND_ONLY_COLUMNS.contains(col)) {
-                columnsToSelect.add(col);
+            if (FRONTEND_ONLY_COLUMNS.contains(col)) {
+                continue;
             }
+            whitelist.requireAllowed(col);
+            columnsToSelect.add(col);
         }
-        
+
         // Always include grouped columns (even if not in visible list)
         if (groupColumns != null) {
             for (String col : groupColumns) {
-                if (!FRONTEND_ONLY_COLUMNS.contains(col)) {
-                    columnsToSelect.add(col);
+                if (FRONTEND_ONLY_COLUMNS.contains(col)) {
+                    continue;
                 }
+                whitelist.requireAllowed(col);
+                columnsToSelect.add(col);
             }
         }
-        
+
         // If no valid columns, default to all
         if (columnsToSelect.isEmpty()) {
             return "*";
         }
-        
+
         // Build the SELECT clause with DISTINCT
         return "DISTINCT " + String.join(", ", columnsToSelect);
+    }
+
+    /**
+     * Validates every entry in {@code rowGroupCols} against the per-category whitelist.
+     * Called once at the entry to {@link #fetchSSRMData} so subsequent uses of the list
+     * (in WHERE / GROUP BY / SELECT concatenation) are safe.
+     */
+    static void validateGroupColumns(List<String> rowGroupCols, ColumnNameWhitelist whitelist) {
+        if (rowGroupCols == null || rowGroupCols.isEmpty()) {
+            return;
+        }
+        for (String col : rowGroupCols) {
+            whitelist.requireAllowed(col);
+        }
     }
 }
