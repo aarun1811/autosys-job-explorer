@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from 'react'
+import { useEffect, useMemo, useRef, type ReactElement } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import type {
   IServerSideDatasource,
@@ -7,13 +7,17 @@ import type {
   IServerSideGetRowsParams,
   FirstDataRenderedEvent,
   RowDoubleClickedEvent,
+  ColumnVisibleEvent,
 } from 'ag-grid-community'
-import { GRID_SIDEBAR, rowHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
+import { GRID_SIDEBAR, rowHeightForDensity, headerHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { columnsToColDefs } from '@/search/lib/configToColDefs'
 import { cellRenderers } from '@/search/renderers/registry'
-import type { CategoryResultV4, SSRMRequestV4, InitialFilter } from '@/search/types'
+import type { CategoryResultV4, SSRMRequestV4 } from '@/search/types'
+import {
+  buildSsrmRowId, getVisibleColumnIds, convertFilterModel, buildInitialFilter, FRONTEND_ONLY_COLUMNS,
+} from '@/search/lib/ssrm'
 
 /**
  * SearchGrid — an AG-Grid SSRM grid for ONE search category.
@@ -36,19 +40,6 @@ export interface SearchGridProps {
   onFirstDataRendered?: (e: FirstDataRenderedEvent) => void
   /** Fired on double-click of a LEAF row (group rows ignored). */
   onRowDoubleClicked?: (data: Record<string, unknown>) => void
-}
-
-function searchColumnFor(category: CategoryResultV4): string {
-  // The rowGroup column IS the ES search column. If none exists, return '' so
-  // buildInitialFilter yields null — never a bogus column name (the category
-  // key is not a DB column). Defense-in-depth; current config always has one.
-  return category.columns.find((c) => c.rowGroup)?.field ?? ''
-}
-
-function buildInitialFilter(category: CategoryResultV4): InitialFilter | null {
-  const column = searchColumnFor(category)
-  if (category.values.length === 0 || !column) return null
-  return { column, values: category.values }
 }
 
 /**
@@ -75,10 +66,13 @@ export function _test_buildDatasource(q: string, category: CategoryResultV4): IS
           rowGroupCols: (params.request.rowGroupCols ?? []).map((c) => c.field ?? ''),
           groupKeys: params.request.groupKeys ?? [],
           sortModel: params.request.sortModel ?? [],
-          filterModel: (params.request.filterModel ?? {}) as Record<string, unknown>,
+          filterModel: convertFilterModel(params.request.filterModel as Record<string, unknown>),
           startRow: params.request.startRow ?? 0,
           endRow: params.request.endRow ?? 100,
-          visibleColumns: [],
+          visibleColumns: getVisibleColumnIds(
+            params.api.getColumnState(),
+            params.api.getRowGroupColumns().map((c) => c.getColId()),
+          ),
         }
         const res = await apiFetch(`/rectrace/api/v4/search/ssrm/${category.key}`, {
           method: 'POST',
@@ -110,6 +104,9 @@ export function SearchGrid({
 }: SearchGridProps): ReactElement {
   const columnDefs = useMemo<ColDef[]>(() => columnsToColDefs(category.columns), [category])
   const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
+  const colVisTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Cancel a pending column-visibility refresh if the grid unmounts (tab switch).
+  useEffect(() => () => { if (colVisTimer.current) clearTimeout(colVisTimer.current) }, [])
 
   return (
     <div className="ag-theme-quartz h-full w-full">
@@ -119,16 +116,38 @@ export function SearchGrid({
         serverSideDatasource={datasource}
         columnDefs={columnDefs}
         components={cellRenderers}
+        getRowId={buildSsrmRowId}
+        defaultColDef={{ sortable: true, filter: true, resizable: true, minWidth: 100, flex: 1 }}
+        autoGroupColumnDef={{
+          headerName: category.columns[0]?.headerName,
+          minWidth: 250,
+          cellRendererParams: { suppressCount: false },
+        }}
         sideBar={GRID_SIDEBAR}
         rowGroupPanelShow="always"
+        groupDefaultExpanded={0}
+        animateRows
+        enableCellTextSelection
+        suppressCellFocus
+        suppressMakeColumnVisibleAfterUnGroup={false}
+        tooltipShowDelay={0}
+        tooltipHideDelay={2000}
         rowHeight={rowHeightForDensity(density)}
+        headerHeight={headerHeightForDensity(density)}
         cacheBlockSize={100}
         maxBlocksInCache={10}
-        autoSizeStrategy={{ type: 'fitCellContents' }}
         onGridReady={onGridReady}
         onFirstDataRendered={onFirstDataRendered}
         onRowDoubleClicked={(e: RowDoubleClickedEvent) => {
           if (!e.node.group && e.data) onRowDoubleClicked?.(e.data as Record<string, unknown>)
+        }}
+        onColumnRowGroupChanged={(e) => e.api.refreshServerSide({ purge: true })}
+        onColumnVisible={(e: ColumnVisibleEvent) => {
+          if (e.source === 'gridInitializing') return
+          const id = e.column?.getColId()
+          if (id && FRONTEND_ONLY_COLUMNS.has(id)) return
+          if (colVisTimer.current) clearTimeout(colVisTimer.current)
+          colVisTimer.current = setTimeout(() => e.api.refreshServerSide({ purge: true }), 500)
         }}
       />
     </div>

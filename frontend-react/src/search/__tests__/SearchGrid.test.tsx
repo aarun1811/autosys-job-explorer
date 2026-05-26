@@ -18,7 +18,8 @@ const category: CategoryResultV4 = {
   ],
 }
 
-const req = { request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, success: vi.fn(), fail: vi.fn() }
+const mockApi = { getColumnState: () => [], getRowGroupColumns: () => [] }
+const req = { request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, api: mockApi, success: vi.fn(), fail: vi.fn() }
 
 beforeEach(() => { apiFetchMock.mockReset() })
 
@@ -56,12 +57,42 @@ describe('SearchGrid datasource', () => {
     const ds = _test_buildDatasource('trade', category)
     await ds.getRows({
       request: { startRow: 100, endRow: 200, rowGroupCols: [{ field: 'app_name' }], groupKeys: ['x'], sortModel: [{ colId: 'app_name', sort: 'asc' }], filterModel: {} },
-      success: vi.fn(), fail: vi.fn(),
+      api: mockApi, success: vi.fn(), fail: vi.fn(),
     } as never)
     const body = JSON.parse((apiFetchMock.mock.calls[0][1] as RequestInit).body as string)
     expect(body.startRow).toBe(100)
     expect(body.endRow).toBe(200)
     expect(body.rowGroupCols).toEqual(['app_name'])
     expect(body.groupKeys).toEqual(['x'])
+  })
+
+  test('getRows sends computed visibleColumns and a converted filterModel', async () => {
+    const ds = _test_buildDatasource('recon', {
+      key: 'jobName', label: 'Job Name', count: 1, hasMore: false, values: ['A'],
+      columns: [{ field: 'job_name', headerName: 'Job', rowGroup: true }],
+    } as never)
+    const params = {
+      request: {
+        startRow: 0, endRow: 100, rowGroupCols: [{ field: 'job_name' }], groupKeys: [], sortModel: [],
+        filterModel: { box_name: { filter: 'b' }, empty: { filter: '' } },
+      },
+      api: {
+        getColumnState: () => [
+          { colId: 'job_name', hide: true },        // hidden but is the group col → kept
+          { colId: 'box_name', hide: false },
+          { colId: 'execution_order', hide: false }, // frontend-only → dropped
+        ],
+        getRowGroupColumns: () => [{ getColId: () => 'job_name' }],
+      },
+      success: vi.fn(),
+      fail: vi.fn(),
+    }
+    apiFetchMock.mockResolvedValue({ json: async () => ({ rows: [], lastRow: 0 }) })
+    await ds.getRows(params as never)
+    const lastCall = apiFetchMock.mock.calls.at(-1)!
+    const body = JSON.parse(lastCall[1].body)
+    expect(body.visibleColumns).toHaveLength(2)
+    expect(body.visibleColumns).toEqual(expect.arrayContaining(['box_name', 'job_name']))
+    expect(body.filterModel).toEqual({ box_name: { filterType: 'text', type: 'contains', filter: 'b' } })
   })
 })
