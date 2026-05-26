@@ -34,6 +34,13 @@ export interface SearchBarProps {
   placeholder?: string
   /** 'bar' (default) = compact navbar input; 'hero' = large elevated landing input. */
   variant?: 'bar' | 'hero'
+  /**
+   * How the submit affordance is rendered:
+   * - 'full' (default) = a separate "Search" button beside the input.
+   * - 'icon' = no separate button; a leading magnifier button lives INSIDE the
+   *   input (Google-style). Submitting is Enter or clicking the magnifier.
+   */
+  submitButton?: 'full' | 'icon'
   rollingPlaceholder?: { prefix: string; words: string[] }
 }
 
@@ -45,6 +52,7 @@ export function SearchBar({
   suggestions,
   placeholder = 'Search…',
   variant = 'bar',
+  submitButton = 'full',
   rollingPlaceholder,
 }: SearchBarProps) {
   const { recents, remove: removeRecent, clear: clearRecents } = useRecentSearches()
@@ -52,11 +60,13 @@ export function SearchBar({
   const [activeIndex, setActiveIndex] = useState(-1)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const [wordIdx, setWordIdx] = useState(0)
   const listboxId = useId()
   const optionId = (i: number) => `${listboxId}-opt-${i}`
 
   const hero = variant === 'hero'
+  const iconSubmit = submitButton === 'icon'
   const items = useMemo(
     () => buildSuggestItems(recents, suggestions, value),
     [recents, suggestions, value],
@@ -143,6 +153,7 @@ export function SearchBar({
             }
           >
             <Input
+              ref={inputRef}
               role="combobox"
               aria-expanded={open}
               aria-controls={listboxId}
@@ -152,7 +163,7 @@ export function SearchBar({
               className={
                 hero
                   ? 'h-13 rounded-2xl border-transparent bg-transparent pl-5 pr-11 text-base shadow-none focus-visible:ring-0'
-                  : 'rectrace-search-bar-input h-9 pr-8'
+                  : `rectrace-search-bar-input h-9 pr-8 ${iconSubmit ? 'pl-9' : ''}`
               }
               placeholder={rollingPlaceholder ? '' : placeholder}
               value={value}
@@ -168,6 +179,17 @@ export function SearchBar({
               }}
               onKeyDown={handleKeyDown}
             />
+            {iconSubmit && (
+              // Decorative leading lens (Google-style): a dull, non-interactive
+              // magnifier. It is NOT a submit affordance — Enter (or picking a
+              // suggestion) runs the search.
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2.5 top-1/2 flex -translate-y-1/2 items-center text-muted-foreground"
+              >
+                <SearchIcon className="size-4" />
+              </span>
+            )}
             {showOverlay && rollingPlaceholder && (
               <div
                 aria-hidden="true"
@@ -188,7 +210,12 @@ export function SearchBar({
                 variant="ghost"
                 aria-label="Clear search"
                 className={`absolute top-1/2 -translate-y-1/2 ${hero ? 'right-2.5' : 'right-1'}`}
-                onClick={onClear}
+                onClick={() => {
+                  onClear()
+                  // Keep the caret in the box for immediate re-typing (Google-style)
+                  // instead of letting focus escape.
+                  inputRef.current?.focus()
+                }}
               >
                 <XIcon className="size-3.5" />
               </Button>
@@ -231,16 +258,18 @@ export function SearchBar({
           />
         </PopoverContent>
       </Popover>
-      <Button
-        type="button"
-        size={hero ? 'lg' : 'sm'}
-        variant="default"
-        onClick={submit}
-        className={`group rectrace-search-btn ${hero ? 'h-13 rounded-2xl px-6 text-base' : ''}`}
-      >
-        <SearchIcon className={`transition-transform duration-200 group-hover:scale-110 ${hero ? 'size-4 mr-1.5' : 'size-4 mr-1'}`} />
-        Search
-      </Button>
+      {!iconSubmit && (
+        <Button
+          type="button"
+          size={hero ? 'lg' : 'sm'}
+          variant="default"
+          onClick={submit}
+          className={`group rectrace-search-btn ${hero ? 'h-13 rounded-2xl px-6 text-base' : ''}`}
+        >
+          <SearchIcon className={`transition-transform duration-200 group-hover:scale-110 ${hero ? 'size-4 mr-1.5' : 'size-4 mr-1'}`} />
+          Search
+        </Button>
+      )}
     </div>
   )
 }

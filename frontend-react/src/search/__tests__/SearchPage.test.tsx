@@ -83,8 +83,15 @@ describe('SearchPage results', () => {
     apiFetchMock.mockResolvedValue({ json: async () => respWith(mk('fileName', 'File Name', 0)) })
     renderAt('/search?q=zzz')
     await waitFor(() => expect(screen.getByText('No results found')).toBeInTheDocument())
-    expect(screen.getByText(/Try a different term/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Start over/i })).toBeInTheDocument()
     expect(screen.queryByTestId('grid')).not.toBeInTheDocument()
+  })
+
+  test('navbar logo links to the home route', async () => {
+    apiFetchMock.mockResolvedValue({ json: async () => respWith(mk('jobName', 'Job Name', 10)) })
+    renderAt('/search?q=trade')
+    await waitFor(() => expect(screen.getByText('Job Name (10)')).toBeInTheDocument())
+    expect(screen.getByRole('link', { name: 'Go to Rectrace home' })).toHaveAttribute('href', '/')
   })
 
   test('deep-link tab selects that category when valid', async () => {

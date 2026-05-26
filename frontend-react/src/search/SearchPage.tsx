@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import type { GridApi, GridReadyEvent } from 'ag-grid-community'
-import { SearchXIcon, TriangleAlertIcon } from 'lucide-react'
+import { TriangleAlertIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +12,7 @@ import { UserChip } from '@/components/app-shell/UserChip'
 import { ThemeSwitch } from '@/components/layout/theme-switch'
 
 import { CategoryTabBar } from '@/search/CategoryTabBar'
+import { NoResultsState } from '@/search/NoResultsState'
 import { SearchBar } from '@/search/SearchBar'
 import { SearchGrid } from '@/search/SearchGrid'
 import { SearchToolbar } from '@/search/SearchToolbar'
@@ -20,6 +21,7 @@ import { useSuggestions } from '@/search/hooks/useSuggestions'
 import { useUserInfo } from '@/search/hooks/useUserInfo'
 import { buildExportFilename } from '@/search/lib/buildExportFilename'
 import { deriveSearchResults } from '@/search/lib/deriveSearchResults'
+import { PLACEHOLDER_PHRASES, TRY_EXAMPLES } from '@/search/lib/heroContent'
 import { InitialSearchResponseV4Schema, type CategoryResultV4 } from '@/search/types'
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 
@@ -147,20 +149,31 @@ export function SearchPage(): React.ReactElement {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header
-        className="bg-background/70 supports-[backdrop-filter]:bg-background/55 sticky top-0 z-50 flex items-center justify-between gap-3 border-b px-4 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-xl"
+        className="bg-background/70 supports-[backdrop-filter]:bg-background/55 sticky top-0 z-50 flex items-center gap-3 border-b px-4 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-xl"
         style={{ height: 'var(--header-height, 3.5rem)' }}
       >
-        <BrandLogo className="h-6 w-auto shrink-0" />
-        <div className="flex-1 max-w-2xl">
+        <Link
+          to="/"
+          aria-label="Go to Rectrace home"
+          className="shrink-0 rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <BrandLogo className="h-6 w-auto" />
+        </Link>
+        <div className="ml-4 w-full max-w-xl sm:ml-6">
           <SearchBar
             value={inputValue}
             onChange={setInputValue}
             onSubmit={handleSubmit}
-            onClear={handleClear}
+            // Clearing the navbar field just empties it and keeps the caret in
+            // the box (Google-style) — it does NOT navigate away or drop the
+            // current results. "Start over" (empty state) is what returns home.
+            onClear={() => setInputValue('')}
             suggestions={suggestions}
+            submitButton="icon"
             placeholder="Search…"
           />
         </div>
+        <div className="flex-1" />
         <div className="flex items-center gap-1.5">
           <ThemeSwitch />
           <UserChip {...user} />
@@ -177,7 +190,13 @@ export function SearchPage(): React.ReactElement {
       ) : error ? (
         <ErrorStateCard correlationId={error.correlationId} onRetry={() => q && void runSearch(q)} />
       ) : results.length === 0 ? (
-        <NoResultsState term={q ?? ''} />
+        <NoResultsState
+          term={q ?? ''}
+          examples={TRY_EXAMPLES.slice(0, 6)}
+          searchableCategories={PLACEHOLDER_PHRASES}
+          onExample={handleSubmit}
+          onClear={handleClear}
+        />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-in fade-in-0 duration-300">
           <CategoryTabBar categories={results} activeKey={activeCategory?.key ?? results[0].key} onSelect={handleSelectTab} />
@@ -199,24 +218,6 @@ export function SearchPage(): React.ReactElement {
         </div>
       )}
       <Footer />
-    </div>
-  )
-}
-
-function NoResultsState({ term }: { term: string }): React.ReactElement {
-  return (
-    <div className="flex flex-1 items-center justify-center p-8">
-      <Card className="max-w-md animate-in fade-in-0 zoom-in-95 fill-mode-both duration-500">
-        <CardHeader className="items-center text-center">
-          <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-muted">
-            <SearchXIcon className="size-6 text-muted-foreground" />
-          </div>
-          <CardTitle>No results found</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center text-sm text-muted-foreground">
-          No results found for &ldquo;<strong className="text-foreground">{term}</strong>&rdquo;. Try a different term.
-        </CardContent>
-      </Card>
     </div>
   )
 }

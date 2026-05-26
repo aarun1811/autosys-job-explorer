@@ -51,6 +51,25 @@ describe('SearchBar', () => {
     expect(onSubmit).toHaveBeenCalledWith('cash')
   })
 
+  test('default submitButton renders the full text "Search" button', () => {
+    renderBar({ value: 'cash' })
+    expect(screen.getByRole('button', { name: 'Search' })).toHaveTextContent('Search')
+  })
+
+  test('submitButton="icon" has no submit button (decorative lens); Enter submits', () => {
+    const { onSubmit } = renderBar({ value: 'cash', submitButton: 'icon' })
+    // The leading magnifier is decorative (Google-style) — no clickable submit.
+    expect(screen.queryByRole('button', { name: 'Search' })).not.toBeInTheDocument()
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' })
+    expect(onSubmit).toHaveBeenCalledWith('cash')
+  })
+
+  test('clicking clear (X) refocuses the input for immediate re-typing', () => {
+    renderBar({ value: 'abc' })
+    fireEvent.click(screen.getByRole('button', { name: /Clear search/i }))
+    expect(screen.getByRole('combobox')).toHaveFocus()
+  })
+
   test('focus opens recents; ArrowDown highlights first option; Enter submits it', () => {
     mockRecents = ['LOAD-ABC-123', 'reconour']
     const { onSubmit } = renderBar({ value: '' })
