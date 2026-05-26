@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import type { GridApi, GridReadyEvent } from 'ag-grid-community'
 
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Footer } from '@/components/app-shell/footer'
+import { BrandLogo } from '@/components/app-shell/BrandLogo'
+import { UserChip } from '@/components/app-shell/UserChip'
 import { ThemeSwitch } from '@/components/layout/theme-switch'
 
 import { CategoryTabBar } from '@/search/CategoryTabBar'
@@ -13,235 +15,196 @@ import { SearchBar } from '@/search/SearchBar'
 import { SearchGrid } from '@/search/SearchGrid'
 import { SearchToolbar } from '@/search/SearchToolbar'
 import { useRecentSearches } from '@/search/hooks/useRecentSearches'
+import { useSuggestions } from '@/search/hooks/useSuggestions'
+import { useUserInfo } from '@/search/hooks/useUserInfo'
 import { buildExportFilename } from '@/search/lib/buildExportFilename'
-import {
-  type InitialSearchResponseV4,
-  InitialSearchResponseV4Schema,
-} from '@/search/types'
+import { deriveSearchResults } from '@/search/lib/deriveSearchResults'
+import { InitialSearchResponseV4Schema, type CategoryResultV4 } from '@/search/types'
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 
 /**
- * SearchPage — the Phase 3 vertical-slice orchestrator.
+ * SearchPage — the multi-category federated results view at `/search?q=…`
+ * (Angular `search-v5` parity in the shadcn shell).
  *
- * Composes the full app shell + search experience: header (Rectrace brand +
- * SearchBar + ThemeSwitch) → CategoryTabBar → SearchToolbar → main grid slot
- * (PreSearch / Loading / Error / SearchGrid) → Footer.
- *
- * URL is the single source of truth (D-3.1): `useSearch({ from: '/search' })`
- * reads Zod-validated `{ q, cat }`. handleSubmit issues a `replace: true`
- * navigation then fires `apiFetch('/rectrace/api/v4/search/initial?keyword=...')`
- * (GET — Pitfall 4 / D-3.7), parses the response through
- * `InitialSearchResponseV4Schema.parse()` at the trust boundary (T-03.7-02),
- * and stores the result as `initialFilter` for SearchGrid.
- *
- * Deep-link restore (D-3.2 — Angular `initializeQueryParamsSubscription`
- * parity): a useEffect keyed on `[q, cat]` fires `handleSubmit(q)` once on
- * mount when `q` is present and no filter is loaded yet, and syncs the input
- * value when the URL changes externally. Re-entrancy is gated by
- * `!initialFilter && !isInitialLoading` (T-03.7-05).
- *
- * Grid integration (D-3.10 / SEARCH-04): `gridApiRef` is captured via
- * `onGridReady` and `resultCount` via `onModelUpdated`. The Excel-export
- * closure passed to SearchToolbar calls `gridApi.exportDataAsExcel({ fileName:
- * buildExportFilename(cat, q), columnKeys })` excluding the `execution_order`
- * action column.
- *
- * Errors route through `reportRequestFailure(err)` (Sonner with 32-hex
- * correlation ID — SEARCH-06) AND surface inline as an error-state card with a
- * "Try again" button (UI-SPEC §"Error Surfaces").
+ * One `GET /initial` per `q` → `deriveSearchResults` (categories with hits,
+ * sorted by count desc). One tab per result category; only the ACTIVE tab's
+ * grid is mounted (keyed by `${q}-${key}` in SearchGrid → clean remount + a
+ * fresh SSRM datasource on every tab switch). The active tab is the URL `tab`
+ * when valid, else the highest-count category; once results resolve the URL is
+ * synced to the active key (replace). No `/config`, no hardcoded category.
  */
 export function SearchPage(): React.ReactElement {
-  const { q, cat } = useSearch({ from: '/search' })
+  const { q, tab } = useSearch({ from: '/search' }) as { q?: string; tab?: string }
   const navigate = useNavigate({ from: '/search' })
+  const user = useUserInfo()
   const { push: pushRecent } = useRecentSearches()
 
   const [inputValue, setInputValue] = useState<string>(q ?? '')
-  const [initialFilter, setInitialFilter] = useState<InitialSearchResponseV4 | null>(null)
-  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false)
-  const [initialError, setInitialError] = useState<{ correlationId?: string } | null>(null)
-  const [isExporting, setIsExporting] = useState<boolean>(false)
-  // resultCount is wired via SearchGrid.onModelUpdated below (NOT optional —
-  // UI-SPEC parity requires the Toolbar Badge to update on every model
-  // change). SearchToolbar hides the Badge when this is null or 0.
+  const suggestions = useSuggestions(inputValue)
+  const [results, setResults] = useState<CategoryResultV4[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<{ correlationId?: string } | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
   const [resultCount, setResultCount] = useState<number | null>(null)
   const gridApiRef = useRef<GridApi | null>(null)
 
-  const handleSubmit = useCallback(
+  const runSearch = useCallback(
     async (term: string) => {
       const trimmed = term.trim()
       if (!trimmed) return
-      await navigate({
-        search: (prev: Record<string, unknown>) => ({ ...prev, q: trimmed, cat }),
-        replace: true,
-      })
-      setIsInitialLoading(true)
-      setInitialError(null)
+      setIsLoading(true)
+      setError(null)
+      setResultCount(null)
       try {
-        const res = await apiFetch(
-          `/rectrace/api/v4/search/initial?keyword=${encodeURIComponent(trimmed)}`,
-        )
-        const json: unknown = await res.json()
-        const parsed = InitialSearchResponseV4Schema.parse(json)
-        setInitialFilter(parsed)
+        const res = await apiFetch(`/rectrace/api/v4/search/initial?keyword=${encodeURIComponent(trimmed)}`)
+        const parsed = InitialSearchResponseV4Schema.parse(await res.json())
+        setResults(deriveSearchResults(parsed))
         pushRecent(trimmed)
       } catch (err) {
-        const correlationId = (err as { correlationId?: string }).correlationId
-        setInitialError({ correlationId })
+        setError({ correlationId: (err as { correlationId?: string }).correlationId })
+        setResults([])
         reportRequestFailure(err)
       } finally {
-        setIsInitialLoading(false)
+        setIsLoading(false)
       }
     },
-    [navigate, pushRecent, cat],
+    [pushRecent],
   )
 
-  // Deep-link restore + URL-driven input sync (D-3.2). handleSubmit is stable
-  // via useCallback; intentionally omitted from the dep array to match Angular
-  // initializeQueryParamsSubscription semantics (fire once per URL change, not
-  // per handler-identity change). See plan §URL-restore.
-  //
-  // The setInputValue call inside this effect synchronizes the controlled
-  // input with the URL — a legitimate "sync external system → React state"
-  // pattern (the URL is the source of truth per D-3.1). React's lint rule
-  // doesn't distinguish this from a cascading-render anti-pattern; we silence
-  // it on the setState lines because the alternative (deriving input value
-  // from URL on every render) would prevent the user from typing freely
-  // while the URL lags.
+  // Deep-link + URL-driven q: run the search whenever q changes.
   useEffect(() => {
-    if (q && q.trim() && !initialFilter && !isInitialLoading) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (q && q.trim()) {
       setInputValue(q)
-      void handleSubmit(q)
-    } else if (q !== undefined && q !== inputValue) {
-      setInputValue(q)
+      void runSearch(q)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, cat])
+  }, [q])
+
+  const activeCategory = useMemo<CategoryResultV4 | undefined>(() => {
+    if (results.length === 0) return undefined
+    return results.find((r) => r.key === tab) ?? results[0]
+  }, [results, tab])
+
+  // Sync the URL tab to the active category once results resolve (Angular parity).
+  useEffect(() => {
+    if (results.length === 0) return
+    const valid = tab && results.some((r) => r.key === tab)
+    if (!valid && activeCategory) {
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({ ...prev, tab: activeCategory.key }),
+        replace: true,
+      })
+    }
+  }, [results, tab, activeCategory, navigate])
+
+  const handleSubmit = useCallback(
+    (term: string) => {
+      const t = term.trim()
+      if (t) void navigate({ search: { q: t }, replace: true })
+    },
+    [navigate],
+  )
 
   const handleClear = useCallback(() => {
     setInputValue('')
-    setInitialFilter(null)
+    setResults([])
     setResultCount(null)
-    setInitialError(null)
-    void navigate({ search: {}, replace: true })
+    setError(null)
+    void navigate({ to: '/' })
   }, [navigate])
 
-  const handleGridReady = useCallback((event: GridReadyEvent) => {
-    gridApiRef.current = event.api
-  }, [])
-
-  const handleModelUpdated = useCallback((rowCount: number) => {
-    setResultCount(rowCount)
-  }, [])
+  const handleSelectTab = useCallback(
+    (key: string) => {
+      void navigate({
+        search: (prev: Record<string, unknown>) => ({ ...prev, tab: key }),
+        replace: true,
+      })
+    },
+    [navigate],
+  )
 
   const handleExport = useCallback(() => {
     const api = gridApiRef.current
-    if (!api) return
+    if (!api || !activeCategory) return
     setIsExporting(true)
     try {
-      // D-3.10: exclude the `execution_order` action column from the export.
-      // getColumns() can return null pre-init; fall back to undefined which
-      // tells AG-Grid to use all columns.
       const cols = api.getColumns()
       const columnKeys = cols
-        ? cols
-            .filter((c) => c.getColId() !== 'execution_order')
-            .map((c) => c.getColId())
+        ? cols.filter((c) => c.getColId() !== 'execution_order').map((c) => c.getColId())
         : undefined
-      api.exportDataAsExcel({
-        fileName: buildExportFilename(cat, q ?? ''),
-        columnKeys,
-      })
+      api.exportDataAsExcel({ fileName: buildExportFilename(activeCategory.key, q ?? ''), columnKeys })
     } catch (err) {
       reportRequestFailure(err)
     } finally {
       setIsExporting(false)
     }
-  }, [cat, q])
+  }, [activeCategory, q])
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <header
-        className="bg-background/40 sticky top-0 z-50 flex items-center justify-between px-4 border-b backdrop-blur-md"
+        className="bg-background/40 sticky top-0 z-50 flex items-center justify-between gap-3 border-b px-4 backdrop-blur-md"
         style={{ height: 'var(--header-height, 2.5rem)' }}
       >
-        <span className="text-sm font-semibold">Rectrace</span>
-        <div className="flex-1 px-6">
+        <BrandLogo className="h-5 w-auto" />
+        <div className="flex-1">
           <SearchBar
             value={inputValue}
             onChange={setInputValue}
-            // SearchBar.onSubmit is typed (term: string) => void; handleSubmit
-            // returns Promise<void>. Wrap in a `void` IIFE so the attribute
-            // returns synchronously while the async work fires-and-forgets.
-            onSubmit={(term) => {
-              void handleSubmit(term)
-            }}
+            onSubmit={handleSubmit}
             onClear={handleClear}
+            suggestions={suggestions}
+            placeholder="Search…"
           />
         </div>
         <ThemeSwitch />
+        <UserChip {...user} />
       </header>
-      {q && (
+
+      {isLoading ? (
+        <div role="status" aria-label="Loading results..." className="flex flex-col gap-2 p-4">
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+      ) : error ? (
+        <ErrorStateCard correlationId={error.correlationId} onRetry={() => q && void runSearch(q)} />
+      ) : results.length === 0 ? (
+        <NoResultsState term={q ?? ''} />
+      ) : (
         <>
-          <CategoryTabBar activeCat={cat ?? 'fileName'} />
-          <SearchToolbar
-            resultCount={resultCount}
-            onExport={handleExport}
-            isExporting={isExporting}
-          />
+          <CategoryTabBar categories={results} activeKey={activeCategory?.key ?? results[0].key} onSelect={handleSelectTab} />
+          <SearchToolbar resultCount={resultCount} onExport={handleExport} isExporting={isExporting} />
+          <main className="flex-1 overflow-hidden">
+            {activeCategory && (
+              <SearchGrid
+                q={q ?? ''}
+                category={activeCategory}
+                onGridReady={(e: GridReadyEvent) => {
+                  gridApiRef.current = e.api
+                }}
+                onModelUpdated={setResultCount}
+              />
+            )}
+          </main>
         </>
       )}
-      <main className="flex-1 overflow-hidden">
-        {!q ? (
-          <PreSearchEmptyState />
-        ) : isInitialLoading ? (
-          <InitialLoadingSkeleton />
-        ) : initialError ? (
-          <ErrorStateCard
-            correlationId={initialError.correlationId}
-            onRetry={() => void handleSubmit(q)}
-          />
-        ) : initialFilter ? (
-          <SearchGrid
-            q={q}
-            cat={cat ?? 'fileName'}
-            initialFilter={initialFilter}
-            onGridReady={handleGridReady}
-            onModelUpdated={handleModelUpdated}
-          />
-        ) : null}
-      </main>
       <Footer />
     </div>
   )
 }
 
-function PreSearchEmptyState(): React.ReactElement {
+function NoResultsState({ term }: { term: string }): React.ReactElement {
   return (
-    <div className="flex h-full items-center justify-center p-8">
+    <div className="flex flex-1 items-center justify-center p-8">
       <Card className="max-w-md">
         <CardHeader>
-          <CardTitle>Search Autosys jobs</CardTitle>
+          <CardTitle>No results found</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Enter a search term above to find jobs by file name. Recent searches
-          appear when you click the input.
+          No results found for &ldquo;<strong>{term}</strong>&rdquo;. Try a different term.
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-function InitialLoadingSkeleton(): React.ReactElement {
-  return (
-    <div
-      aria-label="Loading results..."
-      role="status"
-      className="flex flex-col gap-2 p-4"
-    >
-      <Skeleton className="h-9 w-full" />
-      <Skeleton className="h-9 w-full" />
-      <Skeleton className="h-9 w-full" />
     </div>
   )
 }
@@ -253,7 +216,7 @@ interface ErrorStateCardProps {
 
 function ErrorStateCard({ correlationId, onRetry }: ErrorStateCardProps): React.ReactElement {
   return (
-    <div className="flex h-full items-center justify-center p-8">
+    <div className="flex flex-1 items-center justify-center p-8">
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Search unavailable</CardTitle>
@@ -263,8 +226,7 @@ function ErrorStateCard({ correlationId, onRetry }: ErrorStateCardProps): React.
             Failed to load results.{' '}
             {correlationId ? (
               <>
-                Error reference: <code className="font-mono">{correlationId}</code> — quote
-                this when reporting an issue.
+                Error reference: <code className="font-mono">{correlationId}</code> — quote this when reporting an issue.
               </>
             ) : (
               'Check the browser console for details.'
