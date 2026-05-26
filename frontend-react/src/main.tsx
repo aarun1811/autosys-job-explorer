@@ -9,6 +9,7 @@ import {
   RowApiModule,
   ColumnApiModule,
   GridStateModule,
+  EventApiModule,
 } from 'ag-grid-community'
 import {
   ServerSideRowModelModule,
@@ -56,6 +57,11 @@ ModuleRegistry.registerModules([
   // (columns/grouping/sort/filter) at grid construction. Without it AG-Grid
   // throws error #200 and silently ignores initialState.
   GridStateModule,
+  // EventApiModule backs api.addEventListener / removeEventListener — used by
+  // SearchGridPanel's onGridReady to track filterChanged for the toolbar's
+  // active-filter badge. Without it AG-Grid v35 throws error #200 and the
+  // listener silently never attaches.
+  EventApiModule,
 ])
 
 const rootElement = document.getElementById('root')
