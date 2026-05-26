@@ -1,31 +1,37 @@
-import { describe, test, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, test, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 import { CategoryTabBar } from '@/search/CategoryTabBar'
+import type { CategoryResultV4 } from '@/search/types'
+
+const cats = [
+  { key: 'fileName', label: 'File Name', count: 3, hasMore: false, values: [], columns: [] },
+  { key: 'jobName', label: 'Job Name', count: 1000, hasMore: true, values: [], columns: [] },
+] as CategoryResultV4[]
 
 describe('CategoryTabBar', () => {
-  test('renders one tab with text "File Name" when activeCat === "fileName"', () => {
-    render(<CategoryTabBar activeCat="fileName" />)
-    expect(screen.getByText('File Name')).toBeInTheDocument()
+  test('renders one tab per category with "Label (N)" / "(N+)" labels', () => {
+    render(<CategoryTabBar categories={cats} activeKey="fileName" onSelect={vi.fn()} />)
+    expect(screen.getByText('File Name (3)')).toBeInTheDocument()
+    expect(screen.getByText('Job Name (1000+)')).toBeInTheDocument()
   })
 
-  test('the active tab carries the primary-border indicator (no raw hex)', () => {
-    render(<CategoryTabBar activeCat="fileName" />)
-    const tab = screen.getByText('File Name')
-    // Active 2px bottom border in var(--primary) — tailwind class border-primary.
-    expect(tab.className).toMatch(/border-primary/)
-    expect(tab.className).toMatch(/border-b-2/)
+  test('active tab carries the primary border indicator', () => {
+    render(<CategoryTabBar categories={cats} activeKey="jobName" onSelect={vi.fn()} />)
+    const active = screen.getByText('Job Name (1000+)')
+    expect(active.className).toMatch(/border-primary/)
+    expect(active.className).toMatch(/border-b-2/)
   })
 
-  test('exposes data-active-cat for downstream automation', () => {
-    render(<CategoryTabBar activeCat="fileName" />)
-    const tab = screen.getByText('File Name')
-    expect(tab.getAttribute('data-active-cat')).toBe('fileName')
+  test('clicking a tab calls onSelect with its key', () => {
+    const onSelect = vi.fn()
+    render(<CategoryTabBar categories={cats} activeKey="fileName" onSelect={onSelect} />)
+    fireEvent.click(screen.getByText('Job Name (1000+)'))
+    expect(onSelect).toHaveBeenCalledWith('jobName')
   })
 
-  test('renders exactly one tab element (no extra tabs in Phase 3)', () => {
-    const { container } = render(<CategoryTabBar activeCat="fileName" />)
-    const tabs = container.querySelectorAll('[data-active-cat]')
-    expect(tabs.length).toBe(1)
+  test('renders exactly N tabs and exposes data-tab-key', () => {
+    const { container } = render(<CategoryTabBar categories={cats} activeKey="fileName" onSelect={vi.fn()} />)
+    expect(container.querySelectorAll('[data-tab-key]').length).toBe(2)
   })
 })

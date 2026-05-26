@@ -1,41 +1,47 @@
+import type { CategoryResultV4 } from '@/search/types'
+
 /**
- * CategoryTabBar — single non-interactive tab strip immediately below the header.
+ * CategoryTabBar — data-driven multi-tab strip below the header (Angular
+ * `search-v5` tabs parity). One tab per result category, labelled
+ * `"<label> (<count>)"` (or `"(<count>+)"` when `hasMore`). The active tab
+ * carries a 2px bottom border in `var(--primary)`. Clicking a tab calls
+ * `onSelect(key)`; the parent writes it to the URL `tab` param.
  *
- * Phase 3 renders exactly one tab ("File Name") because the vertical slice is
- * single-category. The component exists to:
- *   1. Show the active category label to the user.
- *   2. Establish the markup/sizing pattern for Phase 4+ when multiple categories
- *      will render and a tab-switching primitive (shadcn Tabs) will replace the
- *      static span.
- *
- * UI-SPEC §"Category Tab Bar":
- *   - Background: bg-muted/50 backdrop-blur-sm (matches Phase 2 header translucency)
- *   - Height: 40px (`h-10`)
- *   - Active tab: 2px bottom border in var(--primary) (`border-b-2 border-primary`)
- *   - Label: 12px semibold (`text-xs font-semibold`)
- *
- * TODO(Phase 4): replace this with shadcn Tabs over multi-category config.
- * Phase 4 will grep for this exact "TODO(Phase 4)" marker.
+ * Nothing is hardcoded — labels, counts, and order all come from the
+ * `searchResults` array the parent derives from `/initial`.
  */
 export interface CategoryTabBarProps {
-  activeCat: string
-  // Phase 3: single tab; no onChange handler yet (no switching).
+  categories: CategoryResultV4[]
+  activeKey: string
+  onSelect: (key: string) => void
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  fileName: 'File Name',
+function tabLabel(c: CategoryResultV4): string {
+  return `${c.label} (${c.count}${c.hasMore ? '+' : ''})`
 }
 
-export function CategoryTabBar({ activeCat }: CategoryTabBarProps) {
-  const label = CATEGORY_LABELS[activeCat] ?? 'File Name'
+export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabBarProps) {
   return (
-    <div className="flex items-center gap-0 border-b px-4 h-10 bg-muted/50 backdrop-blur-sm">
-      <div
-        data-active-cat={activeCat}
-        className="px-4 h-10 flex items-center text-xs font-semibold border-b-2 border-primary"
-      >
-        {label}
-      </div>
+    <div className="flex items-center gap-0 border-b px-4 h-10 bg-muted/50 backdrop-blur-sm overflow-x-auto">
+      {categories.map((c) => {
+        const active = c.key === activeKey
+        return (
+          <button
+            key={c.key}
+            type="button"
+            data-tab-key={c.key}
+            data-active={active}
+            onClick={() => onSelect(c.key)}
+            className={`px-4 h-10 flex items-center text-xs font-semibold whitespace-nowrap border-b-2 ${
+              active
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tabLabel(c)}
+          </button>
+        )
+      })}
     </div>
   )
 }
