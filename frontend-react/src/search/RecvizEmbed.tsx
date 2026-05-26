@@ -77,6 +77,12 @@ export function RecvizEmbed({ url, q, title, minHeight = 320 }: RecvizEmbedProps
           src={src}
           title={title ?? 'Dashboard'}
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups-to-escape-sandbox"
+          // NOTE: onError does NOT fire when a cross-origin embed is refused via
+          // X-Frame-Options / CSP frame-ancestors — the browser renders its own error
+          // page inside the frame and fires onLoad instead. So error/Retry only covers
+          // resource-level failures, not framing refusals. Robust detection for the real
+          // recviz integration (e.g. treat the absence of a first RECTRACE_IFRAME_HEIGHT
+          // handshake within N seconds as failure) is a Phase-4 recviz-contract item.
           onLoad={() => setState('ready')}
           onError={() => setState('error')}
           initial={{ opacity: 0 }}
