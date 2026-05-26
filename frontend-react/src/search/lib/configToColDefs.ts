@@ -42,7 +42,7 @@ export function columnsToColDefs(columns: ColumnDefinitionV4[]): ColDef[] {
   return columns.map((c: ColumnDefinitionV4): ColDef => ({
     field: c.field,
     headerName: c.headerName,
-    width: c.width,
+    width: c.width ?? undefined,
     hide: c.hide ?? false,
     sortable: c.sortable ?? true,
     // filter: true → AG-Grid's built-in text filter; false → no filter at all.

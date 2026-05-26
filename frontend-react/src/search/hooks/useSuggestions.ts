@@ -19,6 +19,9 @@ export function useSuggestions(term: string): string[] {
   useEffect(() => {
     const q = term.trim()
     if (q.length < MIN_CHARS) {
+      // Reset suggestions when the term is too short — a legitimate sync of
+      // derived external state, not a cascading-render anti-pattern.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestions([])
       return
     }

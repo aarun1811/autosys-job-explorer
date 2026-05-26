@@ -34,7 +34,7 @@ import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
  * synced to the active key (replace). No `/config`, no hardcoded category.
  */
 export function SearchPage(): React.ReactElement {
-  const { q, tab } = useSearch({ from: '/search' }) as { q?: string; tab?: string }
+  const { q, tab } = useSearch({ from: '/search' })
   const navigate = useNavigate({ from: '/search' })
   const user = useUserInfo()
   const { push: pushRecent } = useRecentSearches()
@@ -71,9 +71,12 @@ export function SearchPage(): React.ReactElement {
     [pushRecent],
   )
 
-  // Deep-link + URL-driven q: run the search whenever q changes.
+  // Deep-link + URL-driven q: run the search whenever q changes. Syncing the
+  // controlled input from the URL (source of truth) is a legitimate
+  // external→React sync, not a cascading-render anti-pattern.
   useEffect(() => {
     if (q && q.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInputValue(q)
       void runSearch(q)
     }

@@ -12,6 +12,9 @@ import { SearchPage } from '@/search/SearchPage'
  *
  * No `cat`, no `.default()` — the URL is bare until the user searches.
  */
+// Exported for the route's own validateSearch test. The route file legitimately
+// owns its param schema alongside the Route; this is not a shared-constant smell.
+// eslint-disable-next-line react-refresh/only-export-components
 export const searchSchema = z.object({
   q: z.string().optional(),
   tab: z.string().optional(),
