@@ -1,8 +1,12 @@
 // src/search/__tests__/RowDetailSheet.test.tsx
-import { describe, test, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { RowDetailSheet } from '@/search/RowDetailSheet'
 import type { ColumnDefinitionV4 } from '@/search/types'
+
+const toastSuccess = vi.fn()
+const toastError = vi.fn()
+vi.mock('sonner', () => ({ toast: { success: (m: string) => toastSuccess(m), error: (m: string) => toastError(m) } }))
 
 const columns: ColumnDefinitionV4[] = [
   { field: 'job_name', headerName: 'Job Name', rowGroup: true } as ColumnDefinitionV4,
@@ -10,6 +14,11 @@ const columns: ColumnDefinitionV4[] = [
 ]
 
 describe('RowDetailSheet', () => {
+  beforeEach(() => {
+    toastSuccess.mockClear()
+    toastError.mockClear()
+  })
+
   test('renders each column header and value for the row when open', () => {
     render(
       <RowDetailSheet
@@ -39,7 +48,41 @@ describe('RowDetailSheet', () => {
     expect(screen.queryByText('Recon Name')).not.toBeInTheDocument()
   })
 
-  it('titles the sheet with the search-column value and shows the category label', () => {
+  test('shows an error toast when the clipboard write rejects', async () => {
+    const writeText = vi.fn(() => Promise.reject(new Error('denied')))
+    Object.assign(navigator, { clipboard: { writeText } })
+    render(
+      <RowDetailSheet
+        open
+        onOpenChange={vi.fn()}
+        categoryLabel="Job Name"
+        row={{ job_name: 'JOB_ABC', recon: 'TRADE_RECON_NA' }}
+        columns={columns}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Recon Name' }))
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith('Copy failed'))
+    expect(toastSuccess).not.toHaveBeenCalled()
+  })
+
+  test('shows a success toast when the clipboard write resolves', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    Object.assign(navigator, { clipboard: { writeText } })
+    render(
+      <RowDetailSheet
+        open
+        onOpenChange={vi.fn()}
+        categoryLabel="Job Name"
+        row={{ job_name: 'JOB_ABC', recon: 'TRADE_RECON_NA' }}
+        columns={columns}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Recon Name' }))
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith('Copied'))
+    expect(writeText).toHaveBeenCalledWith('TRADE_RECON_NA')
+  })
+
+  test('titles the sheet with the search-column value and shows the category label', () => {
     render(<RowDetailSheet open onOpenChange={() => {}} categoryLabel="Job Name"
       row={{ job_name: 'JOB_ABC', box_name: '' }} columns={[
         { field: 'job_name', headerName: 'Job Name', rowGroup: true } as ColumnDefinitionV4,

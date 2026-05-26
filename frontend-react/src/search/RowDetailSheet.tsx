@@ -73,10 +73,12 @@ export function RowDetailSheet({
                       <button
                         type="button"
                         aria-label={`Copy ${c.headerName}`}
-                        className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                        className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
                         onClick={() => {
-                          void navigator.clipboard.writeText(value)
-                          toast.success('Copied')
+                          navigator.clipboard
+                            .writeText(value)
+                            .then(() => toast.success('Copied'))
+                            .catch(() => toast.error('Copy failed'))
                         }}
                       >
                         <CopyIcon className="size-3.5" />
