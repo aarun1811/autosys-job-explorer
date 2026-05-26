@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  body{font-family:Inter,system-ui,sans-serif;margin:0;padding:24px;background:#fff;color:#111}
+  body[data-theme="dark"]{background:#15191c;color:#e8eaed}
+</style></head><body>
+  <h2>recviz placeholder</h2><p id="term"></p>
+  <script>
+    const p = new URLSearchParams(location.search);
+    document.getElementById('term').textContent = 'term: ' + (p.get('term') || '(none)');
+    function report(){ parent.postMessage({type:'RECTRACE_IFRAME_HEIGHT',height:document.body.scrollHeight}, '*'); }
+    new ResizeObserver(report).observe(document.body); report();
+    addEventListener('message', e => { if (e.data?.type==='RECTRACE_THEME') document.body.dataset.theme=e.data.theme; });
+  </script>
+</body></html>
