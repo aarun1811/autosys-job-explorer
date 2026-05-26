@@ -41,8 +41,12 @@ needed and is dropped.
   ```ts
   z.object({ q: z.string().optional(), tab: z.string().optional() })
   ```
-  No `cat`, no `.default()`. If `q` is absent/empty → redirect to `/` (guard
-  against an invalid state; this is the only redirect that remains).
+  No `cat`, no `.default()`. If `q` is absent/empty → redirect to `/`.
+
+  > **Accepted exception to "no rerouting":** this guard redirects only the
+  > invalid state of landing on `/search` with no query. It is not the cosmetic
+  > param-injection rewrite (`?cat=fileName`) that motivated this work; that is
+  > removed entirely. This is the only redirect in the app.
 - Pre-search URLs carry no params. `tab` is written (with `replace: true`) only
   after results resolve, and on tab clicks.
 
@@ -182,6 +186,20 @@ single coherent dropdown, instead of bolting on a second mechanism.
 - Broader visual modernization of the shell.
 
 ---
+
+## Accepted exceptions to "no hardcoding"
+
+The no-hardcoding rule targets **search/category behavior** — grid columns,
+category metadata, renderer maps, and the `cat` default must be data-driven (from
+`/initial`), never literals. Two items are *cosmetic copy*, not behavior, and are
+deliberately kept as small declared constants:
+
+- Hero **placeholder phrases** (§H) — display copy for the rotating placeholder.
+- **"Try" button** example values (§H) — demo seed values.
+
+Neither drives what is searched or how results render. If desired later, both
+could be sourced from a lightweight endpoint, but that is explicitly not required
+here.
 
 ## Open questions
 
