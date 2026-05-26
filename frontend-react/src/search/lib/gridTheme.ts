@@ -18,8 +18,15 @@ import { createPart, themeQuartz } from 'ag-grid-community'
  * injected via `createPart({ css: '...' })` + `.withPart(...)` instead.
  */
 
-const tabularNumeralsPart = createPart({
-  css: '.ag-cell { font-variant-numeric: tabular-nums; }',
+const gridBodyPart = createPart({
+  css: `.ag-cell { font-variant-numeric: tabular-nums; }
+/* selected row: accent left-edge (distinct from hover) */
+.ag-row-selected { box-shadow: inset 2px 0 0 0 var(--color-primary); }
+/* group rows read as a subtle tier */
+.ag-row-group { background: color-mix(in oklab, var(--color-muted) 50%, transparent); }
+/* column resize handle: reveal on header-cell hover only */
+.ag-header-cell-resize::after { opacity: 0; transition: opacity 120ms ease; }
+.ag-header-cell:hover .ag-header-cell-resize::after { opacity: 1; }`,
 })
 
 export const gridTheme = themeQuartz
@@ -30,6 +37,8 @@ export const gridTheme = themeQuartz
     chromeBackgroundColor: 'var(--color-muted)',
     headerTextColor: 'var(--color-foreground)',
     borderColor: 'var(--color-border)',
+    columnBorder: false,
+    rowBorder: { color: 'color-mix(in oklab, var(--color-foreground) 10%, transparent)' },
     rowHoverColor: 'color-mix(in oklab, var(--color-accent) 55%, transparent)',
     selectedRowBackgroundColor: 'color-mix(in oklab, var(--color-primary) 12%, transparent)',
     oddRowBackgroundColor: 'transparent',
@@ -41,4 +50,4 @@ export const gridTheme = themeQuartz
     spacing: 8,
     wrapperBorderRadius: 0,
   })
-  .withPart(tabularNumeralsPart)
+  .withPart(gridBodyPart)
