@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { SearchIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { useRecentSearches } from '@/search/hooks/useRecentSearches'
+import { buildSuggestItems } from '@/search/lib/buildSuggestItems'
 import { SearchSuggestDropdown } from '@/search/SearchSuggestDropdown'
 
 /**
@@ -48,13 +49,25 @@ export function SearchBar({
 }: SearchBarProps) {
   const { recents, remove: removeRecent, clear: clearRecents } = useRecentSearches()
   const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const [wordIdx, setWordIdx] = useState(0)
+  const listboxId = useId()
+  const optionId = (i: number) => `${listboxId}-opt-${i}`
 
-  const typing = value.trim().length >= 2
-  const hasContent = typing ? suggestions.length > 0 : recents.length > 0
   const hero = variant === 'hero'
+  const items = useMemo(
+    () => buildSuggestItems(recents, suggestions, value),
+    [recents, suggestions, value],
+  )
+  const hasContent = items.length > 0
+  const open = isOpen && hasContent
+  // Derived clamp: `suggestions` is a DEBOUNCED prop — it can rebuild `items`
+  // (shrink it) ~300ms after the last keystroke with NO onChange to reset
+  // activeIndex. Reading a clamped value everywhere keeps the highlight + Enter
+  // honest without a set-state-in-effect (which the lint forbids).
+  const safeActiveIndex = activeIndex >= 0 && activeIndex < items.length ? activeIndex : -1
 
   // Rolling-word carousel timer (only when a rolling placeholder is supplied
   // and motion is allowed). The CSS keyframe handles the per-word roll.
@@ -69,14 +82,58 @@ export function SearchBar({
 
   const showOverlay = Boolean(rollingPlaceholder) && value === ''
 
+  const close = () => {
+    setIsOpen(false)
+    setActiveIndex(-1)
+  }
+  const pick = (term: string) => {
+    close()
+    onSubmit(term)
+  }
   const submit = () => {
     const t = value.trim()
-    if (t) onSubmit(t)
+    if (t) {
+      close()
+      onSubmit(t)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (open && safeActiveIndex >= 0) {
+        e.preventDefault()
+        pick(items[safeActiveIndex].text)
+      } else {
+        submit()
+      }
+      return
+    }
+    if (e.key === 'Escape') {
+      close()
+      return
+    }
+    if (!hasContent) return
+    // Arrow math is based on the CLAMPED index so a stale out-of-range value
+    // (from a debounced suggestions update) self-corrects on the next press.
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setIsOpen(true)
+      setActiveIndex(Math.min(safeActiveIndex + 1, items.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(Math.max(safeActiveIndex - 1, -1))
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      setActiveIndex(0)
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      setActiveIndex(items.length - 1)
+    }
   }
 
   return (
     <div ref={rootRef} className={`flex items-center ${hero ? 'gap-2.5' : 'gap-2'}`}>
-      <Popover open={isOpen && hasContent} onOpenChange={setIsOpen}>
+      <Popover open={open} onOpenChange={setIsOpen}>
         <PopoverAnchor asChild>
           <div
             className={
@@ -86,6 +143,11 @@ export function SearchBar({
             }
           >
             <Input
+              role="combobox"
+              aria-expanded={open}
+              aria-controls={listboxId}
+              aria-autocomplete="list"
+              aria-activedescendant={open && safeActiveIndex >= 0 ? optionId(safeActiveIndex) : undefined}
               aria-label={rollingPlaceholder ? 'Search' : undefined}
               className={
                 hero
@@ -97,15 +159,14 @@ export function SearchBar({
               onChange={(e) => {
                 onChange(e.target.value)
                 setIsOpen(true)
+                setActiveIndex(-1)
               }}
               onFocus={() => setIsOpen(true)}
               onBlur={() => {
                 if (blurTimer.current) clearTimeout(blurTimer.current)
-                blurTimer.current = setTimeout(() => setIsOpen(false), 150)
+                blurTimer.current = setTimeout(() => close(), 150)
               }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submit()
-              }}
+              onKeyDown={handleKeyDown}
             />
             {showOverlay && rollingPlaceholder && (
               <div
@@ -154,18 +215,19 @@ export function SearchBar({
           }}
         >
           <SearchSuggestDropdown
-            value={value}
-            recents={recents}
-            suggestions={suggestions}
-            onPick={(t) => {
-              setIsOpen(false)
-              onSubmit(t)
-            }}
+            items={items}
+            query={value}
+            activeIndex={safeActiveIndex}
+            recentsHeader={value.trim() === ''}
+            onPick={pick}
             onRemoveRecent={removeRecent}
             onClearRecents={() => {
               clearRecents()
-              setIsOpen(false)
+              close()
             }}
+            onActiveIndexChange={setActiveIndex}
+            listboxId={listboxId}
+            optionId={optionId}
           />
         </PopoverContent>
       </Popover>

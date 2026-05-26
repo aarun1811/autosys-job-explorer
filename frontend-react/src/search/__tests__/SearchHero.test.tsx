@@ -33,7 +33,8 @@ function renderHero() {
 describe('SearchHero', () => {
   test('typing + Search navigates to /search?q=term', async () => {
     const router = renderHero()
-    const input = await screen.findByRole('textbox')
+    // The search input is an ARIA combobox (role="combobox"), not a plain textbox.
+    const input = await screen.findByRole('combobox')
     fireEvent.change(input, { target: { value: 'trade' } })
     fireEvent.click(screen.getByRole('button', { name: 'Search' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/search'))
