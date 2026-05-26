@@ -11,8 +11,8 @@ export function AppIDCellRenderer(params: ICellRendererParams) {
   const data = params.data as Record<string, unknown> | undefined
   const appName = (data?.app_name as string | undefined) ?? ''
   const template = (params.colDef?.cellRendererParams as { urlTemplate?: string } | undefined)?.urlTemplate
-  if (!value || !template) return <span>{value}</span>
-  const href = template.replace('{value}', encodeURIComponent(value))
+  if (!value || !template || !/^https?:\/\//i.test(template)) return <span>{value}</span>
+  const href = template.replaceAll('{value}', encodeURIComponent(value))
   return (
     <a href={href} target="_blank" rel="noopener noreferrer"
        title={`View details of ${appName}`} className="rectrace-link">

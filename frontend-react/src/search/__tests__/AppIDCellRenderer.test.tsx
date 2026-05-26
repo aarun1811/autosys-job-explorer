@@ -76,4 +76,16 @@ describe('AppIDCellRenderer', () => {
     const link = screen.getByRole('link')
     expect(link.getAttribute('title')).toBe('View details of ')
   })
+
+  test('renders a plain <span> (no anchor) when the urlTemplate is not http(s)', () => {
+    render(<AppIDCellRenderer {...makeParams('APP123', 'FOO_APP', 'javascript:alert(1)')} />)
+    expect(screen.queryByRole('link')).toBeNull()
+    expect(screen.getByText('APP123')).toBeInTheDocument()
+  })
+
+  test('substitutes every {value} occurrence in the template', () => {
+    render(<AppIDCellRenderer {...makeParams('APP123', 'Acme', 'https://portal/{value}/detail/{value}')} />)
+    const link = screen.getByRole('link')
+    expect(link.getAttribute('href')).toBe('https://portal/APP123/detail/APP123')
+  })
 })
