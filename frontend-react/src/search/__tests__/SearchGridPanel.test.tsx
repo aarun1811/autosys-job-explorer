@@ -145,10 +145,7 @@ describe('SearchGridPanel', () => {
   test('Export downloads via the backend export endpoint', async () => {
     exportMock.mockReset().mockResolvedValue(undefined)
     renderPanel()
-    const trigger = await screen.findByRole('button', { name: 'Export' })
-    trigger.focus()
-    fireEvent.keyDown(trigger, { key: 'Enter' })
-    fireEvent.click(screen.getByText('Download Excel (.xlsx)'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Export to Excel' }))
     await waitFor(() => expect(exportMock).toHaveBeenCalledTimes(1))
     const [category, body] = exportMock.mock.calls[0]
     expect(category).toBe('jobName')

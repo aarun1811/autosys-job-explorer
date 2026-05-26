@@ -18,12 +18,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import type { GridDensity } from '@/search/lib/gridConfig'
 
 export interface GridToolbarProps {
@@ -49,11 +43,13 @@ function ToolButton({
   label,
   onClick,
   pressed,
+  disabled,
   children,
 }: {
   label: string
   onClick: () => void
   pressed?: boolean
+  disabled?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -65,8 +61,10 @@ function ToolButton({
           variant="ghost"
           aria-label={label}
           aria-pressed={pressed === undefined ? undefined : pressed}
+          disabled={disabled}
           onClick={onClick}
-          className={`size-8 ${pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
+          // disabled:opacity-100 keeps a loading spinner fully visible while busy.
+          className={`size-8 disabled:opacity-100 ${pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
         >
           {children}
         </Button>
@@ -120,33 +118,14 @@ export function GridToolbar(props: GridToolbarProps): React.ReactElement {
           <CopyMinusIcon className="size-4" />
         </ToolButton>
         {sep}
-        {/* Export / Share */}
-        <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Export"
-                  disabled={props.isExporting}
-                  className="size-8 text-muted-foreground"
-                >
-                  {props.isExporting ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : (
-                    <DownloadIcon className="size-4" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>Export</TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={props.onExportExcel}>Download Excel (.xlsx)</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Export / Share — Export downloads immediately on click (spinner while busy). */}
+        <ToolButton label="Export to Excel" onClick={props.onExportExcel} disabled={props.isExporting}>
+          {props.isExporting ? (
+            <Loader2Icon className="size-4 animate-spin" />
+          ) : (
+            <DownloadIcon className="size-4" />
+          )}
+        </ToolButton>
         <ToolButton label="Copy rows to clipboard" onClick={props.onCopy}>
           <CopyIcon className="size-4" />
         </ToolButton>

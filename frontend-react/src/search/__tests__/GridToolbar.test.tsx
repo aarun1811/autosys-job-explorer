@@ -68,15 +68,16 @@ describe('GridToolbar', () => {
     expect(screen.getByRole('button', { name: 'Remove duplicates' })).toHaveAttribute('aria-pressed', 'true')
   })
 
-  test('Export dropdown offers Excel', () => {
+  test('Export button triggers export directly on a single click', () => {
     const spies = setup()
-    // Radix DropdownMenu opens on pointerdown OR keyboard Enter/Space; in jsdom
-    // keyboard activation is the reliable path (proven in the retired
-    // SearchToolbar.test). `fireEvent.click` does NOT open it.
-    const trigger = screen.getByRole('button', { name: 'Export' })
-    trigger.focus()
-    fireEvent.keyDown(trigger, { key: 'Enter' })
-    fireEvent.click(screen.getByText('Download Excel (.xlsx)'))
+    fireEvent.click(screen.getByRole('button', { name: 'Export to Excel' }))
     expect(spies.onExportExcel).toHaveBeenCalledTimes(1)
+  })
+
+  test('Export button shows a spinner and is disabled while exporting', () => {
+    setup({ isExporting: true })
+    const btn = screen.getByRole('button', { name: 'Export to Excel' })
+    expect(btn).toBeDisabled()
+    expect(btn.querySelector('.animate-spin')).not.toBeNull()
   })
 })
