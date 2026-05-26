@@ -23,7 +23,7 @@ const gridBodyPart = createPart({
 /* selected row: accent left-edge (distinct from hover) */
 .ag-row-selected { box-shadow: inset 2px 0 0 0 var(--color-primary); }
 /* group rows read as a subtle tier */
-.ag-row-group { background: color-mix(in oklab, var(--color-muted) 50%, transparent); }
+.ag-row-group-expanded, .ag-row-group-contracted { background: color-mix(in oklab, var(--color-muted) 50%, transparent); }
 /* column resize handle: reveal on header-cell hover only */
 .ag-header-cell-resize::after { opacity: 0; transition: opacity 120ms ease; }
 .ag-header-cell:hover .ag-header-cell-resize::after { opacity: 1; }`,

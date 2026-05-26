@@ -39,4 +39,11 @@ describe('gridTheme', () => {
     const params = JSON.parse(ourParams(gridTheme)) as Record<string, unknown>
     expect(params['rowHoverColor']).not.toBe(params['selectedRowBackgroundColor'])
   })
+
+  it('injects the body-treatment CSS via the custom part', () => {
+    const json = JSON.stringify(gridTheme)
+    expect(json).toContain('font-variant-numeric: tabular-nums')
+    expect(json).toContain('.ag-row-selected')
+    expect(json).toContain('.ag-row-group-expanded')
+  })
 })
