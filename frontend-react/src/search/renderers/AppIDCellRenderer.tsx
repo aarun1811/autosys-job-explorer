@@ -1,32 +1,21 @@
 import type { ICellRendererParams } from 'ag-grid-community'
 
 /**
- * AppIDCellRenderer — React port of AppIDCellRendererComponent.
- *
- * Behavioral parity with Angular source:
- *   frontend/rectrace/src/app/custom-interactions/components/renderers/app-id-cell-renderer.component.ts
- *
- * - Truthy params.value → <a href="https://lnkd.in/gpAtSBRj"> opening in a new tab.
- *   title attribute = "View details of {params.data.app_name}".
- * - Falsy params.value → plain <span>{value}</span> (no link).
- *
- * Styling uses the Phase 2 design tokens (text-primary, underline) — no raw hex.
+ * AppIDCellRenderer — config-driven app link. The URL comes from
+ * cellRendererParams.urlTemplate (with a `{value}` placeholder) declared in
+ * search-config-v4.json; no template ⇒ plain text. The real Citi app-portal
+ * URL is supplied via config — see search-config-v4.json [NEEDS USER INPUT].
  */
 export function AppIDCellRenderer(params: ICellRendererParams) {
   const value = params.value as string | undefined | null
   const data = params.data as Record<string, unknown> | undefined
   const appName = (data?.app_name as string | undefined) ?? ''
-  if (!value) {
-    return <span>{value}</span>
-  }
+  const template = (params.colDef?.cellRendererParams as { urlTemplate?: string } | undefined)?.urlTemplate
+  if (!value || !template) return <span>{value}</span>
+  const href = template.replace('{value}', encodeURIComponent(value))
   return (
-    <a
-      href="https://lnkd.in/gpAtSBRj"
-      target="_blank"
-      rel="noopener noreferrer"
-      title={`View details of ${appName}`}
-      className="text-primary underline hover:no-underline"
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer"
+       title={`View details of ${appName}`} className="rectrace-link">
       {value}
     </a>
   )
