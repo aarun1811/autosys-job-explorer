@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Profile("!test")
@@ -44,7 +45,7 @@ public class SearchServiceV4 {
         
         log.info("Performing initial search for keyword: {}", keyword);
         
-        Map<String, CategoryResultV4> categoryResults = new HashMap<>();
+        Map<String, CategoryResultV4> categoryResults = new ConcurrentHashMap<>();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         
         // Search all categories in parallel
