@@ -126,6 +126,31 @@ describe('useRecentSearches', () => {
     setItemSpy.mockRestore()
   })
 
+  it('remove() drops a single term and persists the rest', () => {
+    const { result } = renderHook(() => useRecentSearches())
+    act(() => {
+      result.current.push('alpha')
+      result.current.push('beta')
+      result.current.push('gamma')
+    })
+    act(() => {
+      result.current.remove('beta')
+    })
+    expect(result.current.recents).toEqual(['gamma', 'alpha'])
+    expect(JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY)!)).toEqual(['gamma', 'alpha'])
+  })
+
+  it('remove() of an absent term is a no-op', () => {
+    const { result } = renderHook(() => useRecentSearches())
+    act(() => {
+      result.current.push('alpha')
+    })
+    act(() => {
+      result.current.remove('nope')
+    })
+    expect(result.current.recents).toEqual(['alpha'])
+  })
+
   it('clear() empties the list and removes the localStorage key', () => {
     const { result } = renderHook(() => useRecentSearches())
     act(() => {

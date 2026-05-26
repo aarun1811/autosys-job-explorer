@@ -57,6 +57,7 @@ function broadcastChange(): void {
 export function useRecentSearches(): {
   recents: string[]
   push: (term: string) => void
+  remove: (term: string) => void
   clear: () => void
 } {
   const [recents, setRecents] = useState<string[]>(read)
@@ -101,6 +102,21 @@ export function useRecentSearches(): {
     if (wroteOk) broadcastChange()
   }, [])
 
+  const remove = useCallback((term: string) => {
+    // Side effects outside the updater (see push) — compute from the canonical
+    // localStorage store, persist, set state, then broadcast to peers.
+    const next = read().filter((t) => t !== term)
+    let wroteOk = false
+    try {
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next))
+      wroteOk = true
+    } catch {
+      // Quota / blocked storage — in-memory state still updates.
+    }
+    setRecents(next)
+    if (wroteOk) broadcastChange()
+  }, [])
+
   const clear = useCallback(() => {
     let removedOk = false
     try {
@@ -113,5 +129,5 @@ export function useRecentSearches(): {
     if (removedOk) broadcastChange()
   }, [])
 
-  return { recents, push, clear }
+  return { recents, push, remove, clear }
 }

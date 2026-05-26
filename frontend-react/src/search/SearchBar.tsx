@@ -46,7 +46,7 @@ export function SearchBar({
   variant = 'bar',
   rollingPlaceholder,
 }: SearchBarProps) {
-  const { recents, clear: clearRecents } = useRecentSearches()
+  const { recents, remove: removeRecent, clear: clearRecents } = useRecentSearches()
   const [isOpen, setIsOpen] = useState(false)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [wordIdx, setWordIdx] = useState(0)
@@ -134,9 +134,9 @@ export function SearchBar({
           </div>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[--radix-popover-trigger-width] p-0"
+          className="w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl p-0 shadow-lg"
           align="start"
-          sideOffset={4}
+          sideOffset={8}
           // The Input owns focus; don't let Radix steal it from the trigger.
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
@@ -148,6 +148,7 @@ export function SearchBar({
               setIsOpen(false)
               onSubmit(t)
             }}
+            onRemoveRecent={removeRecent}
             onClearRecents={() => {
               clearRecents()
               setIsOpen(false)

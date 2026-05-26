@@ -11,6 +11,7 @@ vi.mock('@/search/hooks/useRecentSearches', () => ({
   useRecentSearches: () => ({
     recents: mockRecents,
     push: vi.fn(),
+    remove: vi.fn(),
     clear: mockClear,
   }),
 }))
