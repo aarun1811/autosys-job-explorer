@@ -213,7 +213,13 @@
           "cellRendererParams": {"jobNameField": "load_job"},
           "cellStyle": {"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
           "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ]
+      ],
+      "dashboard": {
+        "url": "http://localhost:5173/recviz-placeholder.html?term={q}",
+        "title": "Job summary",
+        "defaultOpen": false,
+        "height": 320
+      }
     },
     {
       "key": "machineName",
@@ -343,6 +349,17 @@
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true}
       ]
+    },
+    {
+      "key": "overview",
+      "label": "Overview",
+      "searchColumn": "",
+      "dashboard": {
+        "url": "http://localhost:5173/recviz-placeholder.html?term={q}",
+        "title": "Search overview",
+        "defaultOpen": true,
+        "height": 360
+      }
     }
   ]
 }
