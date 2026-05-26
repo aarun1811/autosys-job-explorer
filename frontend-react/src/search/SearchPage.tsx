@@ -13,8 +13,8 @@ import { ThemeSwitch } from '@/components/layout/theme-switch'
 
 import { CategoryTabBar } from '@/search/CategoryTabBar'
 import { NoResultsState } from '@/search/NoResultsState'
+import { ResultSurface } from '@/search/ResultSurface'
 import { SearchBar } from '@/search/SearchBar'
-import { SearchGridPanel } from '@/search/SearchGridPanel'
 import { useRecentSearches } from '@/search/hooks/useRecentSearches'
 import { useSuggestions } from '@/search/hooks/useSuggestions'
 import { useUserInfo } from '@/search/hooks/useUserInfo'
@@ -184,7 +184,7 @@ export function SearchPage(): React.ReactElement {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="flex min-h-0 flex-1 flex-col overflow-hidden"
             >
-              <SearchGridPanel q={q ?? ''} category={activeCategory} />
+              <ResultSurface q={q ?? ''} category={activeCategory} />
             </m.div>
           )}
         </div>

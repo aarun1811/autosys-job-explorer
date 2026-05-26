@@ -1,4 +1,4 @@
-import { describe, test, expect, vi } from 'vitest'
+import { describe, it, test, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
 import { CategoryTabBar } from '@/search/CategoryTabBar'
@@ -48,5 +48,11 @@ describe('CategoryTabBar', () => {
   test('renders exactly N tabs and exposes data-tab-key', () => {
     const { container } = render(<CategoryTabBar categories={cats} activeKey="fileName" onSelect={vi.fn()} />)
     expect(container.querySelectorAll('[data-tab-key]').length).toBe(2)
+  })
+
+  it('shows a dashboard icon (not a count) for a dashboard-only category', () => {
+    const cats = [{ key: 'd', label: 'Overview', values: [], count: 0, hasMore: false, columns: [], dashboard: { url: 'u' } }] as never
+    render(<CategoryTabBar categories={cats} activeKey="d" onSelect={() => {}} />)
+    expect(screen.getByTestId('tab-dashboard-icon')).toBeTruthy()
   })
 })

@@ -1,4 +1,5 @@
 import { m } from 'motion/react'
+import { LayoutDashboardIcon } from 'lucide-react'
 
 import type { CategoryResultV4 } from '@/search/types'
 
@@ -36,9 +37,13 @@ export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabB
             }`}
           >
             {c.label}
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-              {c.count}{c.hasMore ? '+' : ''}
-            </span>
+            {c.columns.length === 0 && c.dashboard != null ? (
+              <LayoutDashboardIcon data-testid="tab-dashboard-icon" className="size-3.5 text-muted-foreground" aria-hidden />
+            ) : (
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+                {c.count}{c.hasMore ? '+' : ''}
+              </span>
+            )}
             {active && (
               <m.span
                 layoutId="cat-tab-underline"

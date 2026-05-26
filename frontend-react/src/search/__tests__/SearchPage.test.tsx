@@ -20,13 +20,13 @@ vi.mock('@/components/layout/theme-switch', () => ({ ThemeSwitch: () => null }))
 vi.mock('@/components/app-shell/footer', () => ({ Footer: () => null }))
 vi.mock('@/components/app-shell/BrandLogo', () => ({ BrandLogo: () => null }))
 
-// Stub the heavy AG-Grid panel; record the category key each mount receives so
-// we can assert tab-switch wiring (which category's grid is currently mounted).
+// Stub the result surface; record the category key each mount receives so
+// we can assert tab-switch wiring (which category's surface is currently mounted).
 const gridCategoryKeys: string[] = []
-vi.mock('@/search/SearchGridPanel', () => ({
-  SearchGridPanel: ({ category }: { category: { key: string } }) => {
+vi.mock('@/search/ResultSurface', () => ({
+  ResultSurface: ({ category }: { category: { key: string } }) => {
     gridCategoryKeys.push(category.key)
-    return <div data-testid="grid">{category.key}</div>
+    return <div data-testid="result-surface">{category.key}</div>
   },
 }))
 
@@ -85,7 +85,7 @@ describe('SearchPage results', () => {
     renderAt('/search?q=zzz')
     await waitFor(() => expect(screen.getByText('No results found')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: /Start over/i })).toBeInTheDocument()
-    expect(screen.queryByTestId('grid')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('result-surface')).not.toBeInTheDocument()
   })
 
   test('navbar logo links to the home route', async () => {
