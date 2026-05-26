@@ -65,3 +65,24 @@ export function buildInitialFilter(category: CategoryResultV4): InitialFilter | 
   if (category.values.length === 0 || !column) return null
   return { column, values: category.values }
 }
+
+/** Minimal shape of an AG-Grid row node for route building (key + parent chain). */
+interface RouteNode {
+  key?: string | null
+  parent?: RouteNode | null
+}
+
+/**
+ * A group node's route — its group-key path from the root, SEP-joined. Used to
+ * capture which groups are expanded (Share view) and to match them on restore.
+ * Stable across live-data changes: a vanished group simply won't be matched.
+ */
+export function groupNodeRoute(node: RouteNode | null | undefined): string {
+  const keys: string[] = []
+  let n = node ?? null
+  while (n && n.key != null) {
+    keys.unshift(String(n.key))
+    n = n.parent ?? null
+  }
+  return keys.join(SEP)
+}

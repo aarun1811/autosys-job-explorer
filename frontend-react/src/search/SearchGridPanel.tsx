@@ -8,7 +8,7 @@ import { GridToolbar } from '@/search/GridToolbar'
 import { SearchGrid } from '@/search/SearchGrid'
 import { RowDetailSheet } from '@/search/RowDetailSheet'
 import { exportSearchToExcel } from '@/search/lib/exportSearch'
-import { getVisibleColumnIds, convertFilterModel, buildInitialFilter } from '@/search/lib/ssrm'
+import { getVisibleColumnIds, convertFilterModel, buildInitialFilter, groupNodeRoute } from '@/search/lib/ssrm'
 import { decodeViewState, encodeViewState, type GridViewState } from '@/search/lib/gridViewState'
 import type { GridDensity } from '@/search/lib/gridConfig'
 import type { CategoryResultV4, ExportRequestV4, SortModelItem } from '@/search/types'
@@ -51,6 +51,14 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
       e.api.setFilterModel(state.filterModel)
       setDensity(state.density)
       setIsDeduplicated(state.dedup)
+      // Best-effort: re-expand the shared groups that still exist in live data.
+      // forEachNode only visits loaded nodes, so vanished groups are a no-op.
+      if (state.expandedGroups.length > 0) {
+        const saved = new Set(state.expandedGroups)
+        e.api.forEachNode((node) => {
+          if (node.group && saved.has(groupNodeRoute(node))) node.setExpanded(true)
+        })
+      }
     },
     [view],
   )
@@ -138,11 +146,16 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const onShare = useCallback(() => {
     const api = apiRef.current
     if (!api) return
+    const expandedGroups: string[] = []
+    api.forEachNode((node) => {
+      if (node.group && node.expanded) expandedGroups.push(groupNodeRoute(node))
+    })
     const state: GridViewState = {
       columnState: api.getColumnState(),
       filterModel: api.getFilterModel(),
       dedup: isDeduplicated,
       density,
+      expandedGroups,
     }
     const encoded = encodeViewState(state)
     void navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, view: encoded }), replace: true }).then(() => {

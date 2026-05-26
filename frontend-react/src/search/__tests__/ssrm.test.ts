@@ -7,6 +7,7 @@ import {
   convertFilterModel,
   searchColumnFor,
   buildInitialFilter,
+  groupNodeRoute,
 } from '@/search/lib/ssrm'
 import type { CategoryResultV4 } from '@/search/types'
 
@@ -72,5 +73,17 @@ describe('ssrm helpers', () => {
     expect(searchColumnFor(cat())).toBe('job_name')
     expect(buildInitialFilter(cat())).toEqual({ column: 'job_name', values: ['A', 'B'] })
     expect(buildInitialFilter(cat({ values: [] }))).toBeNull()
+  })
+
+  test('groupNodeRoute builds the group key-path from the node up to root', () => {
+    const root = { key: null, parent: null }
+    const grp = { key: 'RECON-1', parent: root }
+    const sub = { key: 'NA', parent: grp }
+    expect(groupNodeRoute(grp)).toBe('RECON-1')
+    const subRoute = groupNodeRoute(sub)
+    expect(subRoute.startsWith('RECON-1')).toBe(true)
+    expect(subRoute.endsWith('NA')).toBe(true)
+    expect(subRoute).not.toBe('RECON-1NA') // keys are separated, not concatenated
+    expect(groupNodeRoute(null)).toBe('')
   })
 })

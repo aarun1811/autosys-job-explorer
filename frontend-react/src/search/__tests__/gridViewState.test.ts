@@ -7,12 +7,20 @@ const sample: GridViewState = {
   filterModel: { job_name: { filterType: 'text', type: 'contains', filter: 'recon' } },
   dedup: false,
   density: 'compact',
+  expandedGroups: ['RECON-1', 'GBLCOMMAND'],
 }
 
 describe('gridViewState', () => {
-  test('encode then decode round-trips the state', () => {
+  test('encode then decode round-trips the state (incl. expandedGroups)', () => {
     const decoded = decodeViewState(encodeViewState(sample))
     expect(decoded).toEqual(sample)
+  })
+
+  test('older links without expandedGroups decode with an empty array', () => {
+    const json = JSON.stringify({ columnState: [], filterModel: {}, dedup: false, density: 'normal' })
+    const param = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const decoded = decodeViewState(param)
+    expect(decoded?.expandedGroups).toEqual([])
   })
 
   test('the encoded param is a non-empty URL-safe string', () => {

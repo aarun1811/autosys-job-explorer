@@ -12,6 +12,8 @@ export interface GridViewState {
   dedup: boolean
   /** Row-density toggle state. */
   density: GridDensity
+  /** Routes (SEP-joined group keys) of expanded group rows; best-effort restore. */
+  expandedGroups: string[]
 }
 
 /** JSON → UTF-8 → base64url (URL-safe, no padding). */
@@ -29,7 +31,15 @@ export function decodeViewState(param: string): GridViewState | null {
     const json = decodeURIComponent(escape(atob(b64)))
     const obj = JSON.parse(json) as unknown
     if (!isGridViewState(obj)) return null
-    return obj
+    const v = obj as unknown as Record<string, unknown>
+    // expandedGroups is normalised/defaulted so older links (without it) still decode.
+    return {
+      columnState: v.columnState as ColumnState[],
+      filterModel: v.filterModel as Record<string, unknown>,
+      dedup: v.dedup as boolean,
+      density: v.density as GridDensity,
+      expandedGroups: Array.isArray(v.expandedGroups) ? (v.expandedGroups as string[]) : [],
+    }
   } catch {
     return null
   }
