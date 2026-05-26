@@ -21,11 +21,11 @@ vi.mock('@/components/layout/theme-switch', () => ({ ThemeSwitch: () => null }))
 vi.mock('@/components/app-shell/footer', () => ({ Footer: () => null }))
 vi.mock('@/components/app-shell/BrandLogo', () => ({ BrandLogo: () => null }))
 
-// Stub the heavy AG-Grid; record the category key each mount receives so we can
-// assert tab-switch wiring (which category's grid is currently mounted).
+// Stub the heavy AG-Grid panel; record the category key each mount receives so
+// we can assert tab-switch wiring (which category's grid is currently mounted).
 const gridCategoryKeys: string[] = []
-vi.mock('@/search/SearchGrid', () => ({
-  SearchGrid: ({ category }: { category: { key: string } }) => {
+vi.mock('@/search/SearchGridPanel', () => ({
+  SearchGridPanel: ({ category }: { category: { key: string } }) => {
     gridCategoryKeys.push(category.key)
     return <div data-testid="grid">{category.key}</div>
   },

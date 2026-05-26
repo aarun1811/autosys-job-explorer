@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import type { GridApi, GridReadyEvent } from 'ag-grid-community'
 import { TriangleAlertIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -14,12 +13,10 @@ import { ThemeSwitch } from '@/components/layout/theme-switch'
 import { CategoryTabBar } from '@/search/CategoryTabBar'
 import { NoResultsState } from '@/search/NoResultsState'
 import { SearchBar } from '@/search/SearchBar'
-import { SearchGrid } from '@/search/SearchGrid'
-import { SearchToolbar } from '@/search/SearchToolbar'
+import { SearchGridPanel } from '@/search/SearchGridPanel'
 import { useRecentSearches } from '@/search/hooks/useRecentSearches'
 import { useSuggestions } from '@/search/hooks/useSuggestions'
 import { useUserInfo } from '@/search/hooks/useUserInfo'
-import { buildExportFilename } from '@/search/lib/buildExportFilename'
 import { deriveSearchResults } from '@/search/lib/deriveSearchResults'
 import { PLACEHOLDER_PHRASES, TRY_EXAMPLES } from '@/search/lib/heroContent'
 import { InitialSearchResponseV4Schema, type CategoryResultV4 } from '@/search/types'
@@ -47,9 +44,6 @@ export function SearchPage(): React.ReactElement {
   const [results, setResults] = useState<CategoryResultV4[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<{ correlationId?: string } | null>(null)
-  const [isExporting, setIsExporting] = useState(false)
-  const [resultCount, setResultCount] = useState<number | null>(null)
-  const gridApiRef = useRef<GridApi | null>(null)
 
   const runSearch = useCallback(
     async (term: string) => {
@@ -57,7 +51,6 @@ export function SearchPage(): React.ReactElement {
       if (!trimmed) return
       setIsLoading(true)
       setError(null)
-      setResultCount(null)
       try {
         const res = await apiFetch(`/rectrace/api/v4/search/initial?keyword=${encodeURIComponent(trimmed)}`)
         const parsed = InitialSearchResponseV4Schema.parse(await res.json())
@@ -114,7 +107,6 @@ export function SearchPage(): React.ReactElement {
   const handleClear = useCallback(() => {
     setInputValue('')
     setResults([])
-    setResultCount(null)
     setError(null)
     void navigate({ to: '/' })
   }, [navigate])
@@ -122,29 +114,12 @@ export function SearchPage(): React.ReactElement {
   const handleSelectTab = useCallback(
     (key: string) => {
       void navigate({
-        search: (prev: Record<string, unknown>) => ({ ...prev, tab: key }),
+        search: (prev: Record<string, unknown>) => ({ q: prev.q as string | undefined, tab: key }),
         replace: true,
       })
     },
     [navigate],
   )
-
-  const handleExport = useCallback(() => {
-    const api = gridApiRef.current
-    if (!api || !activeCategory) return
-    setIsExporting(true)
-    try {
-      const cols = api.getColumns()
-      const columnKeys = cols
-        ? cols.filter((c) => c.getColId() !== 'execution_order').map((c) => c.getColId())
-        : undefined
-      api.exportDataAsExcel({ fileName: buildExportFilename(activeCategory.key, q ?? ''), columnKeys })
-    } catch (err) {
-      reportRequestFailure(err)
-    } finally {
-      setIsExporting(false)
-    }
-  }, [activeCategory, q])
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -200,21 +175,7 @@ export function SearchPage(): React.ReactElement {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-in fade-in-0 duration-300">
           <CategoryTabBar categories={results} activeKey={activeCategory?.key ?? results[0].key} onSelect={handleSelectTab} />
-          <SearchToolbar resultCount={resultCount} onExport={handleExport} isExporting={isExporting} />
-          <main className="min-h-0 flex-1 overflow-hidden px-3 pb-3">
-            {activeCategory && (
-              <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
-                <SearchGrid
-                  q={q ?? ''}
-                  category={activeCategory}
-                  density="normal"
-                  onGridReady={(e: GridReadyEvent) => {
-                    gridApiRef.current = e.api
-                  }}
-                />
-              </div>
-            )}
-          </main>
+          {activeCategory && <SearchGridPanel q={q ?? ''} category={activeCategory} />}
         </div>
       )}
       <Footer />
