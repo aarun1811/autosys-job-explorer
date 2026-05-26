@@ -11,4 +11,8 @@ describe('searchSchema (/search validateSearch)', () => {
   test('drops the legacy cat param (no longer in the schema)', () => {
     expect(searchSchema.parse({ cat: 'fileName' })).toEqual({})
   })
+  test('searchSchema accepts an optional view param', () => {
+    expect(searchSchema.parse({ q: 'recon', tab: 'jobName', view: 'abc' })).toMatchObject({ view: 'abc' })
+    expect(searchSchema.parse({ q: 'recon' }).view).toBeUndefined()
+  })
 })

@@ -18,6 +18,7 @@ import { SearchPage } from '@/search/SearchPage'
 export const searchSchema = z.object({
   q: z.string().optional(),
   tab: z.string().optional(),
+  view: z.string().optional(),
 })
 
 export const Route = createFileRoute('/search')({
