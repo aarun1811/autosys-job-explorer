@@ -94,7 +94,7 @@ export function SearchGrid({ q, category, onGridReady, onModelUpdated }: SearchG
   const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
 
   return (
-    <div className="ag-theme-quartz h-[calc(100vh-var(--header-height,2.5rem)-40px-40px-2.5rem)]">
+    <div className="ag-theme-quartz h-full w-full">
       <AgGridReact
         key={`${q}-${category.key}`}
         rowModelType="serverSide"

@@ -22,7 +22,7 @@ function tabLabel(c: CategoryResultV4): string {
 
 export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabBarProps) {
   return (
-    <div className="flex items-center gap-0 border-b px-4 h-10 bg-muted/50 backdrop-blur-sm overflow-x-auto">
+    <div className="flex items-center gap-0.5 border-b px-4 h-10 bg-muted/40 backdrop-blur-md overflow-x-auto">
       {categories.map((c) => {
         const active = c.key === activeKey
         return (
@@ -32,10 +32,10 @@ export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabB
             data-tab-key={c.key}
             data-active={active}
             onClick={() => onSelect(c.key)}
-            className={`px-4 h-10 flex items-center text-xs font-semibold whitespace-nowrap border-b-2 ${
+            className={`relative px-3.5 h-10 flex items-center text-xs font-semibold whitespace-nowrap border-b-2 transition-colors duration-200 ease-out rounded-t-md ${
               active
                 ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/60'
             }`}
           >
             {tabLabel(c)}

@@ -12,5 +12,7 @@ import logoDark from '@/assets/rectrace-dark.png'
 export function BrandLogo({ className }: { className?: string }) {
   const { resolvedTheme } = useTheme()
   const src = resolvedTheme === 'dark' ? logoDark : logoLight
-  return <img src={src} alt="Rectrace" className={className} />
+  // rounded corners soften the (currently light-background) asset against the
+  // dark theme until a true transparent/dark logo file is supplied.
+  return <img src={src} alt="Rectrace" className={`rounded-md ${className ?? ''}`} />
 }

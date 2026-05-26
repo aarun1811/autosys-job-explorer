@@ -53,6 +53,9 @@
 
 :root {
   --radius: 0.625rem;
+  /* Shared chrome height — consumed by the results navbar AND the SearchGrid
+   * viewport-height calc, so they stay in lockstep. */
+  --header-height: 3.5rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.148 0.004 228.8);
   --card: oklch(1 0 0);
@@ -137,6 +140,82 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: "Inter", system-ui, sans-serif;
-    transition: font-size 200ms ease, line-height 200ms ease;
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+    /* Smooth theme cross-fade */
+    transition: background-color 320ms ease, color 320ms ease, font-size 200ms ease;
+  }
+}
+
+/* ================================================================
+ * RECTRACE premium surface treatments — token-driven (oklch + color-mix),
+ * theme-aware, no hardcoded colors. Motion is gated by prefers-reduced-motion.
+ * ================================================================ */
+
+/* Atmospheric aura behind the hero — a soft, off-center primary glow plus a
+ * faint dotted grid for depth. Sits on a pseudo-element so content stays crisp. */
+.rectrace-aura {
+  position: relative;
+  isolation: isolate;
+}
+.rectrace-aura::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      62% 48% at 50% 34%,
+      color-mix(in oklab, var(--primary) 16%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      38% 34% at 82% 8%,
+      color-mix(in oklab, var(--primary) 9%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      34% 32% at 14% 86%,
+      color-mix(in oklab, var(--accent-foreground) 6%, transparent),
+      transparent 70%
+    );
+}
+.rectrace-aura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(60% 55% at 50% 40%, black, transparent 75%);
+  mask-image: radial-gradient(60% 55% at 50% 40%, black, transparent 75%);
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) 14%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}
+
+/* Elevated search surface used on the hero — soft layered shadow + a primary
+ * focus halo when focus lands inside. */
+.rectrace-search-elevated {
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--foreground) 8%, transparent),
+    0 12px 32px -12px color-mix(in oklab, var(--foreground) 22%, transparent);
+  transition: box-shadow 220ms ease, transform 220ms ease;
+}
+.rectrace-search-elevated:focus-within {
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--primary) 18%, transparent),
+    0 14px 40px -12px color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

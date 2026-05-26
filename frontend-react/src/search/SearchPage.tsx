@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import type { GridApi, GridReadyEvent } from 'ag-grid-community'
+import { SearchXIcon, TriangleAlertIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -144,13 +145,13 @@ export function SearchPage(): React.ReactElement {
   }, [activeCategory, q])
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <header
-        className="bg-background/40 sticky top-0 z-50 flex items-center justify-between gap-3 border-b px-4 backdrop-blur-md"
-        style={{ height: 'var(--header-height, 2.5rem)' }}
+        className="bg-background/70 supports-[backdrop-filter]:bg-background/55 sticky top-0 z-50 flex items-center justify-between gap-3 border-b px-4 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-xl"
+        style={{ height: 'var(--header-height, 3.5rem)' }}
       >
-        <BrandLogo className="h-5 w-auto" />
-        <div className="flex-1">
+        <BrandLogo className="h-6 w-auto shrink-0" />
+        <div className="flex-1 max-w-2xl">
           <SearchBar
             value={inputValue}
             onChange={setInputValue}
@@ -160,37 +161,42 @@ export function SearchPage(): React.ReactElement {
             placeholder="Search…"
           />
         </div>
-        <ThemeSwitch />
-        <UserChip {...user} />
+        <div className="flex items-center gap-1.5">
+          <ThemeSwitch />
+          <UserChip {...user} />
+        </div>
       </header>
 
       {isLoading ? (
-        <div role="status" aria-label="Loading results..." className="flex flex-col gap-2 p-4">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
+        <div role="status" aria-label="Loading results..." className="flex flex-col gap-2.5 p-5">
+          <Skeleton className="h-10 w-64 rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+          <Skeleton className="h-9 w-full rounded-lg" />
         </div>
       ) : error ? (
         <ErrorStateCard correlationId={error.correlationId} onRetry={() => q && void runSearch(q)} />
       ) : results.length === 0 ? (
         <NoResultsState term={q ?? ''} />
       ) : (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-in fade-in-0 duration-300">
           <CategoryTabBar categories={results} activeKey={activeCategory?.key ?? results[0].key} onSelect={handleSelectTab} />
           <SearchToolbar resultCount={resultCount} onExport={handleExport} isExporting={isExporting} />
-          <main className="flex-1 overflow-hidden">
+          <main className="min-h-0 flex-1 overflow-hidden px-3 pb-3">
             {activeCategory && (
-              <SearchGrid
-                q={q ?? ''}
-                category={activeCategory}
-                onGridReady={(e: GridReadyEvent) => {
-                  gridApiRef.current = e.api
-                }}
-                onModelUpdated={setResultCount}
-              />
+              <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
+                <SearchGrid
+                  q={q ?? ''}
+                  category={activeCategory}
+                  onGridReady={(e: GridReadyEvent) => {
+                    gridApiRef.current = e.api
+                  }}
+                  onModelUpdated={setResultCount}
+                />
+              </div>
             )}
           </main>
-        </>
+        </div>
       )}
       <Footer />
     </div>
@@ -200,12 +206,15 @@ export function SearchPage(): React.ReactElement {
 function NoResultsState({ term }: { term: string }): React.ReactElement {
   return (
     <div className="flex flex-1 items-center justify-center p-8">
-      <Card className="max-w-md">
-        <CardHeader>
+      <Card className="max-w-md animate-in fade-in-0 zoom-in-95 fill-mode-both duration-500">
+        <CardHeader className="items-center text-center">
+          <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-muted">
+            <SearchXIcon className="size-6 text-muted-foreground" />
+          </div>
           <CardTitle>No results found</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          No results found for &ldquo;<strong>{term}</strong>&rdquo;. Try a different term.
+        <CardContent className="text-center text-sm text-muted-foreground">
+          No results found for &ldquo;<strong className="text-foreground">{term}</strong>&rdquo;. Try a different term.
         </CardContent>
       </Card>
     </div>
@@ -220,11 +229,14 @@ interface ErrorStateCardProps {
 function ErrorStateCard({ correlationId, onRetry }: ErrorStateCardProps): React.ReactElement {
   return (
     <div className="flex flex-1 items-center justify-center p-8">
-      <Card className="max-w-md">
-        <CardHeader>
+      <Card className="max-w-md animate-in fade-in-0 zoom-in-95 fill-mode-both duration-500">
+        <CardHeader className="items-center text-center">
+          <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+            <TriangleAlertIcon className="size-6 text-destructive" />
+          </div>
           <CardTitle>Search unavailable</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
+        <CardContent className="flex flex-col items-center gap-3 text-center text-sm text-muted-foreground">
           <p>
             Failed to load results.{' '}
             {correlationId ? (

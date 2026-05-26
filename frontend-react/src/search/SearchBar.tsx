@@ -28,15 +28,26 @@ export interface SearchBarProps {
   onClear: () => void
   suggestions: string[]
   placeholder?: string
+  /** 'bar' (default) = compact navbar input; 'hero' = large elevated landing input. */
+  variant?: 'bar' | 'hero'
 }
 
-export function SearchBar({ value, onChange, onSubmit, onClear, suggestions, placeholder = 'Search…' }: SearchBarProps) {
+export function SearchBar({
+  value,
+  onChange,
+  onSubmit,
+  onClear,
+  suggestions,
+  placeholder = 'Search…',
+  variant = 'bar',
+}: SearchBarProps) {
   const { recents, clear: clearRecents } = useRecentSearches()
   const [isOpen, setIsOpen] = useState(false)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const typing = value.trim().length >= 2
   const hasContent = typing ? suggestions.length > 0 : recents.length > 0
+  const hero = variant === 'hero'
 
   const submit = () => {
     const t = value.trim()
@@ -44,12 +55,22 @@ export function SearchBar({ value, onChange, onSubmit, onClear, suggestions, pla
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={`flex items-center ${hero ? 'gap-2.5' : 'gap-2'}`}>
       <Popover open={isOpen && hasContent} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <div className="relative flex-1">
+          <div
+            className={
+              hero
+                ? 'relative flex-1 rounded-2xl bg-background/80 backdrop-blur-sm rectrace-search-elevated'
+                : 'relative flex-1'
+            }
+          >
             <Input
-              className="h-9 pr-8"
+              className={
+                hero
+                  ? 'h-13 rounded-2xl border-transparent bg-transparent pl-5 pr-11 text-base shadow-none focus-visible:ring-0'
+                  : 'h-9 pr-8'
+              }
               placeholder={placeholder}
               value={value}
               onChange={(e) => {
@@ -71,7 +92,7 @@ export function SearchBar({ value, onChange, onSubmit, onClear, suggestions, pla
                 size="icon-xs"
                 variant="ghost"
                 aria-label="Clear search"
-                className="absolute right-1 top-1/2 -translate-y-1/2"
+                className={`absolute top-1/2 -translate-y-1/2 ${hero ? 'right-2.5' : 'right-1'}`}
                 onClick={onClear}
               >
                 <XIcon className="size-3.5" />
@@ -101,8 +122,18 @@ export function SearchBar({ value, onChange, onSubmit, onClear, suggestions, pla
           />
         </PopoverContent>
       </Popover>
-      <Button type="button" size="sm" variant="default" onClick={submit}>
-        <SearchIcon className="size-4 mr-1" />
+      <Button
+        type="button"
+        size={hero ? 'lg' : 'sm'}
+        variant="default"
+        onClick={submit}
+        className={
+          hero
+            ? 'h-13 rounded-2xl px-6 text-base shadow-sm transition-transform active:scale-[0.98]'
+            : 'transition-transform active:scale-[0.98]'
+        }
+      >
+        <SearchIcon className={hero ? 'size-4 mr-1.5' : 'size-4 mr-1'} />
         Search
       </Button>
     </div>
