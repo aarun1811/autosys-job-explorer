@@ -31,7 +31,7 @@
             "styles": [
               "node_modules/ag-grid-enterprise/styles/ag-grid.css",
               "node_modules/ag-grid-enterprise/styles/ag-theme-alpine.css",
-              "src/styles.css",
+              "src/styles.scss",
               "@angular/material/prebuilt-themes/deeppurple-amber.css"
             ],
             "scripts": []

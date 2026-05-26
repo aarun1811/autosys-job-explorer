@@ -4,7 +4,7 @@ import { QuickRecDashboardSummary } from 'src/app/services/quickrec-stats.servic
 @Component({
   selector: 'app-quickrec-summary',
   templateUrl: './quickrec-summary.component.html',
-  styleUrls: ['./quickrec-summary.component.css']
+  styleUrls: ['./quickrec-summary.component.scss']
 })
 export class QuickRecSummaryComponent {
   @Input() summary: QuickRecDashboardSummary | null = null;
