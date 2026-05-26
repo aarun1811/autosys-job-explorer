@@ -4,8 +4,8 @@ import type {
   IServerSideDatasource,
   ColDef,
   GridReadyEvent,
+  GridState,
   IServerSideGetRowsParams,
-  FirstDataRenderedEvent,
   RowDoubleClickedEvent,
   ColumnVisibleEvent,
   IsServerSideGroupOpenByDefaultParams,
@@ -13,7 +13,7 @@ import type {
 import { GRID_SIDEBAR, rowHeightForDensity, headerHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
-import { columnsToColDefs } from '@/search/lib/configToColDefs'
+import { columnsToColDefs, applyRowGroupsToColDefs } from '@/search/lib/configToColDefs'
 import { cellRenderers } from '@/search/renderers/registry'
 import type { CategoryResultV4, SSRMRequestV4 } from '@/search/types'
 import {
@@ -38,11 +38,12 @@ export interface SearchGridProps {
   category: CategoryResultV4
   density: GridDensity
   onGridReady?: (e: GridReadyEvent) => void
-  onFirstDataRendered?: (e: FirstDataRenderedEvent) => void
   /** Fired on double-click of a LEAF row (group rows ignored). */
   onRowDoubleClicked?: (data: Record<string, unknown>) => void
   /** Declarative group-expansion restore for a shared view (per node, every level). */
   isGroupOpenByDefault?: (p: IsServerSideGroupOpenByDefaultParams) => boolean
+  /** Shared-view restore (columns/grouping/sort/filter), applied at construction. */
+  initialState?: GridState
 }
 
 /**
@@ -102,11 +103,17 @@ export function SearchGrid({
   category,
   density,
   onGridReady,
-  onFirstDataRendered,
   onRowDoubleClicked,
   isGroupOpenByDefault,
+  initialState,
 }: SearchGridProps): ReactElement {
-  const columnDefs = useMemo<ColDef[]>(() => columnsToColDefs(category.columns), [category])
+  // Bake any restored grouping (from a shared view's initialState) into the
+  // colDefs so the AgGridReact columnDefs reconciliation keeps it — otherwise an
+  // extra group level not present in the config gets un-grouped on mount.
+  const columnDefs = useMemo<ColDef[]>(
+    () => applyRowGroupsToColDefs(columnsToColDefs(category.columns), initialState?.rowGroup?.groupColIds ?? []),
+    [category, initialState],
+  )
   const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
   const colVisTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Cancel a pending column-visibility refresh if the grid unmounts (tab switch).
@@ -130,6 +137,7 @@ export function SearchGrid({
         sideBar={GRID_SIDEBAR}
         rowGroupPanelShow="always"
         groupDefaultExpanded={0}
+        initialState={initialState}
         isServerSideGroupOpenByDefault={isGroupOpenByDefault}
         animateRows
         enableCellTextSelection
@@ -142,7 +150,6 @@ export function SearchGrid({
         cacheBlockSize={100}
         maxBlocksInCache={10}
         onGridReady={onGridReady}
-        onFirstDataRendered={onFirstDataRendered}
         onRowDoubleClicked={(e: RowDoubleClickedEvent) => {
           if (!e.node.group && e.data) onRowDoubleClicked?.(e.data as Record<string, unknown>)
         }}

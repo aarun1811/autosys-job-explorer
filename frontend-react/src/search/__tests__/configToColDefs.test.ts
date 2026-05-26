@@ -4,7 +4,9 @@ import {
   columnsToColDefs,
   configCategoryToColDefs,
   toCamelCaseStyle,
+  applyRowGroupsToColDefs,
 } from '@/search/lib/configToColDefs'
+import type { ColDef } from 'ag-grid-community'
 import { cellRenderers } from '@/search/renderers/registry'
 import {
   CategoryConfigV4Schema,
@@ -241,5 +243,31 @@ describe('toCamelCaseStyle helper', () => {
 
   it('converts multi-segment kebab keys', () => {
     expect(toCamelCaseStyle({ 'border-top-left-radius': '4px' })).toEqual({ borderTopLeftRadius: '4px' })
+  })
+})
+
+describe('applyRowGroupsToColDefs', () => {
+  const defs: ColDef[] = [
+    { field: 'job_name', rowGroup: true },
+    { field: 'box_name' },
+    { field: 'recon' },
+  ]
+
+  it('overlays grouping by field, setting rowGroupIndex from groupColIds order', () => {
+    const out = applyRowGroupsToColDefs(defs, ['job_name', 'box_name'])
+    expect(out.find((d) => d.field === 'job_name')).toMatchObject({ rowGroup: true, rowGroupIndex: 0 })
+    expect(out.find((d) => d.field === 'box_name')).toMatchObject({ rowGroup: true, rowGroupIndex: 1 })
+    // non-grouped columns are explicitly cleared so reconciliation can't keep a stale group
+    expect(out.find((d) => d.field === 'recon')).toMatchObject({ rowGroup: false, rowGroupIndex: undefined })
+  })
+
+  it('returns the defs unchanged when there is no restored grouping', () => {
+    expect(applyRowGroupsToColDefs(defs, [])).toBe(defs)
+  })
+
+  it('does not mutate the input defs', () => {
+    const snapshot = JSON.parse(JSON.stringify(defs))
+    applyRowGroupsToColDefs(defs, ['box_name'])
+    expect(defs).toEqual(snapshot)
   })
 })

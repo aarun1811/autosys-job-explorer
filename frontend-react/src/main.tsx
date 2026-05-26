@@ -8,6 +8,7 @@ import {
   ColumnAutoSizeModule,
   RowApiModule,
   ColumnApiModule,
+  GridStateModule,
 } from 'ag-grid-community'
 import {
   ServerSideRowModelModule,
@@ -51,6 +52,10 @@ ModuleRegistry.registerModules([
   RowGroupingPanelModule,
   ServerSideRowModelApiModule,
   ColumnMenuModule,
+  // GridStateModule backs `initialState` — used to restore a shared view
+  // (columns/grouping/sort/filter) at grid construction. Without it AG-Grid
+  // throws error #200 and silently ignores initialState.
+  GridStateModule,
 ])
 
 const rootElement = document.getElementById('root')

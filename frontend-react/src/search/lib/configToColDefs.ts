@@ -68,6 +68,25 @@ export function columnsToColDefs(columns: ColumnDefinitionV4[]): ColDef[] {
 }
 
 /**
+ * Overlays a restored row-grouping onto colDefs, by `field`, with rowGroupIndex
+ * taken from the order of `groupColIds`. Necessary because the AgGridReact
+ * wrapper re-applies `columnDefs` on mount: a shared view's extra grouping level
+ * lives only in saved state (not the config), so unless it's baked into the
+ * colDefs the reconciliation un-groups it. Non-grouped columns are explicitly
+ * cleared so a stale config rowGroup can't linger. Returns the input untouched
+ * (same reference) when there's no restored grouping. Pure — never mutates.
+ */
+export function applyRowGroupsToColDefs(defs: ColDef[], groupColIds: string[]): ColDef[] {
+  if (groupColIds.length === 0) return defs
+  return defs.map((d) => {
+    const idx = d.field ? groupColIds.indexOf(d.field) : -1
+    return idx >= 0
+      ? { ...d, rowGroup: true, rowGroupIndex: idx }
+      : { ...d, rowGroup: false, rowGroupIndex: undefined }
+  })
+}
+
+/**
  * Thin wrapper: adapts a `CategoryConfigV4` by delegating its `columns` to
  * {@link columnsToColDefs}. Retained for callers/tests that hold a full
  * category-config object.

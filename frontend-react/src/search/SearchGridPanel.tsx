@@ -1,12 +1,7 @@
 // src/search/SearchGridPanel.tsx
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useSearch } from '@tanstack/react-router'
-import type {
-  FirstDataRenderedEvent,
-  GridApi,
-  GridReadyEvent,
-  IsServerSideGroupOpenByDefaultParams,
-} from 'ag-grid-community'
+import type { GridApi, GridReadyEvent, GridState, IsServerSideGroupOpenByDefaultParams } from 'ag-grid-community'
 import { toast } from 'sonner'
 
 import { GridToolbar } from '@/search/GridToolbar'
@@ -14,7 +9,7 @@ import { SearchGrid } from '@/search/SearchGrid'
 import { RowDetailSheet } from '@/search/RowDetailSheet'
 import { exportSearchToExcel } from '@/search/lib/exportSearch'
 import { getVisibleColumnIds, convertFilterModel, buildInitialFilter, groupNodeRoute, makeIsGroupOpen } from '@/search/lib/ssrm'
-import { decodeViewState, encodeViewState, type GridViewState } from '@/search/lib/gridViewState'
+import { decodeViewState, encodeViewState, viewStateToGridState, type GridViewState } from '@/search/lib/gridViewState'
 import type { GridDensity } from '@/search/lib/gridConfig'
 import type { CategoryResultV4, ExportRequestV4, SortModelItem } from '@/search/types'
 import { reportRequestFailure } from '@/lib/queryClient'
@@ -33,22 +28,30 @@ export interface SearchGridPanelProps {
 export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.ReactElement {
   const { view } = useSearch({ from: '/search' })
 
+  // Decode the shared view once. Drives the grid's initialState (columns/filter/
+  // grouping/sort), the declarative group-expansion predicate, and the seeded
+  // density/dedup below.
+  const restored = useMemo(() => (view ? decodeViewState(view) : null), [view])
+
   const apiRef = useRef<GridApi | null>(null)
-  const [density, setDensity] = useState<GridDensity>('normal')
-  const [isDeduplicated, setIsDeduplicated] = useState(false)
+  const [density, setDensity] = useState<GridDensity>(() => restored?.density ?? 'normal')
+  const [isDeduplicated, setIsDeduplicated] = useState(() => restored?.dedup ?? false)
   const [isExporting, setIsExporting] = useState(false)
   const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Decode the shared view once. Drives both the first-render restore (columns/
-  // filter/density/dedup) and the declarative group-expansion predicate below.
-  const restored = useMemo(() => (view ? decodeViewState(view) : null), [view])
+  // Restore columns/grouping/sort/filter via the grid's initialState — applied at
+  // construction, so the initial SSRM fetch already reflects the shared grouping
+  // and the AgGridReact columnDefs reconciliation can't revert a nested group
+  // level (the bug the old onFirstDataRendered applyColumnState hit).
+  const initialState = useMemo<GridState | undefined>(
+    () => (restored ? viewStateToGridState(restored) : undefined),
+    [restored],
+  )
 
-  // Group expansion is restored declaratively, NOT imperatively: AG-Grid calls
-  // this for every group node as it loads (each nesting level, and again after
-  // any purge). A shared view that regroups the data or applies a filter purges
-  // the store, which silently discarded the old setExpanded-on-first-render
-  // approach — this predicate survives that because the grid re-asks per node.
+  // Group expansion is restored declaratively: AG-Grid calls this for every group
+  // node as it loads (each nesting level, and again after any purge), so it
+  // survives the regroup/filter purges that an imperative setExpanded could not.
   const isGroupOpenByDefault = useMemo(() => {
     const isOpen = makeIsGroupOpen(restored?.expandedGroups ?? [])
     return (p: IsServerSideGroupOpenByDefaultParams) => isOpen(p.rowNode)
@@ -57,20 +60,6 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const onGridReady = useCallback((e: GridReadyEvent) => {
     apiRef.current = e.api
   }, [])
-
-  // Restore the rest of a shared view once the grid has data (column/filter
-  // state needs a ready grid + first block). Density/dedup are local state.
-  // Expansion is handled by isGroupOpenByDefault, not here.
-  const onFirstDataRendered = useCallback(
-    (e: FirstDataRenderedEvent) => {
-      if (!restored) return
-      e.api.applyColumnState({ state: restored.columnState, applyOrder: true })
-      e.api.setFilterModel(restored.filterModel)
-      setDensity(restored.density)
-      setIsDeduplicated(restored.dedup)
-    },
-    [restored],
-  )
 
   const onToggleSidebar = useCallback(() => {
     const api = apiRef.current
@@ -209,9 +198,9 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
             q={q}
             category={category}
             density={density}
+            initialState={initialState}
             isGroupOpenByDefault={isGroupOpenByDefault}
             onGridReady={onGridReady}
-            onFirstDataRendered={onFirstDataRendered}
             onRowDoubleClicked={openDetail}
           />
         </div>
