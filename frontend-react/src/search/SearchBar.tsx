@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SearchIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -18,8 +18,11 @@ import { SearchSuggestDropdown } from '@/search/SearchSuggestDropdown'
  * - `value`/`onChange`: controlled wiring (parent owns the term).
  * - `onSubmit(term)`: Enter, Search click, or picking a dropdown item.
  * - `onClear()`: the inline X.
- * - `suggestions`: live typeahead results supplied by the parent (it owns the
- *   debounced fetch via useSuggestions).
+ * - `suggestions`: live typeahead results supplied by the parent.
+ * - `rollingPlaceholder`: when set AND the input is empty, render an animated
+ *   placeholder overlay — a fixed `prefix` plus a `words` carousel where the
+ *   trailing word rolls up vertically. Native placeholder is suppressed so the
+ *   two don't overlap. (Native placeholders can't be animated.)
  */
 export interface SearchBarProps {
   value: string
@@ -30,6 +33,7 @@ export interface SearchBarProps {
   placeholder?: string
   /** 'bar' (default) = compact navbar input; 'hero' = large elevated landing input. */
   variant?: 'bar' | 'hero'
+  rollingPlaceholder?: { prefix: string; words: string[] }
 }
 
 export function SearchBar({
@@ -40,14 +44,29 @@ export function SearchBar({
   suggestions,
   placeholder = 'Search…',
   variant = 'bar',
+  rollingPlaceholder,
 }: SearchBarProps) {
   const { recents, clear: clearRecents } = useRecentSearches()
   const [isOpen, setIsOpen] = useState(false)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [wordIdx, setWordIdx] = useState(0)
 
   const typing = value.trim().length >= 2
   const hasContent = typing ? suggestions.length > 0 : recents.length > 0
   const hero = variant === 'hero'
+
+  // Rolling-word carousel timer (only when a rolling placeholder is supplied
+  // and motion is allowed). The CSS keyframe handles the per-word roll.
+  const words = rollingPlaceholder?.words
+  useEffect(() => {
+    if (!words || words.length < 2) return
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    if (reduced) return
+    const id = setInterval(() => setWordIdx((i) => (i + 1) % words.length), 1800)
+    return () => clearInterval(id)
+  }, [words])
+
+  const showOverlay = Boolean(rollingPlaceholder) && value === ''
 
   const submit = () => {
     const t = value.trim()
@@ -66,12 +85,13 @@ export function SearchBar({
             }
           >
             <Input
+              aria-label={rollingPlaceholder ? 'Search' : undefined}
               className={
                 hero
                   ? 'h-13 rounded-2xl border-transparent bg-transparent pl-5 pr-11 text-base shadow-none focus-visible:ring-0'
-                  : 'h-9 pr-8'
+                  : 'rectrace-search-bar-input h-9 pr-8'
               }
-              placeholder={placeholder}
+              placeholder={rollingPlaceholder ? '' : placeholder}
               value={value}
               onChange={(e) => {
                 onChange(e.target.value)
@@ -86,6 +106,19 @@ export function SearchBar({
                 if (e.key === 'Enter') submit()
               }}
             />
+            {showOverlay && rollingPlaceholder && (
+              <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute inset-y-0 left-5 flex items-center ${hero ? 'text-base' : 'text-sm'} text-muted-foreground`}
+              >
+                <span>{rollingPlaceholder.prefix}&nbsp;</span>
+                <span className="relative inline-block h-[1.5em] overflow-hidden leading-[1.5em]">
+                  <span key={wordIdx} className="block rectrace-word-roll">
+                    {rollingPlaceholder.words[wordIdx]}
+                  </span>
+                </span>
+              </div>
+            )}
             {value !== '' && (
               <Button
                 type="button"
@@ -127,13 +160,9 @@ export function SearchBar({
         size={hero ? 'lg' : 'sm'}
         variant="default"
         onClick={submit}
-        className={
-          hero
-            ? 'h-13 rounded-2xl px-6 text-base shadow-sm transition-transform active:scale-[0.98]'
-            : 'transition-transform active:scale-[0.98]'
-        }
+        className={`group rectrace-search-btn ${hero ? 'h-13 rounded-2xl px-6 text-base' : ''}`}
       >
-        <SearchIcon className={hero ? 'size-4 mr-1.5' : 'size-4 mr-1'} />
+        <SearchIcon className={`transition-transform duration-200 group-hover:scale-110 ${hero ? 'size-4 mr-1.5' : 'size-4 mr-1'}`} />
         Search
       </Button>
     </div>

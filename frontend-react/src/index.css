@@ -202,12 +202,62 @@
   box-shadow:
     0 1px 2px color-mix(in oklab, var(--foreground) 8%, transparent),
     0 12px 32px -12px color-mix(in oklab, var(--foreground) 22%, transparent);
-  transition: box-shadow 220ms ease, transform 220ms ease;
+  transition: box-shadow 240ms ease, transform 240ms ease;
+}
+/* Hover: lift toward the user with a primary-tinted shadow. Declared BEFORE
+ * :focus-within so the focus halo wins when the field is focused. */
+.rectrace-search-elevated:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 6px color-mix(in oklab, var(--foreground) 10%, transparent),
+    0 20px 48px -14px color-mix(in oklab, var(--primary) 30%, transparent);
 }
 .rectrace-search-elevated:focus-within {
+  transform: translateY(-1px);
   box-shadow:
     0 0 0 4px color-mix(in oklab, var(--primary) 18%, transparent),
-    0 14px 40px -12px color-mix(in oklab, var(--primary) 28%, transparent);
+    0 16px 44px -12px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+/* Tactile primary Search button — lifts with a soft primary glow on hover,
+ * crisp press on active. Pairs with a group-hover icon nudge in markup. */
+.rectrace-search-btn {
+  transition: transform 200ms ease, box-shadow 220ms ease, filter 200ms ease;
+}
+.rectrace-search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -8px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+.rectrace-search-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 12px -8px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+
+/* Compact (navbar) search input — primary-tinted border on hover. */
+.rectrace-search-bar-input {
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.rectrace-search-bar-input:hover:not(:focus-visible) {
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--input));
+}
+
+/* Rolling placeholder word — rises into place from below (the "scroll up"
+ * effect). Lives inside an overflow-hidden clip so it reads as a roll. */
+@keyframes rectrace-word-roll {
+  0% {
+    transform: translateY(0.85em);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.rectrace-word-roll {
+  animation: rectrace-word-roll 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

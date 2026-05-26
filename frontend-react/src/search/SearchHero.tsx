@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { SparklesIcon } from 'lucide-react'
 
@@ -10,28 +9,19 @@ import { SearchBar } from '@/search/SearchBar'
 import { useSuggestions } from '@/search/hooks/useSuggestions'
 import { useUserInfo } from '@/search/hooks/useUserInfo'
 import { PLACEHOLDER_PHRASES, TRY_EXAMPLES } from '@/search/lib/heroContent'
+import { useState } from 'react'
 
 /**
- * SearchHero — the centered landing page at `/`. Premium, atmospheric
- * treatment: a soft primary aura + dotted-grid backdrop, an orchestrated
- * staggered entrance (logo → tagline → search → actions), and the large
- * elevated `hero` SearchBar variant. Submitting navigates to `/search?q=…`.
- * All motion is gated by prefers-reduced-motion (see index.css).
+ * SearchHero — the centered landing page at `/`. Atmospheric aura backdrop,
+ * a large brand logo, and the elevated `hero` SearchBar whose placeholder rolls
+ * its trailing category word ("Search by job name" → "set ID" → …). Submitting
+ * navigates to `/search?q=…`. Motion is gated by prefers-reduced-motion.
  */
 export function SearchHero(): React.ReactElement {
   const navigate = useNavigate()
   const user = useUserInfo()
   const [value, setValue] = useState('')
   const suggestions = useSuggestions(value)
-  const [phraseIdx, setPhraseIdx] = useState(0)
-  const reduced = useRef(false)
-
-  useEffect(() => {
-    reduced.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-    if (reduced.current) return
-    const id = setInterval(() => setPhraseIdx((i) => (i + 1) % PLACEHOLDER_PHRASES.length), 2600)
-    return () => clearInterval(id)
-  }, [])
 
   const submit = (term: string) => {
     const t = term.trim()
@@ -46,18 +36,11 @@ export function SearchHero(): React.ReactElement {
         <UserChip {...user} />
       </header>
 
-      <main className="-mt-14 flex flex-1 flex-col items-center justify-center px-4">
+      <main className="-mt-12 flex flex-1 flex-col items-center justify-center px-4">
         <div className="flex w-full max-w-2xl flex-col items-center">
-          <BrandLogo className="h-14 w-auto animate-in fade-in-0 zoom-in-95 fill-mode-both duration-700 [animation-delay:60ms]" />
+          <BrandLogo className="h-20 w-auto animate-in fade-in-0 zoom-in-95 fill-mode-both duration-700 [animation-delay:60ms]" />
 
-          <h1 className="mt-7 text-center text-2xl font-semibold tracking-tight text-foreground animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-700 [animation-delay:160ms] sm:text-3xl">
-            Explore Autosys jobs &amp; reconciliations
-          </h1>
-          <p className="mt-2.5 max-w-md text-center text-sm text-muted-foreground animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-700 [animation-delay:240ms]">
-            Trace job metadata, dependencies, and TLM stats across Oracle and Elasticsearch — all in one search.
-          </p>
-
-          <div className="mt-9 w-full animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-700 [animation-delay:340ms]">
+          <div className="mt-10 w-full animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-700 [animation-delay:200ms]">
             <SearchBar
               variant="hero"
               value={value}
@@ -65,11 +48,11 @@ export function SearchHero(): React.ReactElement {
               onSubmit={submit}
               onClear={() => setValue('')}
               suggestions={suggestions}
-              placeholder={`Search by ${PLACEHOLDER_PHRASES[phraseIdx]}…`}
+              rollingPlaceholder={{ prefix: 'Search by', words: PLACEHOLDER_PHRASES }}
             />
           </div>
 
-          <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground animate-in fade-in-0 fill-mode-both duration-700 [animation-delay:460ms]">
+          <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground animate-in fade-in-0 fill-mode-both duration-700 [animation-delay:340ms]">
             <span>Not sure where to start?</span>
             <Button
               type="button"
