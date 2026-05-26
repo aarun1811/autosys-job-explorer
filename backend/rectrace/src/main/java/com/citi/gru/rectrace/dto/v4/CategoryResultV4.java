@@ -18,4 +18,5 @@ public class CategoryResultV4 {
     private int count;
     private boolean hasMore;  // True if we hit the 1000 limit
     private List<ColumnDefinition> columns;
+    private DashboardConfig dashboard;
 }
