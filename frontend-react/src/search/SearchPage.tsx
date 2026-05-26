@@ -207,10 +207,10 @@ export function SearchPage(): React.ReactElement {
                 <SearchGrid
                   q={q ?? ''}
                   category={activeCategory}
+                  density="normal"
                   onGridReady={(e: GridReadyEvent) => {
                     gridApiRef.current = e.api
                   }}
-                  onModelUpdated={setResultCount}
                 />
               </div>
             )}

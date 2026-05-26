@@ -1,6 +1,14 @@
 import { useMemo, type ReactElement } from 'react'
 import { AgGridReact } from 'ag-grid-react'
-import type { IServerSideDatasource, ColDef, GridReadyEvent, IServerSideGetRowsParams } from 'ag-grid-community'
+import type {
+  IServerSideDatasource,
+  ColDef,
+  GridReadyEvent,
+  IServerSideGetRowsParams,
+  FirstDataRenderedEvent,
+  RowDoubleClickedEvent,
+} from 'ag-grid-community'
+import { GRID_ROW_SELECTION, GRID_STATUS_BAR, rowHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { columnsToColDefs } from '@/search/lib/configToColDefs'
@@ -23,8 +31,11 @@ import type { CategoryResultV4, SSRMRequestV4, InitialFilter } from '@/search/ty
 export interface SearchGridProps {
   q: string
   category: CategoryResultV4
+  density: GridDensity
   onGridReady?: (e: GridReadyEvent) => void
-  onModelUpdated?: (rowCount: number) => void
+  onFirstDataRendered?: (e: FirstDataRenderedEvent) => void
+  /** Fired on double-click of a LEAF row (group rows ignored). */
+  onRowDoubleClicked?: (data: Record<string, unknown>) => void
 }
 
 function searchColumnFor(category: CategoryResultV4): string {
@@ -89,7 +100,14 @@ export function _test_buildDatasource(q: string, category: CategoryResultV4): IS
   }
 }
 
-export function SearchGrid({ q, category, onGridReady, onModelUpdated }: SearchGridProps): ReactElement {
+export function SearchGrid({
+  q,
+  category,
+  density,
+  onGridReady,
+  onFirstDataRendered,
+  onRowDoubleClicked,
+}: SearchGridProps): ReactElement {
   const columnDefs = useMemo<ColDef[]>(() => columnsToColDefs(category.columns), [category])
   const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
 
@@ -102,11 +120,18 @@ export function SearchGrid({ q, category, onGridReady, onModelUpdated }: SearchG
         columnDefs={columnDefs}
         components={cellRenderers}
         sideBar={{ toolPanels: ['columns', 'filters'] }}
+        rowGroupPanelShow="always"
+        statusBar={GRID_STATUS_BAR}
+        rowSelection={GRID_ROW_SELECTION}
+        rowHeight={rowHeightForDensity(density)}
         cacheBlockSize={100}
         maxBlocksInCache={10}
         autoSizeStrategy={{ type: 'fitCellContents' }}
         onGridReady={onGridReady}
-        onModelUpdated={(e) => onModelUpdated?.(e.api.getDisplayedRowCount())}
+        onFirstDataRendered={onFirstDataRendered}
+        onRowDoubleClicked={(e: RowDoubleClickedEvent) => {
+          if (!e.node.group && e.data) onRowDoubleClicked?.(e.data as Record<string, unknown>)
+        }}
       />
     </div>
   )
