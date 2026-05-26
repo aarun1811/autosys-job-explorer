@@ -23,9 +23,11 @@ import { reportRequestFailure } from '@/lib/queryClient'
 export interface SearchGridPanelProps {
   q: string
   category: CategoryResultV4
+  /** Recviz dashboard collapse state (header variant), threaded into Share. */
+  dashboardOpen?: boolean
 }
 
-export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.ReactElement {
+export function SearchGridPanel({ q, category, dashboardOpen }: SearchGridPanelProps): React.ReactElement {
   const { view } = useSearch({ from: '/search' })
 
   // Decode the shared view once. Drives the grid's initialState (columns/filter/
@@ -161,6 +163,7 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
       dedup: isDeduplicated,
       density,
       expandedGroups,
+      dashboardOpen,
     }
     const encoded = encodeViewState(state)
     // Build the shareable link and copy it WITHOUT navigating the current
@@ -173,7 +176,7 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
       .writeText(url.toString())
       .then(() => toast.success('Link copied'))
       .catch(() => toast.error('Copy failed'))
-  }, [density, isDeduplicated])
+  }, [density, isDeduplicated, dashboardOpen])
 
   const openDetail = useCallback((data: Record<string, unknown>) => {
     setDetailRow(data)

@@ -17,6 +17,8 @@ export interface GridViewState {
   density: GridDensity
   /** Routes (SEP-joined group keys) of expanded group rows; best-effort restore. */
   expandedGroups: string[]
+  /** Recviz dashboard collapse state (header variant); undefined for old links. */
+  dashboardOpen?: boolean
 }
 
 /** JSON → UTF-8 → base64url (URL-safe, no padding). */
@@ -42,6 +44,7 @@ export function decodeViewState(param: string): GridViewState | null {
       dedup: v.dedup as boolean,
       density: v.density as GridDensity,
       expandedGroups: Array.isArray(v.expandedGroups) ? (v.expandedGroups as string[]) : [],
+      dashboardOpen: typeof v.dashboardOpen === 'boolean' ? v.dashboardOpen : undefined,
     }
   } catch {
     return null

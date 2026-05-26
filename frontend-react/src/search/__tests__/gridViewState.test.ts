@@ -1,5 +1,5 @@
 // src/search/__tests__/gridViewState.test.ts
-import { describe, test, expect } from 'vitest'
+import { describe, test, it, expect } from 'vitest'
 import { encodeViewState, decodeViewState, viewStateToGridState, type GridViewState } from '@/search/lib/gridViewState'
 import type { ColumnState } from 'ag-grid-community'
 
@@ -34,6 +34,15 @@ describe('gridViewState', () => {
     expect(decodeViewState('not-base64-$$$')).toBeNull()
     expect(decodeViewState('')).toBeNull()
     expect(decodeViewState(btoa('{"oops":true}'))).toBeNull() // wrong shape
+  })
+
+  it('round-trips dashboardOpen', () => {
+    const enc = encodeViewState({ columnState: [], filterModel: {}, dedup: false, density: 'normal', expandedGroups: [], dashboardOpen: false })
+    expect(decodeViewState(enc)?.dashboardOpen).toBe(false)
+  })
+  it('defaults dashboardOpen to undefined for old links', () => {
+    const enc = encodeViewState({ columnState: [], filterModel: {}, dedup: false, density: 'normal', expandedGroups: [] } as never)
+    expect(decodeViewState(enc)?.dashboardOpen).toBeUndefined()
   })
 })
 
