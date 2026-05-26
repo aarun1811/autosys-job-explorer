@@ -3,98 +3,73 @@ import { AgGridReact } from 'ag-grid-react'
 import type { IServerSideDatasource, ColDef, GridReadyEvent, IServerSideGetRowsParams } from 'ag-grid-community'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
-import { useSearchConfig } from '@/search/hooks/useSearchConfig'
-import { configCategoryToColDefs } from '@/search/lib/configToColDefs'
+import { columnsToColDefs } from '@/search/lib/configToColDefs'
 import { cellRenderers } from '@/search/renderers/registry'
-import type { InitialSearchResponseV4, SSRMRequestV4, InitialFilter } from '@/search/types'
+import type { CategoryResultV4, SSRMRequestV4, InitialFilter } from '@/search/types'
 
 /**
- * SearchGrid — the load-bearing component of Phase 3.
+ * SearchGrid — an AG-Grid SSRM grid for ONE search category.
  *
- * Renders an AG-Grid SSRM grid for a single search category. Everything that
- * could be hardcoded (columnDefs, renderer references) is instead derived from
- * the V4 search configuration JSON (Plan 04 adapter + Plan 03 registry). This
- * enforces the config-driven principle (D-3.3) at the seam where the user
- * actually sees data.
+ * Self-sufficient from the `/api/v4/search/initial` response (Angular parity):
+ * column defs come from the category's inline `columns[]`, and the SSRM filter
+ * column is the column flagged `rowGroup: true` (Angular
+ * search-v5-grid.component.ts:330). No `/config` round-trip.
  *
- * Remount-by-key (D-3.5): the `key={`${q}-${cat}`}` on AgGridReact tears down
- * the entire grid on a new search term or category. Combined with the
- * datasource `useMemo([q, cat, initialFilter])`, this guarantees that:
- *   1. AG-Grid's SSRM cache cannot leak rows from a previous search.
- *   2. Each datasource instance owns a fresh AbortController, so navigations
- *      between searches cancel any in-flight fetch via `destroy()`.
- *
- * SSRM body shape mirrors SSRMRequestV4 (D-3.8 + backend
- * SSRMRequestV4.java) — the Java DTO is the contract, this is the React side.
- *
- * Error path: SSRM bypasses React Query, so the QueryCache.onError handler
- * in queryClient.ts never fires for grid failures. We route through
- * reportRequestFailure() directly, wrapped in setTimeout(0) per D-3.6.
- *
- * SmokeGrid lives on at frontend-react/src/grid/SmokeGrid.tsx — Plan 07
- * deletes it once SearchGrid is wired into SearchPage (Pitfall 8).
+ * Clean remount on tab switch (spec §D): `key={`${q}-${category.key}`}` tears
+ * down the grid and the datasource `useMemo([q, category])` rebuilds — so the
+ * SSRM cache cannot leak rows across categories and a fresh AbortController
+ * cancels any in-flight fetch from the previous tab via `destroy()`.
  */
-
 export interface SearchGridProps {
   q: string
-  cat: string
-  initialFilter: InitialSearchResponseV4
+  category: CategoryResultV4
   onGridReady?: (e: GridReadyEvent) => void
   onModelUpdated?: (rowCount: number) => void
 }
 
+function searchColumnFor(category: CategoryResultV4): string {
+  // The rowGroup column IS the ES search column. If none exists, return '' so
+  // buildInitialFilter yields null — never a bogus column name (the category
+  // key is not a DB column). Defense-in-depth; current config always has one.
+  return category.columns.find((c) => c.rowGroup)?.field ?? ''
+}
+
+function buildInitialFilter(category: CategoryResultV4): InitialFilter | null {
+  const column = searchColumnFor(category)
+  if (category.values.length === 0 || !column) return null
+  return { column, values: category.values }
+}
+
 /**
- * Builds the SSRM datasource for the given (q, cat, initialFilter) tuple.
- * Exported for direct unit testing — the React component wraps this in
- * useMemo with the same dep array (D-3.5).
- *
- * Each call instantiates a fresh AbortController; the returned `destroy()`
- * aborts in-flight fetches when AG-Grid tears down the datasource (which
- * happens on remount or unmount).
+ * Builds the SSRM datasource for a (q, category) pair. Exported for direct unit
+ * testing; the component wraps it in `useMemo` with the same deps (spec §D).
  */
-// react-refresh/only-export-components: this helper is intentionally exported
-// for direct unit testing — it is not a component, and consumers (Vitest only)
-// won't trigger Fast Refresh on it.
+// react-refresh/only-export-components: intentionally exported for unit tests;
+// not a component, and Vitest is the only consumer.
 // eslint-disable-next-line react-refresh/only-export-components
-export function _test_buildDatasource(
-  q: string,
-  cat: string,
-  initialFilter: InitialSearchResponseV4,
-  searchColumn: string,
-): IServerSideDatasource {
-  // Silence the no-unused-vars lint hint — `q` is part of the dep tuple
-  // (D-3.5) even though the body shape doesn't echo it; the keyword reaches
-  // the backend via the `initialFilter.values` (ES pre-filter), not directly.
+export function _test_buildDatasource(q: string, category: CategoryResultV4): IServerSideDatasource {
+  // `q` participates in the remount key/dep tuple; the keyword reaches the
+  // backend via initialFilter.values (the ES pre-filter), not the body directly.
   void q
   const controller = new AbortController()
   return {
-    // AG-Grid's IServerSideDatasource.getRows is declared as `(params) => void`
-    // but the canonical pattern (per AG-Grid docs + SmokeGrid.tsx) is an async
-    // function that awaits the fetch. The grid never reads the Promise — it
-    // is purely a TypeScript-vs-async-semantics mismatch.
+    // AG-Grid types getRows as `(params) => void`; the canonical pattern is an
+    // async body the grid never awaits — a TS-vs-async mismatch only.
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     getRows: async (params: IServerSideGetRowsParams) => {
       try {
         const body: SSRMRequestV4 = {
-          category: cat,
-          initialFilter: extractInitialFilterForCategory(initialFilter, cat, searchColumn),
-          // params.request.rowGroupCols carries ColumnVO objects; the DTO
-          // (and Angular parity, see search-v5-grid.component.ts:354) only
-          // needs the field name.
+          category: category.key,
+          initialFilter: buildInitialFilter(category),
           rowGroupCols: (params.request.rowGroupCols ?? []).map((c) => c.field ?? ''),
           groupKeys: params.request.groupKeys ?? [],
           sortModel: params.request.sortModel ?? [],
           filterModel: (params.request.filterModel ?? {}) as Record<string, unknown>,
           startRow: params.request.startRow ?? 0,
           endRow: params.request.endRow ?? 100,
-          // Phase 3 ships with empty visibleColumns (parity with SmokeGrid).
-          // Angular's getVisibleColumns() in search-v5-grid.component.ts
-          // derives this from gridApi.getAllDisplayedColumns(); a later
-          // phase may port that for SELECT DISTINCT optimization. The
-          // backend tolerates an empty array — it selects all columns.
-          visibleColumns: getVisibleColumns(params),
+          visibleColumns: [],
         }
-        const res = await apiFetch(`/rectrace/api/v4/search/ssrm/${cat}`, {
+        const res = await apiFetch(`/rectrace/api/v4/search/ssrm/${category.key}`, {
           method: 'POST',
           body: JSON.stringify(body),
           signal: controller.signal,
@@ -103,17 +78,8 @@ export function _test_buildDatasource(
         params.success({ rowData: data.rows, rowCount: data.lastRow })
       } catch (err) {
         if ((err as { name?: string }).name !== 'AbortError') {
-          console.error('SSRM fail', err)
-          // The AG-Grid SSRM datasource bypasses React Query, so the QueryClient
-          // queryCache onError handler does not fire. Surface the failure (and
-          // the corr-id, when present on the error) via the same Sonner toast
-          // path so users can quote the reference in a bug report.
-          //
-          // The deferral via setTimeout(0) prevents a Sonner 2.x race: AG-Grid's
-          // initial getRows fires inside the same commit/effect cascade as the
-          // Toaster's own mount, and Sonner silently drops toasts dispatched
-          // before its subscriber attaches. Pushing this to the next macrotask
-          // guarantees the Toaster is live when toast.error() runs.
+          // SSRM bypasses React Query; route failures through the same Sonner
+          // path. setTimeout(0) avoids the Sonner-2.x mount race (D-3.6).
           setTimeout(() => reportRequestFailure(err), 0)
           params.fail()
         }
@@ -123,67 +89,14 @@ export function _test_buildDatasource(
   }
 }
 
-// Builds the SSRM body's `initialFilter` from the `/initial` response and
-// the category's `searchColumn` (from `/config`). The `/initial` endpoint
-// only emits per-category `values`; the `column` must be derived from config
-// (Resolution to RESEARCH.md Open Question #1).
-function extractInitialFilterForCategory(
-  resp: InitialSearchResponseV4,
-  cat: string,
-  searchColumn: string,
-): InitialFilter | null {
-  const result = resp.categoryResults[cat]
-  if (!result || result.values.length === 0 || !searchColumn) return null
-  return { column: searchColumn, values: result.values }
-}
-
-/**
- * Returns the list of currently displayed column IDs for the SELECT DISTINCT
- * optimization on the backend. For Phase 3 we return [] (parity with
- * SmokeGrid); a future phase can derive from
- * `params.api.getAllDisplayedColumns().map(c => c.getColId())` — Angular
- * reference: search-v5-grid.component.ts `getVisibleColumns()`.
- */
-function getVisibleColumns(params: IServerSideGetRowsParams): string[] {
-  void params
-  return []
-}
-
-export function SearchGrid(props: SearchGridProps): ReactElement | null {
-  const { q, cat, initialFilter, onGridReady, onModelUpdated } = props
-  const { data: config, isLoading: configLoading } = useSearchConfig()
-
-  const category = useMemo(
-    () => config?.categories.find((c) => c.key === cat),
-    [config, cat],
-  )
-
-  const columnDefs = useMemo<ColDef[]>(
-    () => (category ? configCategoryToColDefs(category) : []),
-    [category],
-  )
-
-  // The datasource MUST be rebuilt when (q, cat, initialFilter) changes —
-  // D-3.5. Combined with the `key={`${q}-${cat}`}` below, this guarantees
-  // a clean SSRM cache + a fresh AbortController on every new search.
-  const datasource = useMemo<IServerSideDatasource>(
-    () => _test_buildDatasource(q, cat, initialFilter, category?.searchColumn ?? ''),
-    [q, cat, initialFilter, category],
-  )
-
-  // Fallback: while the config is loading or the requested category isn't
-  // in the config, render nothing. UI-SPEC defers loading UX to AG-Grid's
-  // built-in overlay for SSRM rows; the config load itself is so fast
-  // (cached, staleTime: Infinity) that a Skeleton would flash. Returning
-  // null is the simplest defensive path.
-  if (configLoading || !category) {
-    return null
-  }
+export function SearchGrid({ q, category, onGridReady, onModelUpdated }: SearchGridProps): ReactElement {
+  const columnDefs = useMemo<ColDef[]>(() => columnsToColDefs(category.columns), [category])
+  const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
 
   return (
     <div className="ag-theme-quartz h-[calc(100vh-var(--header-height,2.5rem)-40px-40px-2.5rem)]">
       <AgGridReact
-        key={`${q}-${cat}`}
+        key={`${q}-${category.key}`}
         rowModelType="serverSide"
         serverSideDatasource={datasource}
         columnDefs={columnDefs}
