@@ -170,7 +170,7 @@ export function SearchPage(): React.ReactElement {
             onClear={() => setInputValue('')}
             suggestions={suggestions}
             submitButton="icon"
-            placeholder="Search jobs, sets, recons, files…"
+            placeholder="Search jobs, set IDs, recons, files…"
           />
         </div>
         <div className="flex-1" />
