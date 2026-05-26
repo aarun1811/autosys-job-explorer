@@ -1,8 +1,10 @@
 # Search Results / Grid Page — Design Spec
 
 **Date:** 2026-05-26
-**Status:** Approved design → ready for implementation plan
+**Status:** Implemented (branch `milestone/modernization`)
 **Module:** `frontend-react` (React 19 + Vite 7 + AG-Grid v35 + shadcn + TanStack Router/Query)
+
+> **Post-implementation change (2026-05-26):** the **status bar** and **checkbox row selection** described below were **dropped** during live verification. AG-Grid's Server-Side Row Model does not support the Total/Filtered row-count status components (warnings #225/#222), and SSRM selection requires a `getRowId` we can't derive cleanly for these column-config-driven rows (#188). Row counts already appear in the category tabs. Everything else shipped as specced. The deep grid-body styling pass remains a follow-up.
 
 ## Goal
 
