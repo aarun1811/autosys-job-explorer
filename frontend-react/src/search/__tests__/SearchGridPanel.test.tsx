@@ -134,12 +134,14 @@ describe('SearchGridPanel', () => {
     expect(screen.getByText('SAMPLE_TRADE_RECON_001')).toBeInTheDocument()
   })
 
-  test('Share view writes the URL view param and copies a link', async () => {
+  test('Share view copies a link with the view param WITHOUT navigating the session', async () => {
     const router = renderPanel()
     fireEvent.click(await screen.findByRole('button', { name: 'Share view' }))
-    // navigate() and the clipboard write are async (.then chain) — await both.
-    await waitFor(() => expect(router.state.location.search).toHaveProperty('view'))
     await waitFor(() => expect(clipboard).toHaveBeenCalledTimes(1))
+    expect(clipboard).toHaveBeenCalledWith(expect.stringContaining('view='))
+    // The current session URL is NOT mutated — navigating would re-render the
+    // grid and reset column visibility / collapse groups (the bug this fixes).
+    expect(router.state.location.search).not.toHaveProperty('view')
   })
 
   test('Export downloads via the backend export endpoint', async () => {

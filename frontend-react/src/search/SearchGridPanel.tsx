@@ -1,6 +1,6 @@
 // src/search/SearchGridPanel.tsx
 import { useCallback, useRef, useState } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 import type { FirstDataRenderedEvent, GridApi, GridReadyEvent } from 'ag-grid-community'
 import { toast } from 'sonner'
 
@@ -27,7 +27,6 @@ export interface SearchGridPanelProps {
 
 export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.ReactElement {
   const { view } = useSearch({ from: '/search' })
-  const navigate = useNavigate({ from: '/search' })
 
   const apiRef = useRef<GridApi | null>(null)
   const [density, setDensity] = useState<GridDensity>('normal')
@@ -158,13 +157,17 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
       expandedGroups,
     }
     const encoded = encodeViewState(state)
-    void navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, view: encoded }), replace: true }).then(() => {
-      navigator.clipboard
-        .writeText(window.location.href)
-        .then(() => toast.success('Link copied'))
-        .catch(() => toast.error('Copy failed'))
-    })
-  }, [density, isDeduplicated, navigate])
+    // Build the shareable link and copy it WITHOUT navigating the current
+    // session: navigating re-renders the grid, which re-applies the column defs
+    // and resets runtime column visibility + collapses expanded groups. The
+    // recipient's grid restores everything from `view` on load.
+    const url = new URL(window.location.href)
+    url.searchParams.set('view', encoded)
+    navigator.clipboard
+      .writeText(url.toString())
+      .then(() => toast.success('Link copied'))
+      .catch(() => toast.error('Copy failed'))
+  }, [density, isDeduplicated])
 
   const openDetail = useCallback((data: Record<string, unknown>) => {
     setDetailRow(data)
