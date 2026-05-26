@@ -8,6 +8,7 @@ import {
   searchColumnFor,
   buildInitialFilter,
   groupNodeRoute,
+  makeIsGroupOpen,
 } from '@/search/lib/ssrm'
 import type { CategoryResultV4 } from '@/search/types'
 
@@ -73,6 +74,19 @@ describe('ssrm helpers', () => {
     expect(searchColumnFor(cat())).toBe('job_name')
     expect(buildInitialFilter(cat())).toEqual({ column: 'job_name', values: ['A', 'B'] })
     expect(buildInitialFilter(cat({ values: [] }))).toBeNull()
+  })
+
+  test('makeIsGroupOpen: matches saved group routes at every nesting level', () => {
+    const root = { key: null, parent: null }
+    const lvl0 = { key: 'RECON-1', parent: root }
+    const lvl1 = { key: 'BOX-1', parent: lvl0 }
+    const other = { key: 'RECON-2', parent: root }
+    const isOpen = makeIsGroupOpen(['RECON-1', groupNodeRoute(lvl1)])
+    expect(isOpen(lvl0)).toBe(true) // level-0 route listed
+    expect(isOpen(lvl1)).toBe(true) // nested route listed → restores deep expansion
+    expect(isOpen(other)).toBe(false) // not listed → stays collapsed
+    // empty set (a normal, non-shared search) → nothing auto-opens
+    expect(makeIsGroupOpen([])(lvl0)).toBe(false)
   })
 
   test('groupNodeRoute builds the group key-path from the node up to root', () => {

@@ -1,14 +1,19 @@
 // src/search/SearchGridPanel.tsx
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useSearch } from '@tanstack/react-router'
-import type { FirstDataRenderedEvent, GridApi, GridReadyEvent } from 'ag-grid-community'
+import type {
+  FirstDataRenderedEvent,
+  GridApi,
+  GridReadyEvent,
+  IsServerSideGroupOpenByDefaultParams,
+} from 'ag-grid-community'
 import { toast } from 'sonner'
 
 import { GridToolbar } from '@/search/GridToolbar'
 import { SearchGrid } from '@/search/SearchGrid'
 import { RowDetailSheet } from '@/search/RowDetailSheet'
 import { exportSearchToExcel } from '@/search/lib/exportSearch'
-import { getVisibleColumnIds, convertFilterModel, buildInitialFilter, groupNodeRoute } from '@/search/lib/ssrm'
+import { getVisibleColumnIds, convertFilterModel, buildInitialFilter, groupNodeRoute, makeIsGroupOpen } from '@/search/lib/ssrm'
 import { decodeViewState, encodeViewState, type GridViewState } from '@/search/lib/gridViewState'
 import type { GridDensity } from '@/search/lib/gridConfig'
 import type { CategoryResultV4, ExportRequestV4, SortModelItem } from '@/search/types'
@@ -35,31 +40,36 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
+  // Decode the shared view once. Drives both the first-render restore (columns/
+  // filter/density/dedup) and the declarative group-expansion predicate below.
+  const restored = useMemo(() => (view ? decodeViewState(view) : null), [view])
+
+  // Group expansion is restored declaratively, NOT imperatively: AG-Grid calls
+  // this for every group node as it loads (each nesting level, and again after
+  // any purge). A shared view that regroups the data or applies a filter purges
+  // the store, which silently discarded the old setExpanded-on-first-render
+  // approach — this predicate survives that because the grid re-asks per node.
+  const isGroupOpenByDefault = useMemo(() => {
+    const isOpen = makeIsGroupOpen(restored?.expandedGroups ?? [])
+    return (p: IsServerSideGroupOpenByDefaultParams) => isOpen(p.rowNode)
+  }, [restored])
+
   const onGridReady = useCallback((e: GridReadyEvent) => {
     apiRef.current = e.api
   }, [])
 
-  // Restore a shared view once the grid has data (column/filter state needs a
-  // ready grid + first block). Density/dedup are local state.
+  // Restore the rest of a shared view once the grid has data (column/filter
+  // state needs a ready grid + first block). Density/dedup are local state.
+  // Expansion is handled by isGroupOpenByDefault, not here.
   const onFirstDataRendered = useCallback(
     (e: FirstDataRenderedEvent) => {
-      if (!view) return
-      const state = decodeViewState(view)
-      if (!state) return
-      e.api.applyColumnState({ state: state.columnState, applyOrder: true })
-      e.api.setFilterModel(state.filterModel)
-      setDensity(state.density)
-      setIsDeduplicated(state.dedup)
-      // Best-effort: re-expand the shared groups that still exist in live data.
-      // forEachNode only visits loaded nodes, so vanished groups are a no-op.
-      if (state.expandedGroups.length > 0) {
-        const saved = new Set(state.expandedGroups)
-        e.api.forEachNode((node) => {
-          if (node.group && saved.has(groupNodeRoute(node))) node.setExpanded(true)
-        })
-      }
+      if (!restored) return
+      e.api.applyColumnState({ state: restored.columnState, applyOrder: true })
+      e.api.setFilterModel(restored.filterModel)
+      setDensity(restored.density)
+      setIsDeduplicated(restored.dedup)
     },
-    [view],
+    [restored],
   )
 
   const onToggleSidebar = useCallback(() => {
@@ -199,6 +209,7 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
             q={q}
             category={category}
             density={density}
+            isGroupOpenByDefault={isGroupOpenByDefault}
             onGridReady={onGridReady}
             onFirstDataRendered={onFirstDataRendered}
             onRowDoubleClicked={openDetail}

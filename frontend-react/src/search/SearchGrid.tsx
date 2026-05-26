@@ -8,6 +8,7 @@ import type {
   FirstDataRenderedEvent,
   RowDoubleClickedEvent,
   ColumnVisibleEvent,
+  IsServerSideGroupOpenByDefaultParams,
 } from 'ag-grid-community'
 import { GRID_SIDEBAR, rowHeightForDensity, headerHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
 
@@ -40,6 +41,8 @@ export interface SearchGridProps {
   onFirstDataRendered?: (e: FirstDataRenderedEvent) => void
   /** Fired on double-click of a LEAF row (group rows ignored). */
   onRowDoubleClicked?: (data: Record<string, unknown>) => void
+  /** Declarative group-expansion restore for a shared view (per node, every level). */
+  isGroupOpenByDefault?: (p: IsServerSideGroupOpenByDefaultParams) => boolean
 }
 
 /**
@@ -101,6 +104,7 @@ export function SearchGrid({
   onGridReady,
   onFirstDataRendered,
   onRowDoubleClicked,
+  isGroupOpenByDefault,
 }: SearchGridProps): ReactElement {
   const columnDefs = useMemo<ColDef[]>(() => columnsToColDefs(category.columns), [category])
   const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
@@ -126,6 +130,7 @@ export function SearchGrid({
         sideBar={GRID_SIDEBAR}
         rowGroupPanelShow="always"
         groupDefaultExpanded={0}
+        isServerSideGroupOpenByDefault={isGroupOpenByDefault}
         animateRows
         enableCellTextSelection
         suppressCellFocus

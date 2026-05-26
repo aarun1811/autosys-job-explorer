@@ -86,3 +86,18 @@ export function groupNodeRoute(node: RouteNode | null | undefined): string {
   }
   return keys.join(SEP)
 }
+
+/**
+ * Builds the `isServerSideGroupOpenByDefault` predicate from a set of saved group
+ * routes (Share view). Declarative on purpose: AG-Grid consults it as each group
+ * node is created — at every nesting level and after every refresh/purge — so
+ * shared-view expansion is restored even when the view regroups the data or
+ * applies a filter (both purge the store). The old imperative setExpanded-on-
+ * first-render approach was discarded by those purges. Empty set (a normal,
+ * non-shared search) → returns a constant `false`, leaving groups collapsed.
+ */
+export function makeIsGroupOpen(expandedGroups: string[]): (node: RouteNode) => boolean {
+  if (expandedGroups.length === 0) return () => false
+  const open = new Set(expandedGroups)
+  return (node) => open.has(groupNodeRoute(node))
+}
