@@ -113,25 +113,6 @@
   --sidebar-ring: oklch(0.56 0.021 213.5);
 }
 
-/* AG Grid token bridge — reads shadcn CSS variables */
-.ag-theme-quartz {
-  --ag-background-color: var(--background);
-  --ag-foreground-color: var(--foreground);
-  --ag-header-background-color: var(--muted);
-  --ag-header-foreground-color: var(--foreground);
-  --ag-border-color: var(--border);
-  --ag-row-hover-color: var(--accent);
-  --ag-selected-row-background-color: var(--accent);
-  --ag-odd-row-background-color: transparent;
-  --ag-font-family: "Inter", system-ui, sans-serif;
-  --ag-font-size: 13px;
-  --ag-header-font-size: 12px;
-  --ag-header-font-weight: 500;
-  --ag-cell-horizontal-padding: 12px;
-  --ag-row-height: 36px;
-  --ag-header-height: 40px;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

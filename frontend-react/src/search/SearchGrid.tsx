@@ -11,6 +11,8 @@ import type {
   IsServerSideGroupOpenByDefaultParams,
 } from 'ag-grid-community'
 import { GRID_SIDEBAR, rowHeightForDensity, headerHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
+import { gridTheme } from '@/search/lib/gridTheme'
+import { useTheme } from '@/components/layout/theme-provider'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { columnsToColDefs, applyRowGroupsToColDefs } from '@/search/lib/configToColDefs'
@@ -119,10 +121,14 @@ export function SearchGrid({
   // Cancel a pending column-visibility refresh if the grid unmounts (tab switch).
   useEffect(() => () => { if (colVisTimer.current) clearTimeout(colVisTimer.current) }, [])
 
+  const { resolvedTheme } = useTheme() // resolves 'system' → 'light' | 'dark'
+  const mode = resolvedTheme           // drives data-ag-theme-mode
+
   return (
-    <div className="ag-theme-quartz h-full w-full">
+    <div className="h-full w-full" data-ag-theme-mode={mode}>
       <AgGridReact
         key={`${q}-${category.key}`}
+        theme={gridTheme}
         rowModelType="serverSide"
         serverSideDatasource={datasource}
         columnDefs={columnDefs}
