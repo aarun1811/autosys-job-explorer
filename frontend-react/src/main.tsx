@@ -17,6 +17,8 @@ import {
   SideBarModule,
   RowGroupingModule,
   RowGroupingPanelModule,
+  ServerSideRowModelApiModule,
+  ColumnMenuModule,
 } from 'ag-grid-enterprise'
 import './index.css'
 import App from './App'
@@ -47,6 +49,8 @@ ModuleRegistry.registerModules([
   ColumnApiModule,
   RowGroupingModule,
   RowGroupingPanelModule,
+  ServerSideRowModelApiModule,
+  ColumnMenuModule,
 ])
 
 const rootElement = document.getElementById('root')
