@@ -36,7 +36,7 @@ function renderHookInRoute(initialUrl: string) {
     path: '/search',
     validateSearch: (s: Record<string, unknown>) => ({
       q: typeof s.q === 'string' ? s.q : undefined,
-      cat: typeof s.cat === 'string' ? s.cat : undefined,
+      tab: typeof s.tab === 'string' ? s.tab : undefined,
     }),
     component: HookProbe,
   })
@@ -66,36 +66,35 @@ function renderHookInRoute(initialUrl: string) {
 }
 
 describe('useSearchState', () => {
-  it('reads q and cat from the URL', async () => {
-    const h = renderHookInRoute('/search?q=LOAD-ABC-123&cat=fileName')
-    // Allow router to finish initial load
+  it('reads q and tab from the URL (no default injected)', async () => {
+    const h = renderHookInRoute('/search?q=LOAD-ABC-123&tab=jobName')
     await act(async () => {
       await h.router.load()
     })
     expect(h.current.q).toBe('LOAD-ABC-123')
-    expect(h.current.cat).toBe('fileName')
+    expect(h.current.tab).toBe('jobName')
   })
 
-  it('defaults cat to "fileName" when the URL has no cat param', async () => {
-    const h = renderHookInRoute('/search')
+  it('tab is undefined when absent (no hardcoded default)', async () => {
+    const h = renderHookInRoute('/search?q=trade')
+    await act(async () => {
+      await h.router.load()
+    })
+    expect(h.current.q).toBe('trade')
+    expect(h.current.tab).toBeUndefined()
+  })
+
+  it('q is undefined when only tab is set', async () => {
+    const h = renderHookInRoute('/search?tab=boxName')
     await act(async () => {
       await h.router.load()
     })
     expect(h.current.q).toBeUndefined()
-    expect(h.current.cat).toBe('fileName')
+    expect(h.current.tab).toBe('boxName')
   })
 
-  it('returns q as undefined when only cat is set', async () => {
-    const h = renderHookInRoute('/search?cat=boxName')
-    await act(async () => {
-      await h.router.load()
-    })
-    expect(h.current.q).toBeUndefined()
-    expect(h.current.cat).toBe('boxName')
-  })
-
-  it('setQ updates the URL with q and preserves cat (replace, no back-stack growth)', async () => {
-    const h = renderHookInRoute('/search?cat=fileName')
+  it('setQ updates the URL with q and preserves tab (replace, no back-stack growth)', async () => {
+    const h = renderHookInRoute('/search?tab=fileName')
     await act(async () => {
       await h.router.load()
     })
@@ -103,13 +102,13 @@ describe('useSearchState', () => {
     await act(async () => {
       await Promise.resolve(h.current.setQ('hello'))
     })
-    expect(h.router.state.location.search).toMatchObject({ q: 'hello', cat: 'fileName' })
+    expect(h.router.state.location.search).toMatchObject({ q: 'hello', tab: 'fileName' })
     // replace: true → history length must NOT grow
     expect(h.router.history.length).toBe(lengthBefore)
   })
 
   it('setQ(undefined) removes q from the URL', async () => {
-    const h = renderHookInRoute('/search?q=initial&cat=fileName')
+    const h = renderHookInRoute('/search?q=initial&tab=fileName')
     await act(async () => {
       await h.router.load()
     })
@@ -117,33 +116,34 @@ describe('useSearchState', () => {
       await Promise.resolve(h.current.setQ(undefined))
     })
     expect(h.router.state.location.search).not.toHaveProperty('q')
-    expect(h.router.state.location.search).toMatchObject({ cat: 'fileName' })
+    expect(h.router.state.location.search).toMatchObject({ tab: 'fileName' })
   })
 
-  it('setQ with an empty string removes q from the URL', async () => {
-    const h = renderHookInRoute('/search?q=initial')
+  it('setTab writes tab with replace, preserving q', async () => {
+    const h = renderHookInRoute('/search?q=KEEPME')
     await act(async () => {
       await h.router.load()
     })
     await act(async () => {
-      await Promise.resolve(h.current.setQ(''))
+      await Promise.resolve(h.current.setTab('boxName'))
     })
-    expect(h.router.state.location.search).not.toHaveProperty('q')
+    expect(h.router.state.location.search).toMatchObject({ q: 'KEEPME', tab: 'boxName' })
   })
 
-  it('setCat updates cat without losing q', async () => {
-    const h = renderHookInRoute('/search?q=KEEPME&cat=fileName')
+  it('setTab(undefined) removes tab from the URL', async () => {
+    const h = renderHookInRoute('/search?q=KEEPME&tab=fileName')
     await act(async () => {
       await h.router.load()
     })
     await act(async () => {
-      await Promise.resolve(h.current.setCat('boxName'))
+      await Promise.resolve(h.current.setTab(undefined))
     })
-    expect(h.router.state.location.search).toMatchObject({ q: 'KEEPME', cat: 'boxName' })
+    expect(h.router.state.location.search).not.toHaveProperty('tab')
+    expect(h.router.state.location.search).toMatchObject({ q: 'KEEPME' })
   })
 
   it('clear() empties the URL search', async () => {
-    const h = renderHookInRoute('/search?q=anything&cat=fileName')
+    const h = renderHookInRoute('/search?q=anything&tab=fileName')
     await act(async () => {
       await h.router.load()
     })
