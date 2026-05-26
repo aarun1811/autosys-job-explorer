@@ -77,24 +77,28 @@ export function useRecentSearches(): {
   }, [])
 
   const push = useCallback((term: string) => {
-    if (!term.trim()) return
-    setRecents((prev) => {
-      const filtered = prev.filter((t) => t !== term)
-      const next = [term, ...filtered].slice(0, RECENT_SEARCHES_MAX)
-      let wroteOk = false
-      try {
-        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next))
-        wroteOk = true
-      } catch {
-        // Quota exceeded, storage blocked, etc. — in-memory state still updates.
-      }
-      // Only broadcast on a successful write: peer instances re-read from
-      // localStorage, and broadcasting after a failed write would cause them
-      // to revert to the pre-mutation contents (overwriting this instance's
-      // in-memory state via the listener).
-      if (wroteOk) broadcastChange()
-      return next
-    })
+    const trimmed = term.trim()
+    if (!trimmed) return
+    // Side effects (persist + cross-instance broadcast) must run OUTSIDE the
+    // setRecents updater. A setState updater runs during React's render phase;
+    // dispatching the broadcast there makes peer useRecentSearches instances
+    // call setState mid-render ("Cannot update a component while rendering a
+    // different component"). We compute `next` from localStorage (the canonical
+    // store every mutation writes), persist, set local state, then broadcast.
+    const prev = read()
+    const next = [trimmed, ...prev.filter((t) => t !== trimmed)].slice(0, RECENT_SEARCHES_MAX)
+    let wroteOk = false
+    try {
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next))
+      wroteOk = true
+    } catch {
+      // Quota exceeded, storage blocked, etc. — in-memory state still updates.
+    }
+    setRecents(next)
+    // Only broadcast on a successful write: peer instances re-read from
+    // localStorage, so broadcasting after a failed write would revert them to
+    // the pre-mutation contents.
+    if (wroteOk) broadcastChange()
   }, [])
 
   const clear = useCallback(() => {
