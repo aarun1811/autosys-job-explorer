@@ -51,9 +51,26 @@ public class SearchServiceV4 {
         for (CategoryConfigV4 category : configService.getCategories()) {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
+                    // Dashboard-only category: no ES index configured. Emit the
+                    // category (so the dashboard tab renders) without running a
+                    // search. Coalesce columns null -> empty list so /initial
+                    // never emits columns: null (React Zod requires an array).
+                    if (category.getElasticsearch() == null) {
+                        categoryResults.put(category.getKey(), CategoryResultV4.builder()
+                                .key(category.getKey())
+                                .label(category.getLabel())
+                                .values(new ArrayList<>())
+                                .count(0)
+                                .hasMore(false)
+                                .columns(category.getColumns() != null ? category.getColumns() : new ArrayList<>())
+                                .dashboard(category.getDashboard())
+                                .build());
+                        return; // skip ES for a dashboard-only category
+                    }
+
                     // Get unique values from Elasticsearch
                     List<String> uniqueValues = esService.getUniqueValues(keyword, category);
-                    
+
                     // Build category result
                     CategoryResultV4 result = CategoryResultV4.builder()
                             .key(category.getKey())
@@ -62,12 +79,13 @@ public class SearchServiceV4 {
                             .count(uniqueValues.size())
                             .hasMore(uniqueValues.size() >= 1000)  // Hit the limit
                             .columns(category.getColumns())
+                            .dashboard(category.getDashboard())
                             .build();
-                    
+
                     categoryResults.put(category.getKey(), result);
-                    
+
                     log.debug("Category {} returned {} results", category.getKey(), uniqueValues.size());
-                    
+
                 } catch (Exception e) {
                     log.error("Error searching category: " + category.getKey(), e);
                     // Add empty result for failed category
@@ -78,6 +96,7 @@ public class SearchServiceV4 {
                             .count(0)
                             .hasMore(false)
                             .columns(category.getColumns())
+                            .dashboard(category.getDashboard())
                             .build();
                     categoryResults.put(category.getKey(), emptyResult);
                 }
