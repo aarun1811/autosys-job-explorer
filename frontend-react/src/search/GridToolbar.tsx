@@ -25,6 +25,9 @@ export interface GridToolbarProps {
   density: GridDensity
   isDeduplicated: boolean
   isExporting: boolean
+  categoryLabel: string
+  resultCount: number
+  activeFilterCount: number
   onToggleSidebar: () => void
   onToggleDensity: () => void
   onAutoSize: () => void
@@ -92,6 +95,20 @@ export function GridToolbar(props: GridToolbarProps): React.ReactElement {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex h-11 items-center gap-0.5 border-b px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-semibold text-foreground">{props.categoryLabel}</span>
+          <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+            {props.resultCount}
+          </span>
+          {props.activeFilterCount > 0 && (
+            <span
+              aria-label="active filters"
+              className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium tabular-nums text-primary"
+            >
+              {props.activeFilterCount}
+            </span>
+          )}
+        </div>
         <div className="flex-1" />
         {/* View */}
         <ToolButton label="Toggle columns and filters panel" onClick={props.onToggleSidebar}>

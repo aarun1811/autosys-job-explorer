@@ -30,6 +30,7 @@ const mockApi = {
   getRowGroupColumns: vi.fn(() => []),
   getColumns: vi.fn(() => []),
   forEachNode: vi.fn(),
+  addEventListener: vi.fn(),
 }
 
 // Stub SearchGrid: fire onGridReady on mount; expose a dbl-click trigger.

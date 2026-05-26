@@ -37,6 +37,7 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const [density, setDensity] = useState<GridDensity>(() => restored?.density ?? 'normal')
   const [isDeduplicated, setIsDeduplicated] = useState(() => restored?.dedup ?? false)
   const [isExporting, setIsExporting] = useState(false)
+  const [activeFilterCount, setActiveFilterCount] = useState(0)
   const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
@@ -59,6 +60,10 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
 
   const onGridReady = useCallback((e: GridReadyEvent) => {
     apiRef.current = e.api
+    // Keep the toolbar's active-filter badge in sync with the grid filter model.
+    e.api.addEventListener('filterChanged', () => {
+      setActiveFilterCount(Object.keys(e.api.getFilterModel() ?? {}).length)
+    })
   }, [])
 
   const onToggleSidebar = useCallback(() => {
@@ -179,6 +184,9 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
         density={density}
         isDeduplicated={isDeduplicated}
         isExporting={isExporting}
+        categoryLabel={category.label}
+        resultCount={category.count}
+        activeFilterCount={activeFilterCount}
         onToggleSidebar={onToggleSidebar}
         onToggleDensity={onToggleDensity}
         onAutoSize={onAutoSize}

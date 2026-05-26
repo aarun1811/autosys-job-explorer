@@ -1,5 +1,5 @@
 // src/search/__tests__/GridToolbar.test.tsx
-import { describe, test, expect, vi } from 'vitest'
+import { describe, test, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { GridToolbar } from '@/search/GridToolbar'
 import type { GridDensity } from '@/search/lib/gridConfig'
@@ -23,10 +23,22 @@ function makeSpies() {
   }
 }
 
+// Shared scalar state defaults — spread into a fresh `base` per render alongside
+// fresh spies, so the new left-context tests can supply the 3 new props.
+const baseState = {
+  density: 'normal' as GridDensity,
+  isDeduplicated: false,
+  isExporting: false,
+  categoryLabel: 'Test',
+  resultCount: 0,
+  activeFilterCount: 0,
+}
+
 function setup(state?: { density?: GridDensity; isDeduplicated?: boolean; isExporting?: boolean }) {
   const spies = makeSpies()
   render(
     <GridToolbar
+      {...baseState}
       density={state?.density ?? 'normal'}
       isDeduplicated={state?.isDeduplicated ?? false}
       isExporting={state?.isExporting ?? false}
@@ -79,5 +91,20 @@ describe('GridToolbar', () => {
     const btn = screen.getByRole('button', { name: 'Export to Excel' })
     expect(btn).toBeDisabled()
     expect(btn.querySelector('.animate-spin')).not.toBeNull()
+  })
+
+  it('shows the category label and result count', () => {
+    const base = { ...baseState, ...makeSpies() }
+    render(<GridToolbar {...base} categoryLabel="Job Name" resultCount={42} activeFilterCount={0} />)
+    expect(screen.getByText('Job Name')).toBeInTheDocument()
+    expect(screen.getByText('42')).toBeInTheDocument()
+  })
+
+  it('shows an active-filter badge only when filters are active', () => {
+    const base = { ...baseState, ...makeSpies() }
+    const { rerender } = render(<GridToolbar {...base} categoryLabel="X" resultCount={1} activeFilterCount={0} />)
+    expect(screen.queryByLabelText('active filters')).toBeNull()
+    rerender(<GridToolbar {...base} categoryLabel="X" resultCount={1} activeFilterCount={2} />)
+    expect(screen.getByLabelText('active filters')).toHaveTextContent('2')
   })
 })
