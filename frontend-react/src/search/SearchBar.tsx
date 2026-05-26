@@ -1,115 +1,69 @@
 import { useRef, useState } from 'react'
-import { ClockIcon, SearchIcon, XIcon } from 'lucide-react'
+import { SearchIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Separator } from '@/components/ui/separator'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useRecentSearches } from '@/search/hooks/useRecentSearches'
+import { SearchSuggestDropdown } from '@/search/SearchSuggestDropdown'
 
 /**
- * SearchBar — controlled input + clear-X + Search button + recent-searches Popover.
+ * SearchBar — controlled input + clear-X + Search button, with a dropdown that
+ * delegates entirely to {@link SearchSuggestDropdown}.
  *
- * Composition contract (per 03-06-PLAN.md interfaces):
- * - `value` / `onChange`: controlled input wiring; parent (SearchPage, Plan 07) owns the term.
- * - `onSubmit(term)`: invoked on Enter or click of the Search button, AND when the user
- *   selects a recent-search item. Whitespace-only / empty values are ignored.
- * - `onClear()`: invoked when the user clicks the X inside the input. Parent should
- *   reset the controlled value AND the URL `q` param (SEARCH-03).
+ * Visibility: the Popover opens on focus and stays open while there is content
+ * to show — recents (empty input) or live suggestions (typing ≥2 chars). Blur
+ * closes after 150ms so a dropdown item click registers first.
  *
- * Recent-searches Popover behavior (UI-SPEC §"Recent Searches Popover"):
- * - Opens on Input focus when (value is empty AND recents.length > 0).
- * - Closes on Input blur with a 150ms delay (so item clicks register before unmount).
- * - Closes immediately when the user starts typing (live-typing closes the popover).
- * - Top 10 entries come from {@link useRecentSearches} (Plan 02, D-3.11).
- * - "Clear" button inside the popover invokes useRecentSearches().clear() and closes
- *   the popover. No confirmation dialog — non-destructive (local history only).
- *
- * No live `/api/search/suggest` calls in Phase 3 — recent-searches only (per UI-SPEC).
+ * - `value`/`onChange`: controlled wiring (parent owns the term).
+ * - `onSubmit(term)`: Enter, Search click, or picking a dropdown item.
+ * - `onClear()`: the inline X.
+ * - `suggestions`: live typeahead results supplied by the parent (it owns the
+ *   debounced fetch via useSuggestions).
  */
 export interface SearchBarProps {
   value: string
   onChange: (next: string) => void
   onSubmit: (term: string) => void
   onClear: () => void
+  suggestions: string[]
+  placeholder?: string
 }
 
-export function SearchBar({ value, onChange, onSubmit, onClear }: SearchBarProps) {
+export function SearchBar({ value, onChange, onSubmit, onClear, suggestions, placeholder = 'Search…' }: SearchBarProps) {
   const { recents, clear: clearRecents } = useRecentSearches()
   const [isOpen, setIsOpen] = useState(false)
-  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const submitIfNonEmpty = () => {
-    const trimmed = value.trim()
-    if (trimmed) onSubmit(trimmed)
-  }
+  const typing = value.trim().length >= 2
+  const hasContent = typing ? suggestions.length > 0 : recents.length > 0
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      submitIfNonEmpty()
-    }
-  }
-
-  const handleFocus = () => {
-    if (value === '' && recents.length > 0) {
-      setIsOpen(true)
-    }
-  }
-
-  const handleBlur = () => {
-    // 150ms delay lets popover item onClick handlers fire before the popover unmounts.
-    if (blurTimerRef.current) clearTimeout(blurTimerRef.current)
-    blurTimerRef.current = setTimeout(() => {
-      setIsOpen(false)
-    }, 150)
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = e.target.value
-    onChange(next)
-    // Live typing closes popover so it doesn't occlude future live-suggestion UI (Phase 8+).
-    if (next !== '' && isOpen) {
-      setIsOpen(false)
-    }
-  }
-
-  const handleRecentClick = (term: string) => {
-    setIsOpen(false)
-    onSubmit(term)
-  }
-
-  const handlePopoverClear = () => {
-    clearRecents()
-    setIsOpen(false)
-  }
-
-  const handleClearX = () => {
-    onClear()
+  const submit = () => {
+    const t = value.trim()
+    if (t) onSubmit(t)
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isOpen && hasContent} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <div className="relative flex-1">
             <Input
               className="h-9 pr-8"
-              placeholder="Search by file name..."
+              placeholder={placeholder}
               value={value}
-              onChange={handleChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
+              onChange={(e) => {
+                onChange(e.target.value)
+                setIsOpen(true)
+              }}
+              onFocus={() => setIsOpen(true)}
+              onBlur={() => {
+                if (blurTimer.current) clearTimeout(blurTimer.current)
+                blurTimer.current = setTimeout(() => setIsOpen(false), 150)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submit()
+              }}
             />
             {value !== '' && (
               <Button
@@ -118,7 +72,7 @@ export function SearchBar({ value, onChange, onSubmit, onClear }: SearchBarProps
                 variant="ghost"
                 aria-label="Clear search"
                 className="absolute right-1 top-1/2 -translate-y-1/2"
-                onClick={handleClearX}
+                onClick={onClear}
               >
                 <XIcon className="size-3.5" />
               </Button>
@@ -129,45 +83,25 @@ export function SearchBar({ value, onChange, onSubmit, onClear }: SearchBarProps
           className="w-[--radix-popover-trigger-width] p-0"
           align="start"
           sideOffset={4}
-          // The Input owns focus; do not let Radix steal it from the trigger.
+          // The Input owns focus; don't let Radix steal it from the trigger.
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <div className="flex items-center justify-between px-2 py-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Recent</span>
-            {recents.length > 0 && (
-              <Button
-                type="button"
-                size="xs"
-                variant="ghost"
-                className="text-muted-foreground"
-                onClick={handlePopoverClear}
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-          <Separator />
-          <Command>
-            <CommandList className="max-h-[320px]">
-              {recents.length === 0 ? (
-                <CommandEmpty>No recent searches</CommandEmpty>
-              ) : (
-                recents.map((term) => (
-                  <CommandItem
-                    key={term}
-                    value={term}
-                    onSelect={() => handleRecentClick(term)}
-                  >
-                    <ClockIcon className="size-3.5 mr-2 text-muted-foreground" />
-                    {term}
-                  </CommandItem>
-                ))
-              )}
-            </CommandList>
-          </Command>
+          <SearchSuggestDropdown
+            value={value}
+            recents={recents}
+            suggestions={suggestions}
+            onPick={(t) => {
+              setIsOpen(false)
+              onSubmit(t)
+            }}
+            onClearRecents={() => {
+              clearRecents()
+              setIsOpen(false)
+            }}
+          />
         </PopoverContent>
       </Popover>
-      <Button type="button" size="sm" variant="default" onClick={submitIfNonEmpty}>
+      <Button type="button" size="sm" variant="default" onClick={submit}>
         <SearchIcon className="size-4 mr-1" />
         Search
       </Button>
