@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest'
 
 import {
+  columnsToColDefs,
   configCategoryToColDefs,
   toCamelCaseStyle,
 } from '@/search/lib/configToColDefs'
+import { cellRenderers } from '@/search/renderers/registry'
 import {
   CategoryConfigV4Schema,
   type CategoryConfigV4,
+  type ColumnDefinitionV4,
 } from '@/search/types'
 import { AppIDCellRenderer } from '@/search/renderers/AppIDCellRenderer'
 import { SupportEmailCellRenderer } from '@/search/renderers/SupportEmailCellRenderer'
@@ -182,6 +185,29 @@ describe('configCategoryToColDefs — fileName category', () => {
       ],
     })
     expect(cols[0].cellRenderer).toBeUndefined()
+  })
+})
+
+describe('columnsToColDefs — raw columns[] array (Angular-parity inline source)', () => {
+  const cols: ColumnDefinitionV4[] = [
+    { field: 'file_name_pattern', headerName: 'File Name', rowGroup: true, hide: true, sortable: true, filter: true, resizable: null, width: null, cellRenderer: null, cellRendererParams: null, cellStyle: null, pinned: null },
+    { field: 'app_id', headerName: 'App ID', rowGroup: null, hide: null, sortable: true, filter: true, resizable: null, width: null, cellRenderer: 'appIDCellRenderer', cellRendererParams: null, cellStyle: null, pinned: null },
+    { field: 'misc', headerName: 'Misc', rowGroup: null, hide: null, sortable: true, filter: true, resizable: null, width: null, cellRenderer: 'unknownKey', cellRendererParams: null, cellStyle: null, pinned: null },
+  ]
+
+  it('maps fields, rowGroup, and resolves renderer key to the registry component', () => {
+    const defs = columnsToColDefs(cols)
+    expect(defs).toHaveLength(3)
+    expect(defs[0]).toMatchObject({ field: 'file_name_pattern', rowGroup: true, hide: true })
+    expect(defs[1].field).toBe('app_id')
+    expect(defs[1].cellRenderer).toBe(cellRenderers.appIDCellRenderer)
+    // Unknown renderer key resolves to undefined (registry miss), not the string.
+    expect(defs[2].cellRenderer).toBeUndefined()
+  })
+
+  it('configCategoryToColDefs delegates to columnsToColDefs (identical output)', () => {
+    const category = { key: 'fileName', label: 'File Name', searchColumn: 'file_name_pattern', elasticsearch: {}, oracle: {}, columns: cols }
+    expect(configCategoryToColDefs(category)).toEqual(columnsToColDefs(cols))
   })
 })
 

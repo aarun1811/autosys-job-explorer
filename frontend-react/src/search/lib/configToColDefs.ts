@@ -26,13 +26,20 @@ import { cellRenderers } from '@/search/renderers/registry'
  *      Angular code wrote) to camelCase (what React's CSSProperties type
  *      expects) — see Pitfall 2 in 03-PATTERNS.md.
  *
- * Plan 05 (SearchGrid) consumes this as:
- *   const colDefs = configCategoryToColDefs(
- *     config.categories.find((c) => c.key === activeCategory)!
- *   )
+ * Consumed two ways, both routing through {@link columnsToColDefs}:
+ *   - Angular-parity inline source (SearchGrid): `columnsToColDefs(category.columns)`
+ *     where `category` is a `CategoryResultV4` from `/api/v4/search/initial`.
+ *   - Legacy config source: `configCategoryToColDefs(categoryConfig)`.
  */
-export function configCategoryToColDefs(cat: CategoryConfigV4): ColDef[] {
-  return cat.columns.map((c: ColumnDefinitionV4): ColDef => ({
+
+/**
+ * Translates a raw `ColumnDefinitionV4[]` (the inline `columns[]` carried by
+ * each `/initial` category result, or a `/config` category's columns) into
+ * AG-Grid `ColDef`s. This is the single seam that owns the JSON↔AG-Grid
+ * impedance — see the responsibilities documented above.
+ */
+export function columnsToColDefs(columns: ColumnDefinitionV4[]): ColDef[] {
+  return columns.map((c: ColumnDefinitionV4): ColDef => ({
     field: c.field,
     headerName: c.headerName,
     width: c.width,
@@ -52,6 +59,15 @@ export function configCategoryToColDefs(cat: CategoryConfigV4): ColDef[] {
     cellRendererParams: c.cellRendererParams,
     cellStyle: c.cellStyle ? toCamelCaseStyle(c.cellStyle) : undefined,
   }))
+}
+
+/**
+ * Thin wrapper: adapts a `CategoryConfigV4` by delegating its `columns` to
+ * {@link columnsToColDefs}. Retained for callers/tests that hold a full
+ * category-config object.
+ */
+export function configCategoryToColDefs(cat: Pick<CategoryConfigV4, 'columns'>): ColDef[] {
+  return columnsToColDefs(cat.columns)
 }
 
 /**
