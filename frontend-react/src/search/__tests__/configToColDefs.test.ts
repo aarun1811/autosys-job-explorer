@@ -211,6 +211,21 @@ describe('columnsToColDefs — raw columns[] array (Angular-parity inline source
   })
 })
 
+describe('columnsToColDefs — ColDef parity (Task 3)', () => {
+  test('each ColDef enables row-group, column menu tabs, and apply/reset filter params', () => {
+    const [col] = columnsToColDefs([{ field: 'box_name', headerName: 'Box' }])
+    expect(col.enableRowGroup).toBe(true)
+    expect(col.menuTabs).toEqual(['generalMenuTab', 'columnsMenuTab'])
+    expect(col.filterParams).toMatchObject({ buttons: ['reset', 'apply'], closeOnApply: true, maxNumConditions: 1 })
+  })
+
+  test('a column with filter:false gets no filterParams', () => {
+    const [col] = columnsToColDefs([{ field: 'x', headerName: 'X', filter: false }])
+    expect(col.filter).toBe(false)
+    expect(col.filterParams).toBeUndefined()
+  })
+})
+
 describe('toCamelCaseStyle helper', () => {
   it('returns an empty object for an empty input', () => {
     expect(toCamelCaseStyle({})).toEqual({})

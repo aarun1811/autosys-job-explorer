@@ -50,6 +50,12 @@ export function columnsToColDefs(columns: ColumnDefinitionV4[]): ColDef[] {
     // with categories that don't enumerate every flag).
     filter: c.filter === false ? false : 'agTextColumnFilter',
     resizable: c.resizable ?? true,
+    enableRowGroup: true,
+    menuTabs: ['generalMenuTab', 'columnsMenuTab'],
+    filterParams:
+      c.filter === false
+        ? undefined
+        : { buttons: ['reset', 'apply'], closeOnApply: true, maxNumConditions: 1, debounceMs: 0 },
     rowGroup: c.rowGroup ?? false,
     pinned: c.pinned ?? undefined,
     // Registry lookup; `?? undefined` makes the fallback explicit for the
