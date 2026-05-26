@@ -110,7 +110,7 @@ public class OracleToEsLoaderJob {
                 ps.setFetchSize(1000);
                 return ps;
             }, (RowCallbackHandler) rs -> {
-                Map<String, Object> row = rowToMap(rs);
+                Map<String, Object> row = addSuggestFields(rowToMap(rs));
                 String docId = hasher.hash(def.getSource().getPrimaryKey(), row);
                 ingester.add(op -> op.index(idx -> idx
                         .index(alias)
@@ -157,6 +157,39 @@ public class OracleToEsLoaderJob {
         for (int i = 1; i <= n; i++) {
             String label = md.getColumnLabel(i);
             row.put(label == null ? null : label.toLowerCase(), rs.getObject(i));
+        }
+        return row;
+    }
+
+    /**
+     * Source column → completion-suggester field. Mirrors the {@code *_suggest}
+     * completion fields in the ES mapping and
+     * {@code SuggestionService.suggestionFields}. Adding a suggest field is a
+     * 3-touch change: this map, the ES mapping, and SuggestionService.
+     */
+    private static final Map<String, String> SUGGEST_SOURCE_TO_FIELD = Map.of(
+            "recon", "recon_suggest",
+            "box_name", "box_name_suggest",
+            "machine", "machine_suggest",
+            "run_calendar", "run_calendar_suggest",
+            "exclude_calendar", "exclude_calendar_suggest",
+            "job_name", "job_name_suggest",
+            "sub_acc", "sub_acc_suggest",
+            "set_id", "set_id_suggest");
+
+    /**
+     * Enrich a row map with completion-suggester inputs derived from source
+     * columns so typeahead works on loader-written docs (prod parity with the
+     * local seed). Blank, missing, or non-String sources are skipped — the ES
+     * {@code completion} type rejects empty input. Mutates and returns the same
+     * map. Package-private + static for direct unit testing.
+     */
+    static Map<String, Object> addSuggestFields(Map<String, Object> row) {
+        for (Map.Entry<String, String> e : SUGGEST_SOURCE_TO_FIELD.entrySet()) {
+            Object v = row.get(e.getKey());
+            if (v instanceof String s && !s.isBlank()) {
+                row.put(e.getValue(), s);
+            }
         }
         return row;
     }
