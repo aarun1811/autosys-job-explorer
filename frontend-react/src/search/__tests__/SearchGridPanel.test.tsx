@@ -29,7 +29,6 @@ const mockApi = {
   getFilterModel: vi.fn(() => ({})),
   getRowGroupColumns: vi.fn(() => []),
   getColumns: vi.fn(() => []),
-  exportDataAsExcel: vi.fn(),
   forEachNode: vi.fn(),
 }
 
