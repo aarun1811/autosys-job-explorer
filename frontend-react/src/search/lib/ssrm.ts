@@ -15,7 +15,15 @@ const SEP = '\u0001' // low-collision separator for composite row ids
  */
 export function buildSsrmRowId(params: Pick<GetRowIdParams, 'parentKeys' | 'data'>): string {
   const parents = params.parentKeys ?? []
-  const own = Object.values(params.data ?? {}).map((v) => String(v ?? '')).join(SEP)
+  const data = (params.data ?? {}) as Record<string, unknown>
+  const own = Object.values(data)
+    .map((v) => {
+      if (v == null) return ''
+      if (typeof v === 'string') return v
+      if (typeof v === 'number' || typeof v === 'boolean' || typeof v === 'bigint') return String(v)
+      return JSON.stringify(v) ?? '' // objects/other → safe, never '[object Object]'
+    })
+    .join(SEP)
   return [...parents, own].join(SEP)
 }
 

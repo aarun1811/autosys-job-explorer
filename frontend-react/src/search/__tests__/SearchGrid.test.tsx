@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await, @typescript-eslint/await-thenable, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { describe, test, expect, beforeEach, vi } from 'vitest'
 import { _test_buildDatasource } from '@/search/SearchGrid'
 import type { CategoryResultV4 } from '@/search/types'

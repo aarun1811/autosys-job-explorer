@@ -46,4 +46,22 @@ export default defineConfig([
       'no-restricted-syntax': 'off',
     },
   },
+  // Test files lean on `any`-typed mocks (AG-Grid GridApi stubs, component prop
+  // spreads, `as never` shims). The type-checked unsafe-* family is noise there
+  // and adds no safety to throwaway test scaffolding — relax it for tests only
+  // (production source keeps full type-aware linting).
+  {
+    files: ['**/*.test.{ts,tsx}', 'src/test-setup.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+    },
+  },
 ])

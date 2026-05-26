@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
