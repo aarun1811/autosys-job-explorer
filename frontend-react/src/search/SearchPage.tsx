@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { m } from 'motion/react'
 import { TriangleAlertIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -173,9 +174,19 @@ export function SearchPage(): React.ReactElement {
           onClear={handleClear}
         />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-in fade-in-0 duration-300">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <CategoryTabBar categories={results} activeKey={activeCategory?.key ?? results[0].key} onSelect={handleSelectTab} />
-          {activeCategory && <SearchGridPanel q={q ?? ''} category={activeCategory} />}
+          {activeCategory && (
+            <m.div
+              key={activeCategory.key}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+              <SearchGridPanel q={q ?? ''} category={activeCategory} />
+            </m.div>
+          )}
         </div>
       )}
       <Footer />
