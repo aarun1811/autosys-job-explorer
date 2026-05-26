@@ -7,8 +7,8 @@ import { createPart, themeQuartz } from 'ag-grid-community'
  * index.css in task 1.2). Params reference the shadcn oklch CSS variables
  * directly — `var()` is supported by the Theming API — so the grid follows
  * light/dark automatically via the `.dark` class cascade (no per-scheme literal
- * values needed). The container also carries `data-ag-theme-mode` (set in
- * SearchGrid) so AG-Grid's own popups/scrollbars pick the right color scheme.
+ * values needed). The grid container will carry `data-ag-theme-mode` (wired in
+ * Task 1.2) so AG-Grid's own popups/scrollbars pick the right color scheme.
  *
  * Refined & airy: generous spacing, medium-weight headers, a subtle row hover
  * that is DISTINCT from the accent-tinted selected row, visible-but-quiet
@@ -18,7 +18,7 @@ import { createPart, themeQuartz } from 'ag-grid-community'
  * injected via `createPart({ css: '...' })` + `.withPart(...)` instead.
  */
 
-const tabularsNumeralsPart = createPart({
+const tabularNumeralsPart = createPart({
   css: '.ag-cell { font-variant-numeric: tabular-nums; }',
 })
 
@@ -41,5 +41,4 @@ export const gridTheme = themeQuartz
     spacing: 8,
     wrapperBorderRadius: 0,
   })
-  .withParams({}, 'dark')
-  .withPart(tabularsNumeralsPart)
+  .withPart(tabularNumeralsPart)

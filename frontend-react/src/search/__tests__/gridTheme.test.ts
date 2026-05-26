@@ -1,12 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { gridTheme } from '@/search/lib/gridTheme'
 
-// Pull the last modeParams entry that corresponds to our withParams call.
-// ThemeImpl serializes params as an array of PartImpl objects; our params land
-// in the penultimate entry (the last is the dark-mode override, followed by the
-// tabular-nums part). We reach into the serialized structure to verify only the
-// values we actually set — not the base themeQuartz defaults, which contain hex
-// internally.
+// ThemeImpl serializes params as an array of PartImpl objects. We locate our
+// withParams entry by its accentColor value (`var(--color-primary)`), not by
+// position, then verify only the values we actually set — not the base
+// themeQuartz defaults, which contain hex internally.
 function ourParams(theme: object): string {
   const parsed = JSON.parse(JSON.stringify(theme)) as {
     parts: Array<{ modeParams?: Record<string, Record<string, unknown>> }>
@@ -30,5 +28,15 @@ describe('gridTheme', () => {
     expect(json).toContain('var(--color-background)')
     expect(json).toContain('var(--color-foreground)')
     expect(json).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
+  })
+
+  it('disables zebra striping (odd rows transparent)', () => {
+    const params = JSON.parse(ourParams(gridTheme)) as Record<string, unknown>
+    expect(params['oddRowBackgroundColor']).toBe('transparent')
+  })
+
+  it('keeps row hover distinct from selected row', () => {
+    const params = JSON.parse(ourParams(gridTheme)) as Record<string, unknown>
+    expect(params['rowHoverColor']).not.toBe(params['selectedRowBackgroundColor'])
   })
 })
