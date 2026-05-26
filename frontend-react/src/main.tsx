@@ -8,7 +8,6 @@ import {
   ColumnAutoSizeModule,
   RowApiModule,
   ColumnApiModule,
-  RowSelectionModule,
 } from 'ag-grid-community'
 import {
   ServerSideRowModelModule,
@@ -18,7 +17,6 @@ import {
   SideBarModule,
   RowGroupingModule,
   RowGroupingPanelModule,
-  StatusBarModule,
 } from 'ag-grid-enterprise'
 import './index.css'
 import App from './App'
@@ -33,7 +31,7 @@ LicenseManager.setLicenseKey(import.meta.env.VITE_AG_GRID_LICENSE_KEY ?? '')
 // TextFilterModule / CellStyleModule / ColumnAutoSizeModule / RowApiModule
 // are required by features the columns already use (default text filter,
 // kebab-converted cellStyle on Execution Order, autoSizeStrategy on the grid,
-// and RowApiModule now backs the status-bar row-count panels). SideBarModule
+// and RowApiModule backs forEachNode (used by the toolbar Copy action)). SideBarModule
 // is what makes `sideBar={{ toolPanels: ['columns','filters'] }}` work in
 // v35 — previous versions bundled it with the tool-panel modules.
 ModuleRegistry.registerModules([
@@ -47,10 +45,8 @@ ModuleRegistry.registerModules([
   ColumnAutoSizeModule,
   RowApiModule,
   ColumnApiModule,
-  RowSelectionModule,
   RowGroupingModule,
   RowGroupingPanelModule,
-  StatusBarModule,
 ])
 
 const rootElement = document.getElementById('root')
