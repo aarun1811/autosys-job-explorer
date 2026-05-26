@@ -64,8 +64,9 @@ describe('SearchPage results', () => {
   test('fetches /initial and renders a tab per count>0 category, highest-count active', async () => {
     apiFetchMock.mockResolvedValue({ json: async () => respWith(mk('fileName', 'File Name', 3), mk('jobName', 'Job Name', 10), mk('setId', 'Set ID', 0)) })
     renderAt('/search?q=trade')
-    await waitFor(() => expect(screen.getByText('Job Name (10)')).toBeInTheDocument())
-    expect(screen.getByText('File Name (3)')).toBeInTheDocument()
+    // Tab label and count pill are now separate elements; match on the label text.
+    await waitFor(() => expect(screen.getByText('Job Name')).toBeInTheDocument())
+    expect(screen.getByText('File Name')).toBeInTheDocument()
     expect(screen.queryByText(/Set ID/)).not.toBeInTheDocument()
     await waitFor(() => expect(gridCategoryKeys.at(-1)).toBe('jobName'))
   })
@@ -73,8 +74,8 @@ describe('SearchPage results', () => {
   test('clicking a tab updates URL tab and mounts that category grid', async () => {
     apiFetchMock.mockResolvedValue({ json: async () => respWith(mk('jobName', 'Job Name', 10), mk('fileName', 'File Name', 3)) })
     const router = renderAt('/search?q=trade')
-    await waitFor(() => expect(screen.getByText('File Name (3)')).toBeInTheDocument())
-    fireEvent.click(screen.getByText('File Name (3)'))
+    await waitFor(() => expect(screen.getByText('File Name')).toBeInTheDocument())
+    fireEvent.click(screen.getByText('File Name'))
     await waitFor(() => expect(router.state.location.search).toMatchObject({ q: 'trade', tab: 'fileName' }))
     await waitFor(() => expect(gridCategoryKeys.at(-1)).toBe('fileName'))
   })
@@ -90,7 +91,7 @@ describe('SearchPage results', () => {
   test('navbar logo links to the home route', async () => {
     apiFetchMock.mockResolvedValue({ json: async () => respWith(mk('jobName', 'Job Name', 10)) })
     renderAt('/search?q=trade')
-    await waitFor(() => expect(screen.getByText('Job Name (10)')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Job Name')).toBeInTheDocument())
     expect(screen.getByRole('link', { name: 'Go to Rectrace home' })).toHaveAttribute('href', '/')
   })
 
