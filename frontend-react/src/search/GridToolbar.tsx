@@ -14,6 +14,7 @@ import {
   CopyIcon,
   Share2Icon,
 } from 'lucide-react'
+import { m } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -66,7 +67,14 @@ function ToolButton({
           // disabled:opacity-100 keeps a loading spinner fully visible while busy.
           className={`size-8 disabled:opacity-100 ${pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
         >
-          {children}
+          <m.span
+            className="inline-flex"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+          >
+            {children}
+          </m.span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
@@ -82,7 +90,7 @@ function ToolButton({
 export function GridToolbar(props: GridToolbarProps): React.ReactElement {
   const sep = <Separator orientation="vertical" className="mx-1 h-5" />
   return (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider delayDuration={200}>
       <div className="flex h-11 items-center gap-0.5 border-b px-3">
         <div className="flex-1" />
         {/* View */}
