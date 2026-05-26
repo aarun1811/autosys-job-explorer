@@ -58,18 +58,25 @@
 
 ```ts
 import { columnsToColDefs } from '@/search/lib/configToColDefs'
+import { cellRenderers } from '@/search/renderers/registry'
 import type { ColumnDefinitionV4 } from '@/search/types'
 
 describe('columnsToColDefs', () => {
   const cols: ColumnDefinitionV4[] = [
     { field: 'file_name_pattern', headerName: 'File Name', rowGroup: true, hide: true, sortable: true, filter: true, resizable: null, width: null, cellRenderer: null, cellRendererParams: null, cellStyle: null, pinned: null },
-    { field: 'app_name', headerName: 'App Name', rowGroup: null, hide: null, sortable: true, filter: true, resizable: null, width: null, cellRenderer: 'appId', cellRendererParams: null, cellStyle: null, pinned: null },
+    { field: 'app_name', headerName: 'App Name', rowGroup: null, hide: null, sortable: true, filter: true, resizable: null, width: null, cellRenderer: 'appIDCellRenderer', cellRendererParams: null, cellStyle: null, pinned: null },
+    { field: 'misc', headerName: 'Misc', rowGroup: null, hide: null, sortable: true, filter: true, resizable: null, width: null, cellRenderer: 'unknownKey', cellRendererParams: null, cellStyle: null, pinned: null },
   ]
-  test('maps fields, rowGroup, and renderer key from a raw columns[] array', () => {
+  test('maps fields, rowGroup, and resolves renderer key to the registry component', () => {
+    // The adapter resolves the JSON cellRenderer STRING through the registry into
+    // a component (configToColDefs.ts) — registry keys are appIDCellRenderer etc.
     const defs = columnsToColDefs(cols)
-    expect(defs).toHaveLength(2)
+    expect(defs).toHaveLength(3)
     expect(defs[0]).toMatchObject({ field: 'file_name_pattern', rowGroup: true, hide: true })
-    expect(defs[1]).toMatchObject({ field: 'app_name', cellRenderer: 'appId' })
+    expect(defs[1].field).toBe('app_name')
+    expect(defs[1].cellRenderer).toBe(cellRenderers.appIDCellRenderer)
+    // Unknown renderer key resolves to undefined (registry miss) — not the string.
+    expect(defs[2].cellRenderer).toBeUndefined()
   })
   test('configCategoryToColDefs delegates to columnsToColDefs (same output)', () => {
     const category = { key: 'fileName', label: 'File Name', searchColumn: 'file_name_pattern', elasticsearch: {}, oracle: {}, columns: cols }
@@ -555,7 +562,7 @@ describe('SearchGrid datasource', () => {
     apiFetchMock.mockResolvedValue({ json: async () => ({ rows: [], lastRow: 0 }) })
     const ds = _test_buildDatasource('trade', category)
     const success = vi.fn()
-    await ds.getRows!({ request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, success, fail: vi.fn() } as never)
+    await ds.getRows({ request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, success, fail: vi.fn() } as never)
     const [url, init] = apiFetchMock.mock.calls[0]
     expect(url).toBe('/rectrace/api/v4/search/ssrm/fileName')
     const body = JSON.parse((init as RequestInit).body as string)
@@ -565,7 +572,7 @@ describe('SearchGrid datasource', () => {
   test('null initialFilter when values empty', async () => {
     apiFetchMock.mockResolvedValue({ json: async () => ({ rows: [], lastRow: 0 }) })
     const ds = _test_buildDatasource('trade', { ...category, values: [] })
-    await ds.getRows!({ request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, success: vi.fn(), fail: vi.fn() } as never)
+    await ds.getRows({ request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, success: vi.fn(), fail: vi.fn() } as never)
     const body = JSON.parse((apiFetchMock.mock.calls[0][1] as RequestInit).body as string)
     expect(body.initialFilter).toBeNull()
   })
@@ -593,8 +600,10 @@ export interface SearchGridProps {
 }
 
 function searchColumnFor(category: CategoryResultV4): string {
-  // Angular search-v5-grid.component.ts:330 — the rowGroup column IS the ES search column.
-  return category.columns.find((c) => c.rowGroup)?.field ?? category.key
+  // Angular search-v5-grid.component.ts:330 — the rowGroup column IS the ES search
+  // column. If no rowGroup column exists, return '' so buildInitialFilter yields a
+  // null filter (never a bogus column name like the category key — defense-in-depth).
+  return category.columns.find((c) => c.rowGroup)?.field ?? ''
 }
 
 function buildInitialFilter(category: CategoryResultV4): InitialFilter | null {
@@ -755,12 +764,19 @@ export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabB
 
 ### Task 10: Delete `useSearchConfig`
 
+> **SEQUENCING (verified fix):** EXECUTE THIS TASK **AFTER Task 15**. `SearchPage.tsx`
+> does not import `useSearchConfig` (only `SearchGrid` did, removed in Task 8), but
+> `SearchPage.test.tsx` still does `vi.mock('@/search/hooks/useSearchConfig', …)`
+> until Task 15 rewrites it. Deleting the module before Task 15 makes that mock's
+> path unresolvable and the test suite errors on import. Run this only once Task 15
+> has dropped the mock.
+
 **Files:**
 - Delete: `src/search/hooks/useSearchConfig.ts`, `src/search/__tests__/useSearchConfig.test.ts`
 
-- [ ] **Step 1:** Confirm no remaining importers: `grep -rn "useSearchConfig" src/` → expect only the SearchPage test mock (removed in Task 13) and the files to delete. If SearchGrid still imports it, Task 8 missed it — fix.
+- [ ] **Step 1:** Confirm no remaining importers: `grep -rn "useSearchConfig" src/` → after Task 15 this returns only the two files being deleted. If anything else matches, fix it first.
 - [ ] **Step 2:** `git rm src/search/hooks/useSearchConfig.ts src/search/__tests__/useSearchConfig.test.ts`
-- [ ] **Step 3:** `pnpm exec vitest run src/search` → PASS (no references). If SearchPage.test.tsx still mocks it, leave that for Task 13.
+- [ ] **Step 3:** `pnpm exec vitest run src/search` → PASS (no references remain).
 - [ ] **Step 4: Commit** `git commit -m "chore(react): delete useSearchConfig (/config no longer used)"`
 
 ---
