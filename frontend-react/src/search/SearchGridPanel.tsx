@@ -215,7 +215,7 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
           />
         </div>
       </main>
-      <RowDetailSheet open={sheetOpen} onOpenChange={setSheetOpen} row={detailRow} columns={category.columns} />
+      <RowDetailSheet open={sheetOpen} onOpenChange={setSheetOpen} row={detailRow} columns={category.columns} categoryLabel={category.label} />
     </div>
   )
 }

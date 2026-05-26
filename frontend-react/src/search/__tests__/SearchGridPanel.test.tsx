@@ -135,8 +135,11 @@ describe('SearchGridPanel', () => {
   test('double-clicking a row opens the detail drawer', async () => {
     renderPanel()
     fireEvent.click(await screen.findByTestId('dbl'))
-    expect(await screen.findByText('Row details')).toBeInTheDocument()
-    expect(screen.getByText('SAMPLE_TRADE_RECON_001')).toBeInTheDocument()
+    // The static "Row details" title is gone — the sheet now titles with the
+    // record's primary value and describes it with the category label.
+    expect(await screen.findByText(/record/i)).toBeInTheDocument()
+    // The primary value titles the sheet (and also renders as its job_name cell).
+    expect(screen.getAllByText('SAMPLE_TRADE_RECON_001').length).toBeGreaterThan(0)
   })
 
   test('Share view copies a link with the view param WITHOUT navigating the session', async () => {
