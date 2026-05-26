@@ -109,6 +109,19 @@ export const SSRMRequestV4Schema = z.object({
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Export request body (POST /api/v4/search/export/{category})
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ExportRequestV4 {
+  category: string
+  initialFilter: InitialFilter | null
+  columns: string[]
+  rowGroupCols: string[]
+  sortModel: SortModelItem[]
+  filterModel: Record<string, unknown>
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Inferred TypeScript types — downstream Phase 3 plans import from here.
 // ─────────────────────────────────────────────────────────────────────────────
 
