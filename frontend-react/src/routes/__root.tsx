@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AlertTriangle } from 'lucide-react'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/layout/theme-provider'
+import { MotionProvider } from '@/components/layout/motion-provider'
 import { queryClient } from '@/lib/queryClient'
 
 function RootErrorComponent({ error }: ErrorComponentProps) {
@@ -28,16 +29,18 @@ export const Route = createRootRoute({
 function RootLayout() {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        {/* Toaster must mount BEFORE any child that may dispatch toasts during
-            its initial render — otherwise Sonner 2.x silently discards toasts
-            queued before its Toaster consumer subscribes. SmokeGrid kicks off
-            an SSRM fetch on mount and routes failures through toast.error;
-            without this ordering, those very first errors never render. */}
-        <Toaster richColors position="bottom-right" />
-        <Outlet />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      <MotionProvider>
+        <QueryClientProvider client={queryClient}>
+          {/* Toaster must mount BEFORE any child that may dispatch toasts during
+              its initial render — otherwise Sonner 2.x silently discards toasts
+              queued before its Toaster consumer subscribes. SmokeGrid kicks off
+              an SSRM fetch on mount and routes failures through toast.error;
+              without this ordering, those very first errors never render. */}
+          <Toaster richColors position="bottom-right" />
+          <Outlet />
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </MotionProvider>
     </ThemeProvider>
   )
 }
