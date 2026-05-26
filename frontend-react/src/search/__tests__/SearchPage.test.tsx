@@ -47,6 +47,7 @@ function renderAt(url: string) {
     validateSearch: (s: Record<string, unknown>) => ({
       q: typeof s.q === 'string' ? s.q : undefined,
       tab: typeof s.tab === 'string' ? s.tab : undefined,
+      view: typeof s.view === 'string' ? s.view : undefined,
     }),
     component: SearchPage,
   })
