@@ -11,6 +11,9 @@ import {
 } from '@tanstack/react-router'
 import { SearchGridPanel } from '@/search/SearchGridPanel'
 
+const exportMock = vi.hoisted(() => vi.fn())
+vi.mock('@/search/lib/exportSearch', () => ({ exportSearchToExcel: exportMock }))
+
 // --- mock GridApi ---
 const mockApi = {
   setSideBarVisible: vi.fn(),
@@ -22,8 +25,9 @@ const mockApi = {
   collapseAll: vi.fn(),
   expandAll: vi.fn(),
   refreshServerSide: vi.fn(),
-  getColumnState: vi.fn(() => []),
+  getColumnState: vi.fn(() => [{ colId: 'job_name', hide: false }]),
   getFilterModel: vi.fn(() => ({})),
+  getRowGroupColumns: vi.fn(() => []),
   getColumns: vi.fn(() => []),
   exportDataAsExcel: vi.fn(),
   forEachNode: vi.fn(),
@@ -137,5 +141,20 @@ describe('SearchGridPanel', () => {
     // navigate() and the clipboard write are async (.then chain) — await both.
     await waitFor(() => expect(router.state.location.search).toHaveProperty('view'))
     await waitFor(() => expect(clipboard).toHaveBeenCalledTimes(1))
+  })
+
+  test('Export downloads via the backend export endpoint', async () => {
+    exportMock.mockReset().mockResolvedValue(undefined)
+    renderPanel()
+    const trigger = await screen.findByRole('button', { name: 'Export' })
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+    fireEvent.click(screen.getByText('Download Excel (.xlsx)'))
+    await waitFor(() => expect(exportMock).toHaveBeenCalledTimes(1))
+    const [category, body] = exportMock.mock.calls[0]
+    expect(category).toBe('jobName')
+    expect(body.category).toBe('jobName')
+    // mockApi.getColumnState → [{colId:'job_name',hide:false}], getRowGroupColumns → []
+    expect(body.columns).toEqual(['job_name'])
   })
 })

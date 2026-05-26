@@ -7,10 +7,11 @@ import { toast } from 'sonner'
 import { GridToolbar } from '@/search/GridToolbar'
 import { SearchGrid } from '@/search/SearchGrid'
 import { RowDetailSheet } from '@/search/RowDetailSheet'
-import { buildExportFilename } from '@/search/lib/buildExportFilename'
+import { exportSearchToExcel } from '@/search/lib/exportSearch'
+import { getVisibleColumnIds, convertFilterModel, buildInitialFilter } from '@/search/lib/ssrm'
 import { decodeViewState, encodeViewState, type GridViewState } from '@/search/lib/gridViewState'
 import type { GridDensity } from '@/search/lib/gridConfig'
-import type { CategoryResultV4 } from '@/search/types'
+import type { CategoryResultV4, ExportRequestV4, SortModelItem } from '@/search/types'
 import { reportRequestFailure } from '@/lib/queryClient'
 
 /**
@@ -94,16 +95,21 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
     const api = apiRef.current
     if (!api || isExporting) return
     setIsExporting(true)
-    try {
-      const cols = api.getColumns()
-      const columnKeys = cols ? cols.filter((c) => c.getColId() !== 'execution_order').map((c) => c.getColId()) : undefined
-      api.exportDataAsExcel({ fileName: buildExportFilename(category.key, q), columnKeys })
-    } catch (err) {
-      reportRequestFailure(err)
-    } finally {
-      setIsExporting(false)
+    const colState = api.getColumnState()
+    const body: ExportRequestV4 = {
+      category: category.key,
+      initialFilter: buildInitialFilter(category),
+      columns: getVisibleColumnIds(colState, api.getRowGroupColumns().map((c) => c.getColId())),
+      rowGroupCols: api.getRowGroupColumns().map((c) => c.getColId()),
+      sortModel: colState
+        .filter((c) => c.sort)
+        .map((c): SortModelItem => ({ colId: c.colId, sort: c.sort as 'asc' | 'desc' })),
+      filterModel: convertFilterModel(api.getFilterModel()),
     }
-  }, [category.key, q, isExporting])
+    exportSearchToExcel(category.key, body)
+      .catch((err) => reportRequestFailure(err))
+      .finally(() => setIsExporting(false))
+  }, [category, isExporting])
 
   const onCopy = useCallback(() => {
     const api = apiRef.current
