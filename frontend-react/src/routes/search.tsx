@@ -1,24 +1,32 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { SearchPage } from '@/search/SearchPage'
 
 /**
  * Zod-validated search params for `/search`.
  *
- * The route is the trust boundary for URL-borne state (D-3.1, T-03.7-01):
- *   - `q`: optional keyword. Undefined when omitted from the URL.
- *   - `cat`: optional category key; defaults to 'fileName' (Phase 3 ships a
- *     single category — D-3.4).
+ *   - `q`:   optional keyword. Undefined when omitted.
+ *   - `tab`: optional selected-category key (Angular `tab` parity). Undefined
+ *            when omitted — the active tab is derived from the search results
+ *            (highest-count category), never a hardcoded default.
  *
- * Downstream code (`SearchPage`, `useSearchState`) reads these as typed
- * values; encodeURIComponent at the apiFetch call site is the second gate.
+ * No `cat`, no `.default()` — the URL is bare until the user searches.
  */
-const searchSchema = z.object({
+export const searchSchema = z.object({
   q: z.string().optional(),
-  cat: z.string().optional().default('fileName'),
+  tab: z.string().optional(),
 })
 
 export const Route = createFileRoute('/search')({
   validateSearch: searchSchema,
+  // Landing on /search with no query is an invalid state — send the user to the
+  // hero at `/`. This is NOT the cosmetic param-injection rewrite that was
+  // removed; it is the only redirect in the app.
+  beforeLoad: ({ search }) => {
+    if (!search.q || !search.q.trim()) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw redirect({ to: '/' })
+    }
+  },
   component: SearchPage,
 })
