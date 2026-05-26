@@ -42,13 +42,25 @@ export const ColumnDefinitionV4Schema = z.object({
   pinned: z.enum(['left', 'right']).nullish(),
 })
 
+// Optional per-category embedded dashboard (e.g. an iframe overview panel).
+// Backend emits camelCase keys: url / title / defaultOpen / height.
+export const DashboardConfigV4Schema = z.object({
+  url: z.string(),
+  title: z.string().nullish(),
+  defaultOpen: z.boolean().nullish(),
+  height: z.number().nullish(),
+})
+
 export const CategoryConfigV4Schema = z.object({
   key: z.string(),
   label: z.string(),
   searchColumn: z.string(),
-  elasticsearch: z.record(z.unknown()),
-  oracle: z.record(z.unknown()),
-  columns: z.array(ColumnDefinitionV4Schema),
+  // Widened to `.nullish()` so a dashboard-only category (which carries no
+  // ES / Oracle / column wiring) parses against the /config response.
+  elasticsearch: z.record(z.unknown()).nullish(),
+  oracle: z.record(z.unknown()).nullish(),
+  columns: z.array(ColumnDefinitionV4Schema).nullish(),
+  dashboard: DashboardConfigV4Schema.nullish(),
 })
 
 export const SearchConfigurationV4Schema = z.object({
@@ -76,7 +88,10 @@ export const CategoryResultV4Schema = z.object({
   values: z.array(z.string()),
   count: z.number(),
   hasMore: z.boolean(),
+  // `columns` stays STRICT here: the backend `/initial` guard always
+  // coalesces it to `[]`, so it is never null/undefined on the wire.
   columns: z.array(ColumnDefinitionV4Schema),
+  dashboard: DashboardConfigV4Schema.nullish(),
 })
 
 export const InitialSearchResponseV4Schema = z.object({
@@ -126,6 +141,7 @@ export interface ExportRequestV4 {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type ColumnDefinitionV4 = z.infer<typeof ColumnDefinitionV4Schema>
+export type DashboardConfigV4 = z.infer<typeof DashboardConfigV4Schema>
 export type CategoryConfigV4 = z.infer<typeof CategoryConfigV4Schema>
 export type SearchConfigurationV4 = z.infer<typeof SearchConfigurationV4Schema>
 export type InitialFilter = z.infer<typeof InitialFilterSchema>

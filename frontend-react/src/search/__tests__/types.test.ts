@@ -120,7 +120,9 @@ describe('search/types Zod schemas', () => {
       expect(result.categories[0].key).toBe('fileName')
       // Compile-time + runtime check: types flow through.
       const cat: CategoryConfigV4 = result.categories[0]
-      const col: ColumnDefinitionV4 = cat.columns[0]
+      // `columns` is `.nullish()` post-widening; this is a known grid category,
+      // so a non-null assertion preserves the typed-flow-through check.
+      const col: ColumnDefinitionV4 = cat.columns![0]
       expect(col.field).toBe('file_name_pattern')
     })
 

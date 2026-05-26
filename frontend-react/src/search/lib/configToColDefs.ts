@@ -92,7 +92,9 @@ export function applyRowGroupsToColDefs(defs: ColDef[], groupColIds: string[]): 
  * category-config object.
  */
 export function configCategoryToColDefs(cat: Pick<CategoryConfigV4, 'columns'>): ColDef[] {
-  return columnsToColDefs(cat.columns)
+  // `columns` is `.nullish()` since the schema was widened for dashboard-only
+  // categories (which carry no column wiring) — coalesce to an empty list.
+  return columnsToColDefs(cat.columns ?? [])
 }
 
 /**
