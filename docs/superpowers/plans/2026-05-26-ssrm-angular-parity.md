@@ -56,14 +56,19 @@ const cat = (over: Partial<CategoryResultV4> = {}): CategoryResultV4 => ({
 })
 
 describe('ssrm helpers', () => {
-  test('buildSsrmRowId: group id ignores leaf columns (stable across column changes)', () => {
-    // group row: no parents, data is just the group value
+  test('buildSsrmRowId: stable group id; route-prefixed leaves; no value-concat collisions', () => {
+    // group row: no parents, data is just the group value (independent of visible cols)
     const groupId = buildSsrmRowId({ parentKeys: [], data: { job_name: 'RECON-1' } })
+    expect(groupId).toBe('RECON-1')
+    expect(buildSsrmRowId({ parentKeys: [], data: { job_name: 'RECON-1' } })).toBe(groupId) // stable
     // leaf row under that group: route prefix + its own values
     const leafId = buildSsrmRowId({ parentKeys: ['RECON-1'], data: { box_name: 'BOX-1', machine: 'm1' } })
-    expect(groupId).toBe('RECON-1')
     expect(leafId.startsWith('RECON-1')).toBe(true)
     expect(leafId).not.toBe(groupId)
+    // separated values → naive-concat lookalikes do NOT collide
+    const a = buildSsrmRowId({ parentKeys: ['g'], data: { x: '1', y: '23' } })
+    const b = buildSsrmRowId({ parentKeys: ['g'], data: { x: '12', y: '3' } })
+    expect(a).not.toBe(b)
   })
 
   test('getVisibleColumnIds: drops hidden + frontend-only, always includes group cols', () => {
@@ -74,7 +79,11 @@ describe('ssrm helpers', () => {
       { colId: 'execution_order', hide: false }, // frontend-only → dropped
       { colId: 'ag-Grid-AutoColumn', hide: false }, // frontend-only → dropped
     ] as Array<{ colId: string; hide: boolean }>
-    expect(getVisibleColumnIds(state as never, ['job_name'])).toEqual(['box_name', 'job_name'])
+    const ids = getVisibleColumnIds(state as never, ['job_name'])
+    expect(ids).toHaveLength(2)
+    expect(ids).toEqual(expect.arrayContaining(['box_name', 'job_name'])) // order not contractual
+    expect(ids).not.toContain('machine')
+    expect(ids).not.toContain('execution_order')
   })
 
   test('convertFilterModel: drops empty entries, defaults filterType/type', () => {
@@ -111,7 +120,7 @@ import type { CategoryResultV4, InitialFilter } from '@/search/types'
 /** Columns that exist only in the grid UI — never sent to the backend SELECT. */
 export const FRONTEND_ONLY_COLUMNS = new Set(['execution_order', 'actions', 'ag-Grid-AutoColumn'])
 
-const SEP = '' // low-collision separator for composite row ids
+const SEP = '\u0001' // low-collision separator for composite row ids
 
 /**
  * Stable SSRM row id: route (parent group keys) + this row's own values.
@@ -321,12 +330,19 @@ git commit -m "feat(grid): register ServerSideRowModelApi (expand/collapse) + Co
     await ds.getRows(params as never)
     const lastCall = apiFetchMock.mock.calls.at(-1)!
     const body = JSON.parse(lastCall[1].body)
-    expect(body.visibleColumns).toEqual(['box_name', 'job_name'])
+    expect(body.visibleColumns).toHaveLength(2)
+    expect(body.visibleColumns).toEqual(expect.arrayContaining(['box_name', 'job_name']))
     expect(body.filterModel).toEqual({ box_name: { filterType: 'text', type: 'contains', filter: 'b' } })
   })
 ```
 
-> **Implementer note:** reuse the file's existing `@/lib/queryClient` mock (the `apiFetchMock` already declared at the top of `SearchGrid.test.tsx`) — adapt the variable name if it differs. No new fetch shim. The intent: call `getRows` with a `params` carrying `api.getColumnState()`/`getRowGroupColumns()` + `request.filterModel`, then assert the POST body's `visibleColumns` and `filterModel`.
+> **BLOCKING prerequisite (do this first):** the datasource now calls `params.api.getColumnState()`/`getRowGroupColumns()`. The **four existing** datasource tests share a `req` object (and one inline `request`) that has **no `api`** — they will throw and fail. Add an `api` stub to the shared `req` and the inline "forwards paging" request:
+> ```ts
+> const mockApi = { getColumnState: () => [], getRowGroupColumns: () => [] }
+> const req = { request: { startRow: 0, endRow: 100, rowGroupCols: [], groupKeys: [], sortModel: [], filterModel: {} }, api: mockApi, success: vi.fn(), fail: vi.fn() }
+> // and add `api: mockApi` to the inline request in the 'forwards paging' test.
+> ```
+> **Implementer note:** reuse the file's existing `apiFetchMock` (top of `SearchGrid.test.tsx`); no new fetch shim.
 
 - [ ] **Step 2: Run — expect FAIL** (current body has `visibleColumns: []` and raw filterModel).
 
@@ -338,7 +354,8 @@ import { GRID_SIDEBAR, rowHeightForDensity, headerHeightForDensity, type GridDen
 import {
   buildSsrmRowId, getVisibleColumnIds, convertFilterModel, buildInitialFilter, FRONTEND_ONLY_COLUMNS,
 } from '@/search/lib/ssrm'
-import { useRef } from 'react'
+// Merge useEffect + useRef into the existing top-of-file React import:
+//   import { useEffect, useMemo, useRef, type ReactElement } from 'react'
 import type { ColumnVisibleEvent } from 'ag-grid-community'
 ```
 Delete the local `searchColumnFor` and `buildInitialFilter` function definitions in this file (now imported).
@@ -367,6 +384,8 @@ export function SearchGrid({ q, category, density, onGridReady, onFirstDataRende
   const columnDefs = useMemo<ColDef[]>(() => columnsToColDefs(category.columns), [category])
   const datasource = useMemo<IServerSideDatasource>(() => _test_buildDatasource(q, category), [q, category])
   const colVisTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Cancel a pending column-visibility refresh if the grid unmounts (tab switch).
+  useEffect(() => () => { if (colVisTimer.current) clearTimeout(colVisTimer.current) }, [])
 
   return (
     <div className="ag-theme-quartz h-full w-full">
@@ -543,7 +562,8 @@ Add `getColumnState`, `getRowGroupColumns`, `getFilterModel` to the existing `mo
     const [category, body] = exportMock.mock.calls[0]
     expect(category).toBe('jobName')
     expect(body.category).toBe('jobName')
-    expect(Array.isArray(body.columns)).toBe(true)
+    // mockApi.getColumnState → [{colId:'job_name',hide:false}], getRowGroupColumns → []
+    expect(body.columns).toEqual(['job_name'])
   })
 ```
 
@@ -621,3 +641,9 @@ git add -A && git commit -m "fix(grid): <specific live-verification fixup>"
 - The dedup toggle stays Angular-faithful (state + refresh, no backend flag); with real `visibleColumns` the backend now does `SELECT DISTINCT <visible>` on every fetch.
 - Use real seed terms for live checks (`recon`, `SUBACC`, `SETID`). Enterprise license watermark in dev is expected.
 - Deep grid-body visual styling remains a separate follow-up.
+
+### Review fixes folded in (heed these)
+- **Task 3:** key `enableRowGroup`/`menuTabs`/`filterParams` off the **raw** `c.filter` (the `ColumnDefinitionV4` field), NOT the locally-mapped `filter` value — otherwise every column wrongly gets `filterParams`.
+- **Task 7:** delete the now-unused `buildExportFilename` import from `SearchGridPanel.tsx` (else `tsc`/ESLint fail). `ExcelExportModule` becomes unused but stays registered — harmless; leave it.
+- **Task 2:** keep the existing `GRID_SIDEBAR` test in `gridConfig.test.ts`; only the density-height test is replaced.
+- **Task 6:** add `afterEach(() => vi.restoreAllMocks())` in `exportSearch.test.ts` (it spies `document.createElement`).
