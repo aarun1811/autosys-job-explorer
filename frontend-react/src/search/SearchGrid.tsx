@@ -17,6 +17,7 @@ import { useTheme } from '@/components/layout/theme-provider'
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { columnsToColDefs, applyRowGroupsToColDefs } from '@/search/lib/configToColDefs'
 import { cellRenderers } from '@/search/renderers/registry'
+import { GridNoRowsOverlay } from '@/search/GridNoRowsOverlay'
 import type { CategoryResultV4, SSRMRequestV4 } from '@/search/types'
 import {
   buildSsrmRowId, getVisibleColumnIds, convertFilterModel, buildInitialFilter, FRONTEND_ONLY_COLUMNS,
@@ -133,6 +134,7 @@ export function SearchGrid({
         serverSideDatasource={datasource}
         columnDefs={columnDefs}
         components={cellRenderers}
+        noRowsOverlayComponent={GridNoRowsOverlay}
         getRowId={buildSsrmRowId}
         defaultColDef={{ sortable: true, filter: true, resizable: true, minWidth: 100, flex: 1 }}
         autoGroupColumnDef={{
