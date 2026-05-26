@@ -2,8 +2,8 @@
 import {
   PanelRightIcon,
   Rows3Icon,
-  Maximize2Icon,
-  RotateCcwIcon,
+  ArrowLeftRightIcon,
+  ListRestartIcon,
   ChevronsUpDownIcon,
   ChevronsDownUpIcon,
   FilterXIcon,
@@ -96,10 +96,10 @@ export function GridToolbar(props: GridToolbarProps): React.ReactElement {
           <Rows3Icon className="size-4" />
         </ToolButton>
         <ToolButton label="Auto-size columns" onClick={props.onAutoSize}>
-          <Maximize2Icon className="size-4" />
+          <ArrowLeftRightIcon className="size-4" />
         </ToolButton>
         <ToolButton label="Reset view" onClick={props.onResetView}>
-          <RotateCcwIcon className="size-4" />
+          <ListRestartIcon className="size-4" />
         </ToolButton>
         {sep}
         {/* Grouping */}
@@ -123,16 +123,27 @@ export function GridToolbar(props: GridToolbarProps): React.ReactElement {
         {sep}
         {/* Export / Share */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" size="sm" variant="outline" disabled={props.isExporting} aria-label="Export">
-              {props.isExporting ? (
-                <Loader2Icon className="size-4 mr-1 animate-spin" />
-              ) : (
-                <DownloadIcon className="size-4 mr-1" />
-              )}
-              Export
-            </Button>
-          </DropdownMenuTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Export"
+                  disabled={props.isExporting}
+                  className="size-8 text-muted-foreground"
+                >
+                  {props.isExporting ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <DownloadIcon className="size-4" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Export</TooltipContent>
+          </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={props.onExportExcel}>Download Excel (.xlsx)</DropdownMenuItem>
           </DropdownMenuContent>
