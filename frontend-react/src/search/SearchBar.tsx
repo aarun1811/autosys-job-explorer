@@ -3,7 +3,7 @@ import { SearchIcon, XIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { useRecentSearches } from '@/search/hooks/useRecentSearches'
 import { SearchSuggestDropdown } from '@/search/SearchSuggestDropdown'
 
@@ -49,6 +49,7 @@ export function SearchBar({
   const { recents, remove: removeRecent, clear: clearRecents } = useRecentSearches()
   const [isOpen, setIsOpen] = useState(false)
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const [wordIdx, setWordIdx] = useState(0)
 
   const typing = value.trim().length >= 2
@@ -74,9 +75,9 @@ export function SearchBar({
   }
 
   return (
-    <div className={`flex items-center ${hero ? 'gap-2.5' : 'gap-2'}`}>
+    <div ref={rootRef} className={`flex items-center ${hero ? 'gap-2.5' : 'gap-2'}`}>
       <Popover open={isOpen && hasContent} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
+        <PopoverAnchor asChild>
           <div
             className={
               hero
@@ -132,13 +133,25 @@ export function SearchBar({
               </Button>
             )}
           </div>
-        </PopoverTrigger>
+        </PopoverAnchor>
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-xl p-0 shadow-lg"
           align="start"
           sideOffset={8}
-          // The Input owns focus; don't let Radix steal it from the trigger.
+          // The Input owns focus; keep it there (don't autofocus the content)
+          // and don't let Radix's dismiss layer steal/close on that focus.
           onOpenAutoFocus={(e) => e.preventDefault()}
+          // Interactions WITHIN the search row (clicking/focusing the input,
+          // the clear-X, the Search button) must not dismiss the panel — closing
+          // is driven by blur (focus truly leaving) + Escape + picking an item.
+          // This is what makes "click into the input" keep recents open instead
+          // of the open→dismiss flicker.
+          onInteractOutside={(e) => {
+            if (rootRef.current?.contains(e.target as Node)) e.preventDefault()
+          }}
+          onFocusOutside={(e) => {
+            if (rootRef.current?.contains(e.target as Node)) e.preventDefault()
+          }}
         >
           <SearchSuggestDropdown
             value={value}
