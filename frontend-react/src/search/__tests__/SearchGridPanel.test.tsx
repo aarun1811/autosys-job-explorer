@@ -10,6 +10,7 @@ import {
   Outlet,
 } from '@tanstack/react-router'
 import { SearchGridPanel } from '@/search/SearchGridPanel'
+import { encodeViewState, type GridViewState } from '@/search/lib/gridViewState'
 
 const exportMock = vi.hoisted(() => vi.fn())
 vi.mock('@/search/lib/exportSearch', () => ({ exportSearchToExcel: exportMock }))
@@ -59,7 +60,7 @@ function mkCategory() {
   }
 }
 
-function renderPanel() {
+function renderPanel(view?: string) {
   const root = createRootRoute({ component: () => <Outlet /> })
   const search = createRoute({
     getParentRoute: () => root,
@@ -71,9 +72,12 @@ function renderPanel() {
     }),
     component: () => <SearchGridPanel q="recon" category={mkCategory() as any} />,
   })
+  const initialEntry = view
+    ? `/search?q=recon&tab=jobName&view=${encodeURIComponent(view)}`
+    : '/search?q=recon&tab=jobName'
   const router = createRouter({
     routeTree: root.addChildren([search]),
-    history: createMemoryHistory({ initialEntries: ['/search?q=recon&tab=jobName'] }),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
   })
   render(<RouterProvider router={router} />)
   return router
@@ -143,6 +147,20 @@ describe('SearchGridPanel', () => {
     // The current session URL is NOT mutated — navigating would re-render the
     // grid and reset column visibility / collapse groups (the bug this fixes).
     expect(router.state.location.search).not.toHaveProperty('view')
+  })
+
+  test('seeds the active-filter badge from a restored shared view on first paint', async () => {
+    const state: GridViewState = {
+      columnState: [{ colId: 'job_name', hide: false }],
+      filterModel: { job_name: { filterType: 'text', type: 'contains', filter: 'recon' } },
+      dedup: false,
+      density: 'normal',
+      expandedGroups: [],
+    }
+    renderPanel(encodeViewState(state))
+    // No interaction: initialState applies the filter without a filterChanged
+    // event, so the seeded count must reflect the 1-key filter model immediately.
+    expect(await screen.findByLabelText('active filters')).toHaveTextContent('1')
   })
 
   test('Export downloads via the backend export endpoint', async () => {

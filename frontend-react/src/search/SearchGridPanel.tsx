@@ -37,7 +37,9 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const [density, setDensity] = useState<GridDensity>(() => restored?.density ?? 'normal')
   const [isDeduplicated, setIsDeduplicated] = useState(() => restored?.dedup ?? false)
   const [isExporting, setIsExporting] = useState(false)
-  const [activeFilterCount, setActiveFilterCount] = useState(0)
+  const [activeFilterCount, setActiveFilterCount] = useState(
+    () => (restored?.filterModel ? Object.keys(restored.filterModel).length : 0),
+  )
   const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
