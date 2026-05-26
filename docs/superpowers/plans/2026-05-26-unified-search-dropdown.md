@@ -235,7 +235,10 @@ describe('SearchSuggestDropdown', () => {
     setup()
     const opts = screen.getAllByRole('option')
     expect(opts).toHaveLength(2)
-    expect(screen.getByText('trades')).toBeInTheDocument()
+    // Labels are split into {head}<strong>{tail}</strong>, so assert on the
+    // option's concatenated text content, not getByText (which matches a single
+    // text node and would miss "trades" split as "tr" | "ades").
+    expect(opts[1]).toHaveTextContent('trades')
   })
 
   test('marks the active option aria-selected', () => {
@@ -253,7 +256,8 @@ describe('SearchSuggestDropdown', () => {
 
   test('clicking an option calls onPick with its text', () => {
     const { onPick } = setup()
-    fireEvent.click(screen.getByText('trades'))
+    // Click the option element itself (label is split across text nodes).
+    fireEvent.click(screen.getAllByRole('option')[1])
     expect(onPick).toHaveBeenCalledWith('trades')
   })
 
@@ -473,10 +477,13 @@ describe('SearchBar', () => {
     renderBar({ value: 'tr', suggestions: ['trades', 'tracking'] })
     fireEvent.focus(screen.getByRole('combobox'))
     const opts = screen.getAllByRole('option')
-    // matching recent "trade" first, then suggestions; "box" excluded
+    // matching recent "trade" first, then suggestions; "box" excluded.
+    // Labels are split into {head}<strong>{tail}</strong>, so assert on each
+    // option's concatenated text content (getByText matches a single node).
+    expect(opts).toHaveLength(3)
     expect(opts[0]).toHaveTextContent('trade')
-    expect(screen.getByText('tracking')).toBeInTheDocument()
-    expect(screen.queryByText('box')).not.toBeInTheDocument()
+    expect(opts[2]).toHaveTextContent('tracking')
+    expect(opts.some((o) => o.textContent === 'box')).toBe(false)
   })
 
   test('ArrowUp past the top clears the highlight (returns to typed text)', () => {
@@ -543,6 +550,11 @@ import { buildSuggestItems } from '@/search/lib/buildSuggestItems'
   )
   const hasContent = items.length > 0
   const open = isOpen && hasContent
+  // Derived clamp: `suggestions` is a DEBOUNCED prop — it can rebuild `items`
+  // (shrink it) ~300ms after the last keystroke with NO onChange to reset
+  // activeIndex. Reading a clamped value everywhere keeps the highlight + Enter
+  // honest without a set-state-in-effect (which the lint forbids).
+  const safeActiveIndex = activeIndex >= 0 && activeIndex < items.length ? activeIndex : -1
 ```
 
   (Delete the old `const typing = …` and `const hasContent = typing ? … : …` lines.)
@@ -568,9 +580,9 @@ import { buildSuggestItems } from '@/search/lib/buildSuggestItems'
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      if (open && activeIndex >= 0 && items[activeIndex]) {
+      if (open && safeActiveIndex >= 0) {
         e.preventDefault()
-        pick(items[activeIndex].text)
+        pick(items[safeActiveIndex].text)
       } else {
         submit()
       }
@@ -581,13 +593,15 @@ import { buildSuggestItems } from '@/search/lib/buildSuggestItems'
       return
     }
     if (!hasContent) return
+    // Arrow math is based on the CLAMPED index so a stale out-of-range value
+    // (from a debounced suggestions update) self-corrects on the next press.
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setIsOpen(true)
-      setActiveIndex((i) => Math.min(i + 1, items.length - 1))
+      setActiveIndex(Math.min(safeActiveIndex + 1, items.length - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setActiveIndex((i) => Math.max(i - 1, -1))
+      setActiveIndex(Math.max(safeActiveIndex - 1, -1))
     } else if (e.key === 'Home') {
       e.preventDefault()
       setActiveIndex(0)
@@ -607,7 +621,7 @@ import { buildSuggestItems } from '@/search/lib/buildSuggestItems'
               aria-expanded={open}
               aria-controls={listboxId}
               aria-autocomplete="list"
-              aria-activedescendant={open && activeIndex >= 0 ? optionId(activeIndex) : undefined}
+              aria-activedescendant={open && safeActiveIndex >= 0 ? optionId(safeActiveIndex) : undefined}
               aria-label={rollingPlaceholder ? 'Search' : undefined}
               className={ /* unchanged */ }
               placeholder={rollingPlaceholder ? '' : placeholder}
@@ -634,7 +648,7 @@ import { buildSuggestItems } from '@/search/lib/buildSuggestItems'
           <SearchSuggestDropdown
             items={items}
             query={value}
-            activeIndex={activeIndex}
+            activeIndex={safeActiveIndex}
             recentsHeader={value.trim() === ''}
             onPick={pick}
             onRemoveRecent={removeRecent}
