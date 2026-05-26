@@ -29,7 +29,6 @@ import type { GridDensity } from '@/search/lib/gridConfig'
 export interface GridToolbarProps {
   density: GridDensity
   isDeduplicated: boolean
-  isSidebarVisible: boolean
   isExporting: boolean
   onToggleSidebar: () => void
   onToggleDensity: () => void
@@ -89,7 +88,7 @@ export function GridToolbar(props: GridToolbarProps): React.ReactElement {
       <div className="flex h-11 items-center gap-0.5 border-b px-3">
         <div className="flex-1" />
         {/* View */}
-        <ToolButton label="Toggle columns and filters panel" pressed={props.isSidebarVisible} onClick={props.onToggleSidebar}>
+        <ToolButton label="Toggle columns and filters panel" onClick={props.onToggleSidebar}>
           <PanelRightIcon className="size-4" />
         </ToolButton>
         <ToolButton label="Toggle row density" pressed={props.density === 'compact'} onClick={props.onToggleDensity}>

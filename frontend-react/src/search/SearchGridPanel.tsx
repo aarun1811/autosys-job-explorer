@@ -31,7 +31,6 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const apiRef = useRef<GridApi | null>(null)
   const [density, setDensity] = useState<GridDensity>('normal')
   const [isDeduplicated, setIsDeduplicated] = useState(false)
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -58,9 +57,11 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
   const onToggleSidebar = useCallback(() => {
     const api = apiRef.current
     if (!api) return
-    const next = !api.isSideBarVisible()
-    api.setSideBarVisible(next)
-    setIsSidebarVisible(next)
+    const visible = api.isSideBarVisible()
+    api.setSideBarVisible(!visible)
+    // Angular parity (toggleSidePanel): on open, expand the Columns panel —
+    // not just the tab strip — so the column list is immediately usable.
+    if (!visible) api.openToolPanel('columns')
   }, [])
 
   const onToggleDensity = useCallback(() => {
@@ -156,7 +157,6 @@ export function SearchGridPanel({ q, category }: SearchGridPanelProps): React.Re
       <GridToolbar
         density={density}
         isDeduplicated={isDeduplicated}
-        isSidebarVisible={isSidebarVisible}
         isExporting={isExporting}
         onToggleSidebar={onToggleSidebar}
         onToggleDensity={onToggleDensity}

@@ -23,13 +23,12 @@ function makeSpies() {
   }
 }
 
-function setup(state?: { density?: GridDensity; isDeduplicated?: boolean; isSidebarVisible?: boolean; isExporting?: boolean }) {
+function setup(state?: { density?: GridDensity; isDeduplicated?: boolean; isExporting?: boolean }) {
   const spies = makeSpies()
   render(
     <GridToolbar
       density={state?.density ?? 'normal'}
       isDeduplicated={state?.isDeduplicated ?? false}
-      isSidebarVisible={state?.isSidebarVisible ?? false}
       isExporting={state?.isExporting ?? false}
       {...spies}
     />,

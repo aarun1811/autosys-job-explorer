@@ -15,8 +15,7 @@ import { SearchGridPanel } from '@/search/SearchGridPanel'
 const mockApi = {
   setSideBarVisible: vi.fn(),
   isSideBarVisible: vi.fn(() => false),
-  setGridOption: vi.fn(),
-  resetRowHeights: vi.fn(),
+  openToolPanel: vi.fn(),
   autoSizeAllColumns: vi.fn(),
   resetColumnState: vi.fn(),
   setFilterModel: vi.fn(),
@@ -82,6 +81,14 @@ beforeEach(() => {
 })
 
 describe('SearchGridPanel', () => {
+  test('Toggle panel reveals the sidebar and opens the Columns panel (Angular parity)', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Toggle columns and filters panel' }))
+    // isSideBarVisible() is mocked false → opening: show sidebar + expand Columns.
+    expect(mockApi.setSideBarVisible).toHaveBeenCalledWith(true)
+    expect(mockApi.openToolPanel).toHaveBeenCalledWith('columns')
+  })
+
   test('Expand all calls api.expandAll', async () => {
     renderPanel()
     fireEvent.click(await screen.findByRole('button', { name: 'Expand all groups' }))

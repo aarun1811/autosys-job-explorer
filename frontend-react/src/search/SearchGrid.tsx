@@ -8,7 +8,7 @@ import type {
   FirstDataRenderedEvent,
   RowDoubleClickedEvent,
 } from 'ag-grid-community'
-import { rowHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
+import { GRID_SIDEBAR, rowHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { columnsToColDefs } from '@/search/lib/configToColDefs'
@@ -119,7 +119,7 @@ export function SearchGrid({
         serverSideDatasource={datasource}
         columnDefs={columnDefs}
         components={cellRenderers}
-        sideBar={{ toolPanels: ['columns', 'filters'] }}
+        sideBar={GRID_SIDEBAR}
         rowGroupPanelShow="always"
         rowHeight={rowHeightForDensity(density)}
         cacheBlockSize={100}
