@@ -1,11 +1,13 @@
 // src/search/__tests__/gridConfig.test.ts
 import { describe, test, expect } from 'vitest'
-import { rowHeightForDensity, GRID_SIDEBAR } from '@/search/lib/gridConfig'
+import { rowHeightForDensity, headerHeightForDensity, GRID_SIDEBAR } from '@/search/lib/gridConfig'
 
 describe('gridConfig', () => {
-  test('rowHeightForDensity: compact is shorter than normal', () => {
-    expect(rowHeightForDensity('compact')).toBe(28)
-    expect(rowHeightForDensity('normal')).toBe(36)
+  test('rowHeightForDensity + headerHeightForDensity match Angular (24/32, 32/36)', () => {
+    expect(rowHeightForDensity('compact')).toBe(24)
+    expect(rowHeightForDensity('normal')).toBe(32)
+    expect(headerHeightForDensity('compact')).toBe(32)
+    expect(headerHeightForDensity('normal')).toBe(36)
   })
 
   test('sidebar opens to a clean Columns panel (no pivot/values clutter)', () => {

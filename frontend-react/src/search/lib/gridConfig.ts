@@ -5,7 +5,11 @@ import type { SideBarDef } from 'ag-grid-community'
 export type GridDensity = 'normal' | 'compact'
 
 export function rowHeightForDensity(density: GridDensity): number {
-  return density === 'compact' ? 28 : 36
+  return density === 'compact' ? 24 : 32
+}
+
+export function headerHeightForDensity(density: GridDensity): number {
+  return density === 'compact' ? 32 : 36
 }
 
 /**
