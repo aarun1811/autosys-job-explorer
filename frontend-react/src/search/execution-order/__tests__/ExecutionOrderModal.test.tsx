@@ -1,8 +1,13 @@
 import { describe, test, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 vi.mock('../ExecutionOrderGraph', () => ({
-  ExecutionOrderGraph: () => <div data-testid="eo-graph-mock" />,
+  // Clicking the mock graph drives onSelect, so we can exercise selection state.
+  ExecutionOrderGraph: ({ onSelect }: { onSelect: (id: string) => void }) => (
+    <button type="button" data-testid="eo-graph-mock" onClick={() => onSelect('PICKED_JOB')}>
+      graph
+    </button>
+  ),
 }))
 vi.mock('../PipelineSummaryStrip', () => ({
   PipelineSummaryStrip: ({ data }: { data: { statusAvailable: boolean } }) => (
@@ -74,5 +79,18 @@ describe('ExecutionOrderModal', () => {
     expect(screen.getByTestId('eo-empty')).toBeInTheDocument()
     expect(screen.queryByTestId('eo-graph-mock')).toBeNull()
     expect(screen.queryByTestId('eo-strip-mock')).toBeNull()
+  })
+
+  test('reopening resets the selection back to the run overview (spec §5)', () => {
+    const { rerender } = render(
+      <ExecutionOrderModal data={base()} jobName="LOAD-ABC-123" open onOpenChange={vi.fn()} />,
+    )
+    // Select a node via the graph → inspector opens that job.
+    fireEvent.click(screen.getByTestId('eo-graph-mock'))
+    expect(screen.getByTestId('eo-inspector-mock')).toHaveTextContent('PICKED_JOB')
+    // Close, then reopen → selection cleared, inspector back to the empty state.
+    rerender(<ExecutionOrderModal data={base()} jobName="LOAD-ABC-123" open={false} onOpenChange={vi.fn()} />)
+    rerender(<ExecutionOrderModal data={base()} jobName="LOAD-ABC-123" open onOpenChange={vi.fn()} />)
+    expect(screen.getByTestId('eo-inspector-mock')).toHaveTextContent('EMPTY')
   })
 })

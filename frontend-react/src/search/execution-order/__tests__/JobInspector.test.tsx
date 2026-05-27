@@ -39,6 +39,21 @@ describe('JobInspector', () => {
     expect(screen.getByTestId('eo-run-overview-mock')).toBeInTheDocument()
   })
 
+  test('renders the last-run card + owner when a job has live status but no JIL details', () => {
+    // A sequence job can have a run history (status) without a jobDetails row.
+    // The runtime gold must still surface — not collapse to the run overview.
+    render(<JobInspector jobName="PRE_LOAD_TRADE_RECON_001" details={undefined} status={status} statusAvailable data={overviewData} />)
+    expect(screen.queryByTestId('eo-run-overview-mock')).toBeNull()
+    expect(screen.getByTestId('eo-last-run')).toBeInTheDocument()
+    expect(screen.getByText('svc_recon')).toBeInTheDocument() // owner, from status
+    expect(screen.getByText('2m 5s')).toBeInTheDocument()      // duration
+  })
+
+  test('falls back to RunOverview when the selected job has neither details nor status', () => {
+    render(<JobInspector jobName="GHOST" details={undefined} status={null} statusAvailable data={overviewData} />)
+    expect(screen.getByTestId('eo-run-overview-mock')).toBeInTheDocument()
+  })
+
   test('last-run card leads with duration · exit code · retries used', () => {
     render(<JobInspector jobName="PRE_LOAD_TRADE_RECON_001" details={details} status={status} statusAvailable data={overviewData} />)
     // duration = 125s = "2m 5s"

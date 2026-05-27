@@ -58,14 +58,21 @@ function Metric({ icon: Icon, label, value }: { icon: typeof TimerIcon; label: s
  * Slide-in keyed by job name; reduced-motion gated globally by MotionConfig.
  */
 export function JobInspector({ jobName, details, status, statusAvailable, data }: Props) {
-  if (!jobName || !details) {
+  // Show the inspector when something is selected AND we have definition OR live
+  // status to show. A sequence job can have a live run but no JIL row (jobDetails
+  // comes from a different table than the sequence), so don't suppress the
+  // runtime gold just because details are missing — only fall back to the run
+  // overview when truly nothing is selected / nothing to show.
+  if (!jobName || (!details && !status)) {
     return <RunOverview data={data} />
   }
 
-  const TypeIcon = details.jobType === 'BOX' ? FolderIcon : CodeIcon
+  const TypeIcon = details?.jobType === 'BOX' ? FolderIcon : CodeIcon
   const cfg = status ? STATUS_CONFIG[status.visualState] : null
   const showLastRun = statusAvailable && status
   const duration = status ? formatDuration(status.lastStartEpoch, status.lastEndEpoch) : null
+  const command = details?.command ?? ''
+  const description = details?.description ?? ''
 
   return (
     <m.div
@@ -129,13 +136,13 @@ export function JobInspector({ jobName, details, status, statusAvailable, data }
 
       {/* Definition — owner reads from STATUS (not JobDetails); rows self-hide when empty. */}
       <Row icon={UserIcon} label="Owner" value={status?.owner ?? ''} />
-      <Row icon={ServerIcon} label="Machine" value={details.machine} />
-      <Row icon={BoxIcon} label="Box" value={details.boxName} />
-      <Row icon={CalendarIcon} label="Run Calendar" value={details.runCalendar} />
-      <Row icon={CalendarOffIcon} label="Exclude Calendar" value={details.excludeCalendar} />
+      <Row icon={ServerIcon} label="Machine" value={details?.machine ?? ''} />
+      <Row icon={BoxIcon} label="Box" value={details?.boxName ?? ''} />
+      <Row icon={CalendarIcon} label="Run Calendar" value={details?.runCalendar ?? ''} />
+      <Row icon={CalendarOffIcon} label="Exclude Calendar" value={details?.excludeCalendar ?? ''} />
 
       {/* Command */}
-      {details.command && (
+      {command && (
         <div className="border-b px-4 py-3 last:border-b-0">
           <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <span className="flex items-center gap-2"><TerminalIcon className="size-3.5" />Command</span>
@@ -143,23 +150,23 @@ export function JobInspector({ jobName, details, status, statusAvailable, data }
               type="button"
               aria-label="Copy command"
               className="text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => copy(details.command, 'command')}
+              onClick={() => copy(command, 'command')}
             >
               <CopyIcon className="size-3.5" />
             </button>
           </div>
-          <pre className="overflow-x-auto rounded-md bg-muted/50 px-2.5 py-2 font-mono text-xs leading-relaxed whitespace-pre">{details.command}</pre>
+          <pre className="overflow-x-auto rounded-md bg-muted/50 px-2.5 py-2 font-mono text-xs leading-relaxed whitespace-pre">{command}</pre>
         </div>
       )}
 
       {/* Description */}
-      {details.description && (
+      {description && (
         <div className="border-b px-4 py-3 last:border-b-0">
           <div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <InfoIcon className="size-3.5" />
             Description
           </div>
-          <p className="text-sm leading-relaxed">{details.description}</p>
+          <p className="text-sm leading-relaxed">{description}</p>
         </div>
       )}
     </m.div>

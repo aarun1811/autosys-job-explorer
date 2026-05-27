@@ -40,6 +40,20 @@ export function ExecutionOrderModal({ data, jobName, open, onOpenChange }: Props
   const [selected, setSelected] = useState<string | null>(null)
   const [matches, setMatches] = useState<string[]>([])
 
+  // Reset selection + quick-find on each fresh open (spec §5: reopening starts
+  // clean). Done as a render-time adjustment on the open transition — not an
+  // effect (avoids set-state-in-effect). The graph subtree remounts via Radix
+  // when the dialog opens, so smart-focus re-runs; clearing `selected` here lets
+  // that initial focus win instead of snapping back to a stale selection.
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) {
+      setSelected(null)
+      setMatches([])
+    }
+  }
+
   const empty = isEmptyExecutionOrder(data)
   const r = rollup(data.jobStatuses)
   const selectedDetails = selected ? data.jobDetails?.[selected] : undefined
