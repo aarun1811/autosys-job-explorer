@@ -154,7 +154,10 @@ Order is triage-first:
    out of scope this slice). Beneath: started/ended timestamps (formatted, IST), **run machine**,
    run number.
 3. **Definition** — `owner`, `machine`, `box`, `run calendar`, `exclude calendar`. Sections/rows render
-   only when data exists (no "N/A" noise).
+   only when data exists (no "N/A" noise). **Frontend wiring note:** `owner` arrives on the
+   `JobStatusInfo`/`status` object (sourced from `ujo_job` via `JobStatusService`), *not* on
+   `JobDetails` — `JobDetailsDTO` has no `owner`. Group it visually with definition fields but read it
+   from `status`.
 4. **Command** — monospace `<pre>`, horizontally scrollable, with a copy affordance.
 5. **Description** — prose.
 
@@ -205,12 +208,18 @@ suppress the per-`<Handle>` hover cursor. Fix:
 
 1. **`JobStatusService`** — extend the SELECT (today `uj.job_name, ujs.status, ujs.next_start`) to also
    fetch the six `ujo_job_status` runtime columns + `uj.owner`. Same `LEFT JOIN ujo_job_status ON
-   uj.joid = ujs.joid`. The row mapper tolerates nulls (jobs with no run history return null runtime
-   fields, not errors). `createDefaultStatus` (the not-found path) sets the new fields to null.
+   uj.joid = ujs.joid`. **The real coupling point is the `JobStatusInfo.fromDatabase(...)` factory**
+   (today 3-arg: `jobName, status, nextStart`, called at `JobStatusService.java:67`) — it must grow
+   to thread the seven new columns through (or be supplemented by builder/setters post-construction).
+   The row mapper tolerates nulls (jobs with no run history return null runtime fields, not errors).
+   `createDefaultStatus` (the not-found path, `JobStatusService.java:111`) uses the builder directly,
+   so unset new fields are already null — no extra work there.
 2. **`JobStatusInfo` DTO** — add fields, mirroring the existing `nextStartEpoch`/`nextStartFormatted`
    pattern: `lastStartEpoch`/`lastStartFormatted`, `lastEndEpoch`/`lastEndFormatted`, `exitCode`,
    `runNum`, `retries`, `runMachine`, `owner`. Epoch→formatted conversion follows the existing
-   `next_start` formatting (IST). **Duration is derived on the frontend** from the two epochs.
+   `next_start` formatting (`Instant.ofEpochSecond(...)`, IST). **Epochs are seconds, not millis**
+   (the in-repo contract — `next_start` is epoch-seconds). **Duration is derived on the frontend** as
+   `lastEndEpoch − lastStartEpoch` (seconds) and formatted there.
 3. **`ExecutionOrderService`** — no query change; it already merges `JobStatusInfo` per job. The richer
    DTO flows straight through to the existing `/api/execution-order/{job}` payload.
 4. **Frontend `types.ts`** — extend the `JobStatusInfo` interface to match the new wire shape; add a
@@ -228,7 +237,11 @@ exercise the runtime gold locally:
   `last_start NUMBER(19)`, `last_end NUMBER(19)`, `run_num NUMBER(10)`, `ntry NUMBER(10)`,
   `exit_code NUMBER(10)`, `run_machine VARCHAR2(80)`.
 - **Data (`data/02-autosys-inserts.sql`)** — populate the new columns, **folding in the previously
-  ephemeral step-status rows** so colors + runtime survive `apply.py --reset`.
+  ephemeral step-status rows** so colors + runtime survive `apply.py --reset`. **Fix the status-code
+  mapping while reseeding:** the current seed comments say "4=FAILURE" but
+  `JobStatusInfo.mapStatusCodeToVisualState` maps `4→COMPLETED` and `5→FAILED` — so today no seeded
+  row resolves to `FAILED`. Seed at least one job with status `5` (and a non-zero `exit_code`) so
+  smart-focus ("first FAILED") and the "Attention — N failed" rollup are actually exercisable locally.
 - Sibling repo tests updated. This mirrors the Part-A pattern (separate branch in
   `../rectrace-local-dev`).
 
@@ -241,7 +254,7 @@ Evolves the existing 8 files; adds a few focused ones. (Frontend root: `frontend
 | `ExecutionOrderModal.tsx` | Modify | Shell: header + state pill, summary strip, body split (graph ‖ inspector). |
 | `PipelineSummaryStrip.tsx` | Create | Segmented bar + counts + rollup state pill; hosts QuickFind. |
 | `QuickFind.tsx` | Create | Search input, match cycling, exposes match-set + active match. |
-| `ExecutionOrderGraph.tsx` | Modify | RF wrapper: smart-focus init, `panOnScroll`, controls, minimap gate, neutral non-interactive spine, find dim/highlight, crosshair fix. |
+| `ExecutionOrderGraph.tsx` | Modify | RF wrapper: smart-focus init, `panOnScroll`, controls, minimap gate, neutral non-interactive spine, find dim/highlight, crosshair fix. **Must wrap the graph body in `<ReactFlowProvider>`** (none exists today) so smart-focus/quick-find centering can call `setCenter`/`fitView` via `useReactFlow()` from a child — those hooks throw without the provider. |
 | `JobFlowNode.tsx` | Modify | Redesigned node: accent bar, ordinal, glyph, status icon, running pulse, hover trigger, dim/highlight/selected states. |
 | `NodeRuntimePopover.tsx` | Create | Hover card rendering the runtime gold. |
 | `JobInspector.tsx` | Modify (rename from `JobDetailsPanel.tsx`) | Identity → last-run card → definition → command → description; copy affordances. |
@@ -253,8 +266,11 @@ Evolves the existing 8 files; adds a few focused ones. (Frontend root: `frontend
 | `index.css` | Modify | Accent-bar, popover-surface, neutral-spine tokens, pulse keyframes (no raw hex). |
 | `renderers/ExecutionOrderCellRenderer.tsx` | Unchanged | Still passes fetched data into the modal. |
 
-**Backend:** `JobStatusService.java` (query + mapper), `JobStatusInfo.java` (fields). **Sibling:**
-`schema/02-autosys.sql`, `data/02-autosys-inserts.sql` (+ tests).
+**Backend:** `JobStatusService.java` (query + `fromDatabase` factory), `JobStatusInfo.java` (fields),
+**`JobStatusServiceTest.java` (Create — does not exist today).** The row mapper is currently an inline
+lambda inside `getBatchJobStatus`; to unit-test the column→DTO mapping cleanly, extract it to a
+named/package-private `RowMapper` (or test via the factory). **Sibling:** `schema/02-autosys.sql`,
+`data/02-autosys-inserts.sql` (+ tests).
 
 ## 9. Testing strategy (TDD)
 
