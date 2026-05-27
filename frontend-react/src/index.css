@@ -393,3 +393,22 @@
 /* React Flow edges + arrowheads — token-driven, theme-aware (no hex). */
 .react-flow__edge-path { stroke: color-mix(in oklab, var(--foreground) 28%, transparent); }
 .react-flow__arrowhead { fill: color-mix(in oklab, var(--foreground) 28%, transparent); }
+
+/* React Flow MiniMap + Controls chrome — RF ships light-mode defaults (white
+   minimap / white control buttons) that clash in dark mode. Drive RF's OWN theme
+   variables (consumed by its built-in rules, so they win regardless of stylesheet
+   import order) with our tokens. No hex. */
+.react-flow {
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background) 55%, transparent);
+  --xy-minimap-node-background-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+/* Additive framing (not cascade-fighting): hairline border + radius. */
+.react-flow__minimap { border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.react-flow__controls { border-radius: var(--radius-sm); overflow: hidden; }
