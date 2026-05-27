@@ -94,16 +94,39 @@ export interface Rollup {
   overall: OverallState
 }
 
-/** Pure status rollup for the summary strip + run overview. Null-tolerant. */
+/**
+ * lower(jobName) -> visualState. Mirrors findJobStatus's case-insensitivity
+ * (JobStatusService keys jobStatuses UPPERCASE) without importing statusConfig
+ * (types.ts must not depend on it — would be an import cycle).
+ */
+function statesByLowerName(
+  data: ExecutionOrderData | null | undefined,
+): Map<string, VisualState> {
+  const m = new Map<string, VisualState>()
+  for (const [key, info] of Object.entries(data?.jobStatuses ?? {})) {
+    m.set(key.toLowerCase(), info.visualState)
+  }
+  return m
+}
+
+/**
+ * Status rollup over the execution-order NODES (the sequence) — NOT the raw
+ * jobStatuses map. The backend includes the parent load "box" in jobStatuses,
+ * and it is not a graph node, so counting the map double-counts it (total would
+ * exceed "N jobs"). We count each sequence member, resolving its status
+ * case-insensitively and defaulting an absent one to INACTIVE, so total always
+ * equals the node count. Pure, null-tolerant.
+ */
 export function rollup(
-  jobStatuses: Record<string, JobStatusInfo> | null | undefined,
+  data: ExecutionOrderData | null | undefined,
 ): Rollup {
   const counts: Record<VisualState, number> = {
     COMPLETED: 0, FAILED: 0, RUNNING: 0, WAITING: 0, INACTIVE: 0,
   }
-  const values = jobStatuses ? Object.values(jobStatuses) : []
-  for (const v of values) counts[v.visualState] += 1
-  const total = values.length
+  const seq = data?.executionSequence ?? []
+  const states = statesByLowerName(data)
+  for (const j of seq) counts[states.get(j.jobName.toLowerCase()) ?? 'INACTIVE'] += 1
+  const total = seq.length
   let overall: OverallState
   if (counts.FAILED > 0) overall = 'ATTENTION'
   else if (counts.RUNNING > 0) overall = 'RUNNING'
@@ -136,17 +159,11 @@ export function pickFocusNodeId(
 ): string | null {
   const seq = data?.executionSequence ?? []
   if (seq.length === 0) return null
-  // Resolve case-insensitively: JobStatusService keys jobStatuses by the
-  // UPPERCASE job name, so an exact index by the raw sequence name would miss on
-  // any casing difference and silently drop smart-focus to the top node. Mirrors
-  // findJobStatus (statusConfig) without importing it — types.ts must not depend
-  // on statusConfig (would create an import cycle).
-  const stateByLower = new Map<string, VisualState>()
-  for (const [key, info] of Object.entries(data?.jobStatuses ?? {})) {
-    stateByLower.set(key.toLowerCase(), info.visualState)
-  }
+  // Resolve case-insensitively (JobStatusService keys jobStatuses UPPERCASE) so
+  // smart-focus doesn't silently fall back to the top node on a casing mismatch.
+  const states = statesByLowerName(data)
   const stateOf = (name: string): VisualState =>
-    stateByLower.get(name.toLowerCase()) ?? 'INACTIVE'
+    states.get(name.toLowerCase()) ?? 'INACTIVE'
   const failed = seq.find((j) => stateOf(j.jobName) === 'FAILED')
   if (failed) return failed.jobName
   const running = seq.find((j) => stateOf(j.jobName) === 'RUNNING')

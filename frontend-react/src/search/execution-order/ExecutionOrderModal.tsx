@@ -55,7 +55,7 @@ export function ExecutionOrderModal({ data, jobName, open, onOpenChange }: Props
   }
 
   const empty = isEmptyExecutionOrder(data)
-  const r = rollup(data.jobStatuses)
+  const r = rollup(data)
   const selectedDetails = selected ? data.jobDetails?.[selected] : undefined
   const selectedStatus = selected ? findJobStatus(data.jobStatuses, selected) : null
 

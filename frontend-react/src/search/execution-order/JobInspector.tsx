@@ -7,6 +7,7 @@ import { m } from 'motion/react'
 import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { STATUS_CONFIG } from './statusConfig'
 import { RunOverview } from './RunOverview'
 import { formatDuration, type JobDetails, type JobStatusInfo, type ExecutionOrderData } from './types'
@@ -75,6 +76,7 @@ export function JobInspector({ jobName, details, status, statusAvailable, data }
   const description = details?.description ?? ''
 
   return (
+    <TooltipProvider delayDuration={200}>
     <m.div
       key={jobName}
       initial={{ opacity: 0, x: 8 }}
@@ -92,14 +94,19 @@ export function JobInspector({ jobName, details, status, statusAvailable, data }
             {status.statusName}
           </span>
         )}
-        <button
-          type="button"
-          aria-label="Copy job name"
-          className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-          onClick={() => copy(jobName, 'job name')}
-        >
-          <CopyIcon className="size-3.5" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label="Copy job name"
+              className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => copy(jobName, 'job name')}
+            >
+              <CopyIcon className="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Copy job name only</TooltipContent>
+        </Tooltip>
       </div>
 
       {showLastRun && status.nextStartFormatted && (
@@ -146,14 +153,19 @@ export function JobInspector({ jobName, details, status, statusAvailable, data }
         <div className="border-b px-4 py-3 last:border-b-0">
           <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             <span className="flex items-center gap-2"><TerminalIcon className="size-3.5" />Command</span>
-            <button
-              type="button"
-              aria-label="Copy command"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => copy(command, 'command')}
-            >
-              <CopyIcon className="size-3.5" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Copy command"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => copy(command, 'command')}
+                >
+                  <CopyIcon className="size-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Copy command</TooltipContent>
+            </Tooltip>
           </div>
           <pre className="overflow-x-auto rounded-md bg-muted/50 px-2.5 py-2 font-mono text-xs leading-relaxed whitespace-pre">{command}</pre>
         </div>
@@ -170,5 +182,6 @@ export function JobInspector({ jobName, details, status, statusAvailable, data }
         </div>
       )}
     </m.div>
+    </TooltipProvider>
   )
 }

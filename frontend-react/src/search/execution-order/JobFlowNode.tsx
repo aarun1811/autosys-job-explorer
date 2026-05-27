@@ -39,7 +39,7 @@ export function JobFlowNode({ data, selected }: NodeProps<FlowNode>) {
           cfg.nodeClassName,
           cfg.pulse && 'eo-pulse',
           data.dimmed && 'eo-node-dim',
-          selected && 'ring-2 ring-primary ring-offset-1 ring-offset-background',
+          selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background eo-node-selected',
         )}
       >
         <span

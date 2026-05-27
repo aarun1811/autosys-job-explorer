@@ -476,3 +476,23 @@
 .eo-seg-running   { background: var(--status-running); }
 .eo-seg-waiting   { background: var(--status-waiting); }
 .eo-seg-inactive  { background: var(--status-inactive); }
+
+/* Hover runtime popover must float ABOVE the next node. React Flow paints nodes
+   in array order, so the sibling below would otherwise clip an overflowing
+   overlay. Raise the hovered node's stacking context (!important to beat RF's
+   inline per-node z-index). Selected nodes are already elevated by RF's
+   elevateNodesOnSelect. */
+.react-flow__node:hover { z-index: 20 !important; }
+
+/* Selected node — soft primary glow + a one-shot scale pop on select (the focus
+   ring is applied inline on the node). The pop is stilled under
+   prefers-reduced-motion by the global clamp in this file; the glow remains. */
+@keyframes eo-select-pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.eo-node-selected {
+  animation: eo-select-pop 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 16px -2px color-mix(in oklab, var(--primary) 55%, transparent);
+}

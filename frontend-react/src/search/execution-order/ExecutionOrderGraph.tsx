@@ -116,7 +116,9 @@ function GraphView({ data, selected, matches, onSelect }: Props) {
       proOptions={{ hideAttribution: true }}
     >
       <Background variant={BackgroundVariant.Dots} gap={18} size={1} />
-      <Controls showInteractive={false}>
+      {/* showFitView={false}: we provide our own labeled "Fit all" below, so the
+          built-in (unlabeled, identical-action) fit button would just duplicate it. */}
+      <Controls showInteractive={false} showFitView={false}>
         <ControlButton aria-label="Fit all" title="Fit all" onClick={() => { void fitView({ padding: 0.2, duration: 350 }) }}>
           <MaximizeIcon className="size-3.5" />
         </ControlButton>

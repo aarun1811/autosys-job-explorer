@@ -1,19 +1,6 @@
 import { cn } from '@/lib/utils'
 import { QuickFind } from './QuickFind'
-import { rollup, type ExecutionOrderData, type OverallState, type VisualState } from './types'
-
-const STATE_PILL_LABEL: Record<OverallState, string> = {
-  ATTENTION: 'Attention',
-  RUNNING: 'Running',
-  HEALTHY: 'Healthy',
-  IDLE: 'Idle',
-}
-const STATE_PILL_BADGE: Record<OverallState, string> = {
-  ATTENTION: 'eo-badge-failed',
-  RUNNING: 'eo-badge-running',
-  HEALTHY: 'eo-badge-completed',
-  IDLE: 'eo-badge-inactive',
-}
+import { rollup, type ExecutionOrderData, type VisualState } from './types'
 
 // Segment fill class + count-label noun for each state, in display order.
 const SEGMENTS: { state: VisualState; seg: string; noun: string }[] = [
@@ -36,7 +23,7 @@ interface Props {
  * a quiet note (the layout never depends on live data — spec §6 graceful degrade).
  */
 export function PipelineSummaryStrip({ data, onActiveMatch, onMatchesChange }: Props) {
-  const r = rollup(data.jobStatuses)
+  const r = rollup(data)
   const total = data.executionSequence.length
   const present = SEGMENTS.filter((s) => r.counts[s.state] > 0)
 
@@ -60,12 +47,6 @@ export function PipelineSummaryStrip({ data, onActiveMatch, onMatchesChange }: P
                 <span key={s.state}> · {r.counts[s.state]} {s.noun}</span>
               ))}
             </div>
-            <span
-              data-testid="eo-state-pill"
-              className={cn('ml-1 shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', STATE_PILL_BADGE[r.overall])}
-            >
-              {STATE_PILL_LABEL[r.overall]}{r.failedCount > 0 ? ` — ${r.failedCount} failed` : ''}
-            </span>
           </>
         ) : (
           <span data-testid="eo-status-unavailable" className="text-xs text-muted-foreground">

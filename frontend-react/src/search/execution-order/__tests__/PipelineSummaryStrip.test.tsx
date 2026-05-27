@@ -35,7 +35,7 @@ function data(statusAvailable: boolean, statuses: Record<string, JobStatusInfo> 
 const noop = () => {}
 
 describe('PipelineSummaryStrip', () => {
-  test('renders counts and the rollup state pill (Attention — N failed)', () => {
+  test('renders the segmented bar + counts (no duplicate state pill — header owns it)', () => {
     const d = data(true, {
       A: status({ visualState: 'COMPLETED' }),
       B: status({ visualState: 'RUNNING' }),
@@ -46,16 +46,17 @@ describe('PipelineSummaryStrip', () => {
     expect(screen.getByText(/1 done/i)).toBeInTheDocument()
     expect(screen.getByText(/1 running/i)).toBeInTheDocument()
     expect(screen.getByText(/·\s*1 failed/i)).toBeInTheDocument()
-    expect(screen.getByTestId('eo-state-pill')).toHaveTextContent(/attention — 1 failed/i)
     expect(screen.getByTestId('eo-segbar')).toBeInTheDocument()
     expect(screen.getByTestId('eo-quickfind-mock')).toBeInTheDocument()
+    // The strip no longer renders its own state pill (deduped — the modal header
+    // carries the single "Attention — N failed" pill).
+    expect(screen.queryByTestId('eo-state-pill')).toBeNull()
   })
 
   test('collapses to a quiet "Live status unavailable" note when statusAvailable is false', () => {
     render(<PipelineSummaryStrip data={data(false, null)} onActiveMatch={noop} onMatchesChange={noop} />)
     expect(screen.getByTestId('eo-status-unavailable')).toBeInTheDocument()
     expect(screen.queryByTestId('eo-segbar')).toBeNull()
-    expect(screen.queryByTestId('eo-state-pill')).toBeNull()
     // QuickFind still available even with no live status.
     expect(screen.getByTestId('eo-quickfind-mock')).toBeInTheDocument()
   })

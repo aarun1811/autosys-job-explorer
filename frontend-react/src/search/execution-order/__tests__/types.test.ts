@@ -65,11 +65,11 @@ describe('formatDuration', () => {
 
 describe('rollup', () => {
   test('counts per visual state and reports overall FAILED first', () => {
-    const r = rollup({
+    const r = rollup(order(['a', 'b', 'c'], {
       a: status({ visualState: 'COMPLETED' }),
       b: status({ visualState: 'RUNNING' }),
       c: status({ visualState: 'FAILED' }),
-    })
+    }))
     expect(r.counts.FAILED).toBe(1)
     expect(r.counts.RUNNING).toBe(1)
     expect(r.counts.COMPLETED).toBe(1)
@@ -77,19 +77,47 @@ describe('rollup', () => {
     expect(r.overall).toBe('ATTENTION')
     expect(r.failedCount).toBe(1)
   })
+  test('counts ONLY sequence nodes — ignores extra jobStatuses (the load box)', () => {
+    // jobStatuses carries a 4th entry (the parent load box) that is NOT a graph
+    // node; rollup must count the 2 sequence members only, so total === "N jobs".
+    const r = rollup(order(['A', 'B'], {
+      A: status({ visualState: 'COMPLETED' }),
+      B: status({ visualState: 'FAILED' }),
+      LOAD_BOX: status({ visualState: 'COMPLETED' }),
+    }))
+    expect(r.total).toBe(2)
+    expect(r.counts.COMPLETED).toBe(1)
+    expect(r.counts.FAILED).toBe(1)
+    expect(r.overall).toBe('ATTENTION')
+  })
+  test('resolves member status case-insensitively (jobStatuses keyed UPPERCASE)', () => {
+    const r = rollup(order(['pre', 'main'], {
+      PRE: status({ visualState: 'COMPLETED' }),
+      MAIN: status({ visualState: 'FAILED' }),
+    }))
+    expect(r.counts.COMPLETED).toBe(1)
+    expect(r.counts.FAILED).toBe(1)
+  })
+  test('a sequence node with no status counts as INACTIVE (total still = node count)', () => {
+    const r = rollup(order(['a', 'b'], { a: status({ visualState: 'COMPLETED' }) }))
+    expect(r.total).toBe(2)
+    expect(r.counts.COMPLETED).toBe(1)
+    expect(r.counts.INACTIVE).toBe(1)
+    expect(r.overall).toBe('HEALTHY')
+  })
   test('RUNNING when no failures but a run is in flight', () => {
-    expect(rollup({ a: status({ visualState: 'RUNNING' }), b: status({ visualState: 'COMPLETED' }) }).overall).toBe('RUNNING')
+    expect(rollup(order(['a', 'b'], { a: status({ visualState: 'RUNNING' }), b: status({ visualState: 'COMPLETED' }) })).overall).toBe('RUNNING')
   })
   test('HEALTHY when everything completed', () => {
-    expect(rollup({ a: status({ visualState: 'COMPLETED' }) }).overall).toBe('HEALTHY')
+    expect(rollup(order(['a'], { a: status({ visualState: 'COMPLETED' }) })).overall).toBe('HEALTHY')
   })
   test('IDLE when only waiting/inactive', () => {
-    expect(rollup({ a: status({ visualState: 'WAITING' }), b: status({ visualState: 'INACTIVE' }) }).overall).toBe('IDLE')
+    expect(rollup(order(['a', 'b'], { a: status({ visualState: 'WAITING' }), b: status({ visualState: 'INACTIVE' }) })).overall).toBe('IDLE')
   })
-  test('null jobStatuses → zeroed rollup, IDLE', () => {
-    const r = rollup(null)
-    expect(r.total).toBe(0)
-    expect(r.overall).toBe('IDLE')
+  test('null / empty sequence → zeroed rollup, IDLE', () => {
+    expect(rollup(null).total).toBe(0)
+    expect(rollup(null).overall).toBe('IDLE')
+    expect(rollup(order([], null)).total).toBe(0)
   })
 })
 

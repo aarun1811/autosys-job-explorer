@@ -1,7 +1,8 @@
 import { MousePointerClickIcon, LayersIcon, TimerIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { rollup, formatDuration, type ExecutionOrderData } from './types'
+import { findJobStatus } from './statusConfig'
+import { rollup, formatDuration, type ExecutionOrderData, type JobStatusInfo } from './types'
 
 const OVERALL_LABEL: Record<ReturnType<typeof rollup>['overall'], string> = {
   ATTENTION: 'Attention',
@@ -26,8 +27,13 @@ interface Props {
  * longest-running job) plus a quiet "select a job" prompt. Not a dead prompt.
  */
 export function RunOverview({ data }: Props) {
-  const r = rollup(data.jobStatuses)
-  const longest = Object.values(data.jobStatuses ?? {})
+  const r = rollup(data)
+  // Longest run is computed over the sequence NODES only (resolved
+  // case-insensitively) — not raw jobStatuses, which includes the parent load
+  // box and would otherwise win as the "longest" non-node run.
+  const longest = data.executionSequence
+    .map((j) => findJobStatus(data.jobStatuses, j.jobName))
+    .filter((s): s is JobStatusInfo => s != null)
     .map((s) => ({ name: s.jobName, dur: formatDuration(s.lastStartEpoch, s.lastEndEpoch), secs: (s.lastEndEpoch ?? 0) - (s.lastStartEpoch ?? 0) }))
     .filter((x) => x.dur !== null)
     .sort((a, b) => b.secs - a.secs)[0]
