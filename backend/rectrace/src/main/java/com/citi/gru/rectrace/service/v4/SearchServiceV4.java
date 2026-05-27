@@ -6,7 +6,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -142,36 +141,6 @@ public class SearchServiceV4 {
     
     public SearchConfigurationV4 getConfiguration() {
         return configService.getConfiguration();
-    }
-    
-    @Async
-    public CompletableFuture<CategoryResultV4> searchCategoryAsync(String keyword, CategoryConfigV4 category) {
-        try {
-            List<String> uniqueValues = esService.getUniqueValues(keyword, category);
-            
-            CategoryResultV4 result = CategoryResultV4.builder()
-                    .key(category.getKey())
-                    .label(category.getLabel())
-                    .values(uniqueValues)
-                    .count(uniqueValues.size())
-                    .hasMore(uniqueValues.size() >= 1000)
-                    .columns(category.getColumns())
-                    .build();
-            
-            return CompletableFuture.completedFuture(result);
-            
-        } catch (Exception e) {
-            log.error("Error in async search for category: " + category.getKey(), e);
-            CategoryResultV4 emptyResult = CategoryResultV4.builder()
-                    .key(category.getKey())
-                    .label(category.getLabel())
-                    .values(new ArrayList<>())
-                    .count(0)
-                    .hasMore(false)
-                    .columns(category.getColumns())
-                    .build();
-            return CompletableFuture.completedFuture(emptyResult);
-        }
     }
     
     public byte[] exportToExcel(String categoryKey, ExportRequestV4 request) throws IOException {
