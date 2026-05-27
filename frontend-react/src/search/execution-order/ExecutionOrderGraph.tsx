@@ -26,7 +26,7 @@ export function ExecutionOrderGraph({ data, onSelect }: Props) {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.2, maxZoom: nodes.length <= 5 ? 1 : 1.5 }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable
@@ -37,7 +37,9 @@ export function ExecutionOrderGraph({ data, onSelect }: Props) {
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1} />
         <Controls showInteractive={false} />
-        <MiniMap pannable zoomable />
+        {/* MiniMap only earns its place on long sequences; for short PRE/MAIN/POST
+            chains it's just an empty box, so gate it on node count. */}
+        {nodes.length > 12 && <MiniMap pannable zoomable />}
       </ReactFlow>
     </div>
   )
