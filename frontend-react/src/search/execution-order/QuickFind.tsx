@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { SearchIcon, XIcon } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
@@ -23,15 +23,18 @@ export function QuickFind({ data, onActiveMatch, onMatchesChange }: Props) {
   const [active, setActive] = useState(0)
   const [matches, setMatches] = useState<string[]>([])
 
-  // Recompute matches whenever the query (or data) changes; reset active to 0.
-  useEffect(() => {
-    const next = findMatches(data, query)
+  // Recompute + report on each query change. Event-driven (not an effect) so we
+  // avoid setState-in-effect cascading renders and any parent-callback-stability
+  // coupling; `data` is stable for the modal's lifetime, so the input is the only
+  // trigger. An empty query (including reset) yields no matches → default view.
+  const applyQuery = (q: string) => {
+    const next = findMatches(data, q)
+    setQuery(q)
     setMatches(next)
     setActive(0)
     onMatchesChange(next)
     onActiveMatch(next.length > 0 ? next[0] : null)
-    // onMatchesChange / onActiveMatch are stable (useCallback in the parent).
-  }, [query, data, onMatchesChange, onActiveMatch])
+  }
 
   const cycle = (delta: number) => {
     if (matches.length === 0) return
@@ -40,13 +43,7 @@ export function QuickFind({ data, onActiveMatch, onMatchesChange }: Props) {
     onActiveMatch(matches[next])
   }
 
-  const reset = () => {
-    setQuery('')
-    setMatches([])
-    setActive(0)
-    onMatchesChange([])
-    onActiveMatch(null)
-  }
+  const reset = () => applyQuery('')
 
   const count = matches.length
   const display = count > 0 ? `${active + 1} / ${count}` : '0 / 0'
@@ -58,7 +55,7 @@ export function QuickFind({ data, onActiveMatch, onMatchesChange }: Props) {
         <Input
           aria-label="Find a job"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => applyQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); cycle(1) }
             else if (e.key === 'ArrowUp') { e.preventDefault(); cycle(-1) }

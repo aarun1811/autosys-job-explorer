@@ -25,8 +25,12 @@ const overviewData: ExecutionOrderData = {
   loadJob: 'L', executionSequence: [], jobDetails: {}, jobStatuses: null, statusAvailable: false,
 }
 
+// Captured as a plain const (not accessed as navigator.clipboard.writeText in the
+// assertion) to avoid @typescript-eslint/unbound-method on the method reference.
+const writeText = vi.fn().mockResolvedValue(undefined)
 beforeEach(() => {
-  Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
+  writeText.mockClear()
+  Object.assign(navigator, { clipboard: { writeText } })
 })
 
 describe('JobInspector', () => {
@@ -69,7 +73,7 @@ describe('JobInspector', () => {
     expect(screen.getByText('/scripts/run_pre.sh')).toBeInTheDocument()
     expect(screen.getByText('Pre step for X')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /copy command/i }))
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/scripts/run_pre.sh')
+    expect(writeText).toHaveBeenCalledWith('/scripts/run_pre.sh')
 
     rerender(<JobInspector jobName="PRE_LOAD_TRADE_RECON_001" details={details} status={null} statusAvailable={false} data={overviewData} />)
     expect(screen.queryByText('/scripts/run_pre.sh')).toBeNull()
