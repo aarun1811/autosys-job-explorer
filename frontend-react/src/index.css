@@ -412,3 +412,67 @@
 /* Additive framing (not cascade-fighting): hairline border + radius. */
 .react-flow__minimap { border: 1px solid var(--border); border-radius: var(--radius-sm); }
 .react-flow__controls { border-radius: var(--radius-sm); overflow: hidden; }
+
+/* ================================================================
+ * Execution-order redesign (Slice 1) — accent bars, neutral order-rail,
+ * runtime popover surface, running pulse, hover lift. Token-driven, theme-aware,
+ * reduced-motion stilled. No raw hex.
+ * ================================================================ */
+
+/* Left status accent bar (4px rail) — solid status token. */
+.eo-accent-completed { background: var(--status-completed); }
+.eo-accent-failed    { background: var(--status-failed); }
+.eo-accent-running   { background: var(--status-running); }
+.eo-accent-waiting   { background: var(--status-waiting); }
+.eo-accent-inactive  { background: var(--status-inactive); }
+
+/* Neutral order-rail (spine) edge — muted, NOT status-tinted, no arrowhead.
+   Drives the custom `spine` edge type rendered by ExecutionOrderGraph. */
+.eo-spine-path {
+  stroke: color-mix(in oklab, var(--foreground) 18%, transparent);
+  stroke-width: 1.5;
+  fill: none;
+  pointer-events: none; /* belt-and-suspenders: spine is a passive guide (spec §5.3) */
+}
+/* Adjacent-to-selection emphasis: passive highlight of the rail next to the
+   active node; non-adjacent rails dim. Both derived from selected/hovered id. */
+.eo-spine-path-active { stroke: color-mix(in oklab, var(--primary) 55%, transparent); }
+.eo-spine-path-dim    { stroke: color-mix(in oklab, var(--foreground) 8%, transparent); }
+
+/* Runtime hover popover surface — sits above the canvas, no layout shift. */
+.eo-popover-surface {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 10px 30px -12px color-mix(in oklab, var(--foreground) 28%, transparent);
+}
+
+/* Node hover lift — soft shadow toward the user (overlay popover handles content). */
+.eo-node-lift { transition: box-shadow 180ms ease, transform 180ms ease; }
+.eo-node-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -10px color-mix(in oklab, var(--foreground) 30%, transparent);
+}
+
+/* Find/select dimming — the spine stays intact; non-matches recede. */
+.eo-node-dim { opacity: 0.42; transition: opacity 180ms ease; }
+
+/* RUNNING glow + gentle pulse — the one moving thing is the one thing happening
+   now. Stilled under prefers-reduced-motion by the global clamp in this file. */
+@keyframes eo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--status-running) 42%, transparent); }
+  50%      { box-shadow: 0 0 0 5px color-mix(in oklab, var(--status-running) 0%, transparent); }
+}
+.eo-pulse {
+  animation: eo-pulse 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--status-running) 42%, transparent);
+}
+
+/* Segmented summary bar fills (proportions) — reuse the status palette. */
+.eo-seg-completed { background: var(--status-completed); }
+.eo-seg-failed    { background: var(--status-failed); }
+.eo-seg-running   { background: var(--status-running); }
+.eo-seg-waiting   { background: var(--status-waiting); }
+.eo-seg-inactive  { background: var(--status-inactive); }
