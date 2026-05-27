@@ -136,8 +136,17 @@ export function pickFocusNodeId(
 ): string | null {
   const seq = data?.executionSequence ?? []
   if (seq.length === 0) return null
+  // Resolve case-insensitively: JobStatusService keys jobStatuses by the
+  // UPPERCASE job name, so an exact index by the raw sequence name would miss on
+  // any casing difference and silently drop smart-focus to the top node. Mirrors
+  // findJobStatus (statusConfig) without importing it — types.ts must not depend
+  // on statusConfig (would create an import cycle).
+  const stateByLower = new Map<string, VisualState>()
+  for (const [key, info] of Object.entries(data?.jobStatuses ?? {})) {
+    stateByLower.set(key.toLowerCase(), info.visualState)
+  }
   const stateOf = (name: string): VisualState =>
-    data?.jobStatuses?.[name]?.visualState ?? 'INACTIVE'
+    stateByLower.get(name.toLowerCase()) ?? 'INACTIVE'
   const failed = seq.find((j) => stateOf(j.jobName) === 'FAILED')
   if (failed) return failed.jobName
   const running = seq.find((j) => stateOf(j.jobName) === 'RUNNING')

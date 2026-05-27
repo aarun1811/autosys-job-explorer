@@ -130,4 +130,14 @@ describe('pickFocusNodeId', () => {
   test('null for an empty sequence', () => {
     expect(pickFocusNodeId(order([], null))).toBeNull()
   })
+  test('resolves status case-insensitively (backend keys jobStatuses UPPERCASE)', () => {
+    // The sequence carries the raw (mixed-case) job name while JobStatusService
+    // keys the status map by job-name.toUpperCase(); an exact index would miss
+    // and drop smart-focus to the top node. Must still find the FAILED node.
+    const fixture = order(['pre-load', 'main-load'], {
+      'PRE-LOAD': status({ visualState: 'COMPLETED' }),
+      'MAIN-LOAD': status({ visualState: 'FAILED' }),
+    })
+    expect(pickFocusNodeId(fixture)).toBe('main-load')
+  })
 })

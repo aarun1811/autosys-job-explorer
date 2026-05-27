@@ -98,7 +98,7 @@ export function ExecutionOrderModal({ data, jobName, open, onOpenChange }: Props
                   {data.statusAvailable ? (
                     <StatusLegend />
                   ) : (
-                    <span className="text-[11px] text-muted-foreground" data-testid="eo-status-unavailable">
+                    <span className="text-[11px] text-muted-foreground" data-testid="eo-footer-unavailable">
                       Live status unavailable
                     </span>
                   )}
