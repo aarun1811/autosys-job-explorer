@@ -38,6 +38,12 @@ describe('CategoryTabBar', () => {
     expect(activeButton?.contains(underlines[0])).toBe(true)
   })
 
+  test('marks the active tab aria-selected="true" and inactive tabs "false"', () => {
+    render(<CategoryTabBar categories={cats} activeKey="jobName" onSelect={vi.fn()} />)
+    expect(screen.getByRole('tab', { name: /Job Name/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /File Name/ })).toHaveAttribute('aria-selected', 'false')
+  })
+
   test('clicking a tab calls onSelect with its key', () => {
     const onSelect = vi.fn()
     render(<CategoryTabBar categories={cats} activeKey="fileName" onSelect={onSelect} />)

@@ -22,13 +22,19 @@ export interface CategoryTabBarProps {
 
 export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabBarProps) {
   return (
-    <div className="flex items-center gap-0.5 border-b px-4 h-10 bg-muted/40 backdrop-blur-md overflow-x-auto">
+    <div
+      role="tablist"
+      aria-label="Search result categories"
+      className="flex items-center gap-0.5 border-b px-4 h-10 bg-muted/40 backdrop-blur-md overflow-x-auto"
+    >
       {categories.map((c) => {
         const active = c.key === activeKey
         return (
           <button
             key={c.key}
             type="button"
+            role="tab"
+            aria-selected={active}
             data-tab-key={c.key}
             data-active={active}
             onClick={() => onSelect(c.key)}
@@ -46,6 +52,7 @@ export function CategoryTabBar({ categories, activeKey, onSelect }: CategoryTabB
             )}
             {active && (
               <m.span
+                aria-hidden
                 layoutId="cat-tab-underline"
                 className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-primary"
                 transition={{ type: 'spring', stiffness: 500, damping: 38 }}

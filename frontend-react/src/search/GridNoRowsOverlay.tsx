@@ -4,7 +4,7 @@ import { SearchXIcon } from 'lucide-react'
 export function GridNoRowsOverlay() {
   return (
     <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
-      <SearchXIcon className="size-7 opacity-70" />
+      <SearchXIcon className="size-7 opacity-70" aria-hidden />
       <p className="font-medium text-foreground">No rows to show</p>
       <p className="text-xs">Try clearing filters or refining your search.</p>
     </div>
