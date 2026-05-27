@@ -477,12 +477,13 @@
 .eo-seg-waiting   { background: var(--status-waiting); }
 .eo-seg-inactive  { background: var(--status-inactive); }
 
-/* Hover runtime popover must float ABOVE the next node. React Flow paints nodes
-   in array order, so the sibling below would otherwise clip an overflowing
-   overlay. Raise the hovered node's stacking context (!important to beat RF's
-   inline per-node z-index). Selected nodes are already elevated by RF's
-   elevateNodesOnSelect. */
-.react-flow__node:hover { z-index: 20 !important; }
+/* Hover runtime popover must float ABOVE every other node — including a SELECTED
+   one. React Flow paints nodes in array order (a later sibling would clip an
+   overflowing overlay) AND elevateNodesOnSelect sets the selected node's inline
+   z-index to 1000. So the hovered node must beat 1000: 1001 !important wins over
+   both base nodes (z 0) and the selected node (z 1000), so its popover is always
+   on top. */
+.react-flow__node:hover { z-index: 1001 !important; }
 
 /* Selected node — soft primary glow + a one-shot scale pop on select (the focus
    ring is applied inline on the node). The pop is stilled under
