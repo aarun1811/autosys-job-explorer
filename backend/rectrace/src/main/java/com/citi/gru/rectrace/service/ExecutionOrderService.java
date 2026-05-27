@@ -2,7 +2,6 @@ package com.citi.gru.rectrace.service;
 
 import java.io.Reader;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,7 +72,7 @@ public class ExecutionOrderService {
             ExecutionOrderDTO.JobNodeDTO node = new ExecutionOrderDTO.JobNodeDTO();
             node.setJobName((String) row[0]);
             node.setLoadJob((String) row[1]);
-            node.setExecutionOrder(((BigDecimal) row[2]).intValue());
+            node.setExecutionOrder(((Number) row[2]).intValue());
             sequence.add(node);
         }
         result.setExecutionSequence(sequence);
