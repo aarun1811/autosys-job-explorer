@@ -76,3 +76,5 @@
 # PID files and logs are created at runtime; never committed.
 run/
 logs/
+# superpowers visual-companion brainstorm artifacts
+.superpowers/
