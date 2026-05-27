@@ -39,7 +39,9 @@ export function JobFlowNode({ data, selected }: NodeProps<FlowNode>) {
           cfg.nodeClassName,
           cfg.pulse && 'eo-pulse',
           data.dimmed && 'eo-node-dim',
-          selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background eo-node-selected',
+          // Selection treatment (ring + halo + glow + pop) lives entirely in
+          // .eo-node-selected so it reads as one strong, cohesive emphasis.
+          selected && 'eo-node-selected',
         )}
       >
         <span

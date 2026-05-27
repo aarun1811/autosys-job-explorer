@@ -55,9 +55,8 @@ describe('JobFlowNode', () => {
     expect(screen.getByTestId('eo-node')).not.toHaveClass('eo-pulse')
   })
 
-  test('applies the selected ring + emphasis class when selected', () => {
+  test('applies the selection emphasis class when selected', () => {
     renderNode({}, true)
-    expect(screen.getByTestId('eo-node')).toHaveClass('ring-2')
     expect(screen.getByTestId('eo-node')).toHaveClass('eo-node-selected')
   })
 

@@ -495,5 +495,11 @@
 }
 .eo-node-selected {
   animation: eo-select-pop 180ms cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 16px -2px color-mix(in oklab, var(--primary) 55%, transparent);
+  /* Crisp 3px primary ring + soft halo + strong outer glow — one cohesive,
+     unmistakable selected state (the box is overflow-hidden, but outset
+     box-shadow is not clipped). */
+  box-shadow:
+    0 0 0 3px var(--primary),
+    0 0 0 7px color-mix(in oklab, var(--primary) 32%, transparent),
+    0 0 32px 4px color-mix(in oklab, var(--primary) 75%, transparent);
 }
