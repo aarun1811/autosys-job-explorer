@@ -22,6 +22,10 @@ import {
   ServerSideRowModelApiModule,
   ColumnMenuModule,
 } from 'ag-grid-enterprise'
+// Self-hosted brand typefaces (no runtime CDN — works on locked-down Citi VMs).
+// Geist (chrome/body) + Geist Mono (technical identifiers, numbers, codes).
+import '@fontsource-variable/geist'
+import '@fontsource-variable/geist-mono'
 import './index.css'
 import App from './App'
 

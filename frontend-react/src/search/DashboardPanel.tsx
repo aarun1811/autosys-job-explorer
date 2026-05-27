@@ -1,5 +1,5 @@
 import { m, AnimatePresence } from 'motion/react'
-import { ChevronDownIcon, LinkIcon } from 'lucide-react'
+import { ChevronDownIcon, LinkIcon, LayoutDashboardIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { RecvizEmbed } from '@/search/RecvizEmbed'
 import type { DashboardConfigV4 } from '@/search/types'
@@ -17,7 +17,7 @@ function CopyLink() {
     <button
       type="button"
       aria-label="Copy link to this view"
-      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       onClick={() => {
         navigator.clipboard
           .writeText(window.location.href)
@@ -30,33 +30,48 @@ function CopyLink() {
   )
 }
 
+/** Title with a leading dashboard glyph — shared by both variants. */
+function DashboardTitle({ title }: { title?: string | null }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
+      <span className="inline-flex size-6 items-center justify-center rounded-md bg-primary/12 text-primary">
+        <LayoutDashboardIcon className="size-3.5" aria-hidden />
+      </span>
+      {title ?? 'Dashboard'}
+    </span>
+  )
+}
+
 export function DashboardPanel({ variant, dashboard, q, open, onOpenChange }: DashboardPanelProps) {
   if (variant === 'full') {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-semibold text-foreground">{dashboard.title ?? 'Dashboard'}</span>
+        <div className="flex items-center justify-between px-4 py-3">
+          <DashboardTitle title={dashboard.title} />
           <CopyLink />
         </div>
-        <div className="min-h-0 flex-1 px-3 pb-3">
+        <div className="min-h-0 flex-1 px-4 pb-4">
           <RecvizEmbed url={dashboard.url} q={q} title={dashboard.title ?? undefined} minHeight={dashboard.height ?? 320} />
         </div>
       </div>
     )
   }
   return (
-    <div className="border-b">
-      <div className="flex items-center justify-between px-3 py-1.5">
+    <div className="border-b border-border/70">
+      <div className="flex items-center justify-between px-4 py-2">
         <button
           type="button"
           aria-label={open ? 'Collapse dashboard' : 'Expand dashboard'}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground"
+          className="group inline-flex items-center gap-2 rounded-lg text-sm font-semibold tracking-tight text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => onOpenChange(!open)}
         >
-          <m.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.18 }} className="inline-flex">
+          <span className="inline-flex size-6 items-center justify-center rounded-md bg-primary/12 text-primary">
+            <LayoutDashboardIcon className="size-3.5" aria-hidden />
+          </span>
+          {dashboard.title ?? 'Dashboard'}
+          <m.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.18 }} className="inline-flex text-muted-foreground group-hover:text-foreground">
             <ChevronDownIcon className="size-4" />
           </m.span>
-          {dashboard.title ?? 'Dashboard'}
         </button>
         <CopyLink />
       </div>

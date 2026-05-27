@@ -40,11 +40,10 @@ describe('SupportEmailCellRenderer', () => {
     expect(screen.queryByRole('link')).toBeNull()
   })
 
-  test('className uses text-primary + underline tokens (no raw hex)', () => {
+  test('anchor carries the shared .rectrace-link class (token-driven, no raw hex)', () => {
     render(<SupportEmailCellRenderer {...makeParams('support@example.com')} />)
     const link = screen.getByRole('link')
-    expect(link.className).toContain('text-primary')
-    expect(link.className).toContain('underline')
+    expect(link.className).toContain('rectrace-link')
   })
 
   test('falls back to empty appName when params.data.app_name is missing', () => {

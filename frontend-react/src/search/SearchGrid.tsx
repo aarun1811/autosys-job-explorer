@@ -12,6 +12,7 @@ import type {
 } from 'ag-grid-community'
 import { GRID_SIDEBAR, rowHeightForDensity, headerHeightForDensity, type GridDensity } from '@/search/lib/gridConfig'
 import { gridTheme } from '@/search/lib/gridTheme'
+import { gridIcons } from '@/search/lib/gridIcons'
 import { useTheme } from '@/components/layout/theme-provider'
 
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
@@ -130,16 +131,25 @@ export function SearchGrid({
       <AgGridReact
         key={`${q}-${category.key}`}
         theme={gridTheme}
+        icons={gridIcons}
         rowModelType="serverSide"
         serverSideDatasource={datasource}
         columnDefs={columnDefs}
         components={cellRenderers}
         noRowsOverlayComponent={GridNoRowsOverlay}
         getRowId={buildSsrmRowId}
-        defaultColDef={{ sortable: true, filter: true, resizable: true, minWidth: 100, flex: 1 }}
+        // minWidth 140 keeps headers legible: with many columns they hold this
+        // floor and the grid scrolls horizontally rather than crushing every
+        // header to "Box…"; with few columns flex still fills the width.
+        defaultColDef={{ sortable: true, filter: true, resizable: true, minWidth: 140, flex: 1 }}
+        // Single auto-group column (Angular search-v5 parity): the group value
+        // stays in the first column, aligned with the data and indented to show
+        // hierarchy — far clearer than a full-width header floating above
+        // mismatched columns. Labelled "Group" (not the first column's name) so
+        // it stays honest whether grouping by one column or several.
         autoGroupColumnDef={{
-          headerName: category.columns[0]?.headerName,
-          minWidth: 250,
+          headerName: 'Group',
+          minWidth: 240,
           cellRendererParams: { suppressCount: false },
         }}
         sideBar={GRID_SIDEBAR}

@@ -24,13 +24,12 @@ function makeSpies() {
 }
 
 // Shared scalar state defaults — spread into a fresh `base` per render alongside
-// fresh spies, so the new left-context tests can supply the 3 new props.
+// fresh spies. The category name + count are NOT shown in the toolbar (they live
+// in the active tab), so only density/dedup/export/active-filter state remain.
 const baseState = {
   density: 'normal' as GridDensity,
   isDeduplicated: false,
   isExporting: false,
-  categoryLabel: 'Test',
-  resultCount: 0,
   activeFilterCount: 0,
 }
 
@@ -93,18 +92,18 @@ describe('GridToolbar', () => {
     expect(btn.querySelector('.animate-spin')).not.toBeNull()
   })
 
-  it('shows the category label and result count', () => {
-    const base = { ...baseState, ...makeSpies() }
-    render(<GridToolbar {...base} categoryLabel="Job Name" resultCount={42} activeFilterCount={0} />)
-    expect(screen.getByText('Job Name')).toBeInTheDocument()
-    expect(screen.getByText('42')).toBeInTheDocument()
+  it('groups actions into accessible segmented clusters (View · Group · Data · Export)', () => {
+    setup()
+    for (const label of ['View', 'Group', 'Data', 'Export']) {
+      expect(screen.getByRole('group', { name: label })).toBeInTheDocument()
+    }
   })
 
   it('shows an active-filter badge only when filters are active', () => {
     const base = { ...baseState, ...makeSpies() }
-    const { rerender } = render(<GridToolbar {...base} categoryLabel="X" resultCount={1} activeFilterCount={0} />)
+    const { rerender } = render(<GridToolbar {...base} activeFilterCount={0} />)
     expect(screen.queryByLabelText('active filters')).toBeNull()
-    rerender(<GridToolbar {...base} categoryLabel="X" resultCount={1} activeFilterCount={2} />)
+    rerender(<GridToolbar {...base} activeFilterCount={2} />)
     expect(screen.getByLabelText('active filters')).toHaveTextContent('2')
   })
 })

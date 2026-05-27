@@ -9,7 +9,8 @@ import type { ICellRendererParams } from 'ag-grid-community'
  * - Truthy params.value → <a href="mailto:{value}"> with title "Send email to {app_name}".
  * - Falsy params.value → plain <span>{value}</span>.
  *
- * Styling uses the Phase 2 design tokens (text-primary, underline) — no raw hex.
+ * Styling uses the shared `.rectrace-link` class (token-driven `var(--color-primary)`,
+ * underline-at-rest, clip-safe inside grid cells) — same as AppIDCellRenderer.
  */
 export function SupportEmailCellRenderer(params: ICellRendererParams) {
   const value = params.value as string | undefined | null
@@ -22,7 +23,7 @@ export function SupportEmailCellRenderer(params: ICellRendererParams) {
     <a
       href={`mailto:${value}`}
       title={`Send email to ${appName}`}
-      className="text-primary underline hover:no-underline"
+      className="rectrace-link"
     >
       {value}
     </a>

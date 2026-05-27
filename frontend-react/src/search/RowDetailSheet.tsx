@@ -45,12 +45,12 @@ export function RowDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="gap-0">
-        <SheetHeader>
-          <SheetTitle>{primaryValue || 'Record details'}</SheetTitle>
+        <SheetHeader className="gap-1.5">
+          <SheetTitle className="font-mono text-[15px] leading-snug break-all">{primaryValue || 'Record details'}</SheetTitle>
           <SheetDescription>{`${categoryLabel} record`}</SheetDescription>
         </SheetHeader>
         {row && (
-          <dl className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+          <dl className="mt-2 flex-1 divide-y divide-border/60 overflow-y-auto pr-1">
             {columns.map((c) => {
               const displayable = formatCell(row[c.field])
               const value = displayable ?? '—'
@@ -58,14 +58,14 @@ export function RowDetailSheet({
               return (
                 <div
                   key={c.field}
-                  className="group grid grid-cols-[minmax(0,9rem)_1fr] gap-3 text-sm"
+                  className="group grid grid-cols-[minmax(0,8.5rem)_1fr] gap-3 py-2.5 text-sm"
                 >
-                  <dt className="truncate text-muted-foreground">{c.headerName}</dt>
+                  <dt className="truncate pt-px text-[12px] font-medium text-muted-foreground">{c.headerName}</dt>
                   <dd
                     className={
                       isEmpty
-                        ? 'flex min-w-0 items-start gap-2 break-words italic text-muted-foreground/70'
-                        : 'flex min-w-0 items-start gap-2 break-words font-medium text-foreground'
+                        ? 'flex min-w-0 items-start gap-2 break-words italic text-muted-foreground/60'
+                        : 'flex min-w-0 items-start gap-2 break-words font-mono text-[13px] text-foreground'
                     }
                   >
                     <span className="min-w-0 break-words">{value}</span>

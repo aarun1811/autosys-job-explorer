@@ -17,7 +17,6 @@ import {
 import { m } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { GridDensity } from '@/search/lib/gridConfig'
 
@@ -25,8 +24,6 @@ export interface GridToolbarProps {
   density: GridDensity
   isDeduplicated: boolean
   isExporting: boolean
-  categoryLabel: string
-  resultCount: number
   activeFilterCount: number
   onToggleSidebar: () => void
   onToggleDensity: () => void
@@ -68,7 +65,11 @@ function ToolButton({
           disabled={disabled}
           onClick={onClick}
           // disabled:opacity-100 keeps a loading spinner fully visible while busy.
-          className={`size-8 disabled:opacity-100 ${pressed ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
+          className={`size-8 rounded-md transition-colors disabled:opacity-100 ${
+            pressed
+              ? 'bg-primary/15 text-primary hover:bg-primary/20'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+          }`}
         >
           <m.span
             className="inline-flex"
@@ -86,77 +87,93 @@ function ToolButton({
 }
 
 /**
- * GridToolbar — Angular search-v5 toolbar parity in shadcn: ghost icon-buttons
- * grouped (View · Grouping · Data · Export/Share) with separators, right-aligned.
- * Presentational only — every action is a parent callback.
+ * A segmented cluster of related actions. The bordered surface makes the
+ * controls read as deliberate buttons (not faint floating glyphs that get lost
+ * on a wide monitor). The group name is carried as an accessible `aria-label`
+ * (named for screen readers) rather than visible text — no extra row of height.
+ */
+function ToolGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="inline-flex items-center gap-0.5 rounded-lg border border-border/70 bg-card/60 p-0.5 shadow-sm"
+    >
+      {children}
+    </div>
+  )
+}
+
+/**
+ * GridToolbar — the action strip above the grid. Actions are grouped into
+ * labelled segmented clusters (View · Group · Data · Export) and left-aligned so
+ * they sit where attention lands and stay visible on large monitors. The
+ * category name + count are NOT repeated here — they already live in the active
+ * tab. Presentational only; every action is a parent callback.
  */
 export function GridToolbar(props: GridToolbarProps): React.ReactElement {
-  const sep = <Separator orientation="vertical" className="mx-1 h-5" />
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-11 items-center gap-0.5 border-b px-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-semibold text-foreground">{props.categoryLabel}</span>
-          <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-            {props.resultCount}
-          </span>
-          {props.activeFilterCount > 0 && (
-            <span
-              aria-label="active filters"
-              className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium tabular-nums text-primary"
-            >
-              {props.activeFilterCount}
-            </span>
-          )}
-        </div>
+      <div className="flex h-12 items-center gap-2 px-4">
+        <ToolGroup label="View">
+          <ToolButton label="Toggle columns and filters panel" onClick={props.onToggleSidebar}>
+            <PanelRightIcon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Toggle row density" pressed={props.density === 'compact'} onClick={props.onToggleDensity}>
+            <Rows3Icon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Auto-size columns" onClick={props.onAutoSize}>
+            <ArrowLeftRightIcon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Reset view" onClick={props.onResetView}>
+            <ListRestartIcon className="size-4" />
+          </ToolButton>
+        </ToolGroup>
+
+        <ToolGroup label="Group">
+          <ToolButton label="Expand all groups" onClick={props.onExpandAll}>
+            <ChevronsUpDownIcon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Collapse all groups" onClick={props.onCollapseAll}>
+            <ChevronsDownUpIcon className="size-4" />
+          </ToolButton>
+        </ToolGroup>
+
+        <ToolGroup label="Data">
+          <ToolButton label="Clear filters" onClick={props.onClearFilters}>
+            <FilterXIcon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Refresh" onClick={props.onRefresh}>
+            <RefreshCwIcon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Remove duplicates" pressed={props.isDeduplicated} onClick={props.onToggleDedup}>
+            <CopyMinusIcon className="size-4" />
+          </ToolButton>
+        </ToolGroup>
+
+        <ToolGroup label="Export">
+          <ToolButton label="Export to Excel" onClick={props.onExportExcel} disabled={props.isExporting}>
+            {props.isExporting ? <Loader2Icon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+          </ToolButton>
+          <ToolButton label="Copy rows to clipboard" onClick={props.onCopy}>
+            <CopyIcon className="size-4" />
+          </ToolButton>
+          <ToolButton label="Share view" onClick={props.onShare}>
+            <Share2Icon className="size-4" />
+          </ToolButton>
+        </ToolGroup>
+
         <div className="flex-1" />
-        {/* View */}
-        <ToolButton label="Toggle columns and filters panel" onClick={props.onToggleSidebar}>
-          <PanelRightIcon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Toggle row density" pressed={props.density === 'compact'} onClick={props.onToggleDensity}>
-          <Rows3Icon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Auto-size columns" onClick={props.onAutoSize}>
-          <ArrowLeftRightIcon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Reset view" onClick={props.onResetView}>
-          <ListRestartIcon className="size-4" />
-        </ToolButton>
-        {sep}
-        {/* Grouping */}
-        <ToolButton label="Expand all groups" onClick={props.onExpandAll}>
-          <ChevronsUpDownIcon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Collapse all groups" onClick={props.onCollapseAll}>
-          <ChevronsDownUpIcon className="size-4" />
-        </ToolButton>
-        {sep}
-        {/* Data */}
-        <ToolButton label="Clear filters" onClick={props.onClearFilters}>
-          <FilterXIcon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Refresh" onClick={props.onRefresh}>
-          <RefreshCwIcon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Remove duplicates" pressed={props.isDeduplicated} onClick={props.onToggleDedup}>
-          <CopyMinusIcon className="size-4" />
-        </ToolButton>
-        {sep}
-        {/* Export / Share — Export downloads immediately on click (spinner while busy). */}
-        <ToolButton label="Export to Excel" onClick={props.onExportExcel} disabled={props.isExporting}>
-          {props.isExporting ? (
-            <Loader2Icon className="size-4 animate-spin" />
-          ) : (
-            <DownloadIcon className="size-4" />
-          )}
-        </ToolButton>
-        <ToolButton label="Copy rows to clipboard" onClick={props.onCopy}>
-          <CopyIcon className="size-4" />
-        </ToolButton>
-        <ToolButton label="Share view" onClick={props.onShare}>
-          <Share2Icon className="size-4" />
-        </ToolButton>
+
+        {props.activeFilterCount > 0 && (
+          <span
+            aria-label="active filters"
+            className="rectrace-num inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-2.5 py-1 text-[11px] font-semibold text-primary"
+          >
+            <FilterXIcon className="size-3" aria-hidden />
+            {props.activeFilterCount} active
+          </span>
+        )}
       </div>
     </TooltipProvider>
   )

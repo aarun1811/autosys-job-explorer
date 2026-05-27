@@ -398,6 +398,9 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 
 **Files:**
 - Modify: `frontend-react/src/search/CategoryTabBar.tsx`
+- Modify: `frontend-react/src/components/layout/motion-provider.tsx` (flip `domAnimation` → `domMax`)
+
+- [ ] **Step 0: Switch the Motion feature bundle to `domMax`** (REQUIRED before `layoutId`, verified during Task 2.1 review). `layout`/`layoutId` need the projection feature, which `domAnimation` lacks — and under `LazyMotion strict` (Task 2.1) using `layoutId` with `domAnimation` throws at render. In `motion-provider.tsx`: change the import to `import { LazyMotion, domMax, MotionConfig } from 'motion/react'` and the prop to `features={domMax}`. (`domMax` also bundles `drag`, which we don't use — acceptable; it's the only preset that includes `layout`.) The motion-provider test still passes.
 
 - [ ] **Step 1: Add a sliding indicator** with Motion `layoutId` shared across tabs, and move the count into a refined pill. Keep the `data-tab-key` / `data-active` attributes (tests + Playwright rely on them). Replace the active 2px border with a `layoutId="cat-tab-underline"` `m.span` rendered only under the active tab:
 
@@ -574,7 +577,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 **Files:**
 - Modify: `frontend-react/src/search/lib/gridTheme.ts`
 
-- [ ] **Step 1: Extend `gridTheme`** with the body-level treatment, using the frontend-design skill to choose final values: a left accent border on the selected row + polished group-row background + sort-chevron treatment via `withCSS`, and tuned `rowBorder`/`columnBorder`. Add to the `.withCSS(...)` block (keep `tabular-nums`):
+- [ ] **Step 1: Extend `gridTheme`** with the body-level treatment, using the frontend-design skill to choose final values: a left accent border on the selected row + polished group-row background + sort-chevron treatment, and tuned `rowBorder`/`columnBorder`. **NOTE (confirmed in Task 1.1): `withCSS` does NOT exist in `ag-grid-community@35` — custom CSS goes through `createPart({ css })` + `.withPart(...)`.** Extend the existing tabular-nums Part's `css` string in `gridTheme.ts` (or add a second `createPart({ css })` and `.withPart(...)`) with (keep `tabular-nums`):
 ```css
 .ag-row-selected { box-shadow: inset 2px 0 0 0 var(--color-primary); }
 .ag-row-group { background: color-mix(in oklab, var(--color-muted) 50%, transparent); }
@@ -1093,6 +1096,8 @@ Add `dashboard: DashboardConfigV4Schema.nullish(),` to **both** `CategoryConfigV
 ```ts
 export type DashboardConfigV4 = z.infer<typeof DashboardConfigV4Schema>
 ```
+
+**ALSO (verified gap from the Task 4.3 review): widen `CategoryConfigV4Schema` for dashboard-only categories.** The dashboard-only `overview` category is served by `/config` (and bound by the config POJO) with `elasticsearch: null, oracle: null, columns: null`. `CategoryConfigV4Schema` currently makes those three **non-nullable**, so `SearchConfigurationV4Schema.parse` against live `/config` would hard-fail on `overview` and break the whole config fetch. Make them tolerant on `CategoryConfigV4Schema`: `elasticsearch: z.record(z.unknown()).nullish()`, `oracle: z.record(z.unknown()).nullish()`, `columns: z.array(ColumnDefinitionV4Schema).nullish()`. (Leave `CategoryResultV4Schema.columns` STRICT — the `/initial` backend guard always coalesces it to `[]`.) Add tests: `CategoryConfigV4Schema.parse({ key:'overview', label:'Overview', searchColumn:'', dashboard:{ url:'u' } })` succeeds (no elasticsearch/oracle/columns), and `SearchConfigurationV4Schema.parse({ categories: [<a normal grid category>, <the overview dashboard-only category>] })` succeeds. (Note: check whether anything actively calls `SearchConfigurationV4Schema.parse` against live `/config` — e.g. a `useSearchConfig` hook — to know if this break is active vs latent; the widening fixes it regardless.)
 
 - [ ] **Step 4: Run — expect PASS** + typecheck.
 

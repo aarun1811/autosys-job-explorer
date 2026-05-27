@@ -189,8 +189,6 @@ export function SearchGridPanel({ q, category, dashboardOpen }: SearchGridPanelP
         density={density}
         isDeduplicated={isDeduplicated}
         isExporting={isExporting}
-        categoryLabel={category.label}
-        resultCount={category.count}
         activeFilterCount={activeFilterCount}
         onToggleSidebar={onToggleSidebar}
         onToggleDensity={onToggleDensity}
@@ -205,8 +203,8 @@ export function SearchGridPanel({ q, category, dashboardOpen }: SearchGridPanelP
         onCopy={onCopy}
         onShare={onShare}
       />
-      <main className="min-h-0 flex-1 overflow-hidden px-3 pb-3">
-        <div className="h-full overflow-hidden rounded-xl border bg-card shadow-sm">
+      <main className="min-h-0 flex-1 overflow-hidden px-4 pb-4">
+        <div className="rectrace-panel h-full overflow-hidden rounded-xl border border-border/70 bg-card">
           <SearchGrid
             q={q}
             category={category}

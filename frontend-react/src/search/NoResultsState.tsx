@@ -51,7 +51,7 @@ export function NoResultsState({
 
         <p className="mt-2 text-sm text-muted-foreground">
           Nothing matched{' '}
-          <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium text-foreground">{term}</span>.
+          <span className="rounded-md border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[13px] text-foreground">{term}</span>.
         </p>
 
         <p className="mt-6 text-sm font-medium text-foreground">Suggestions</p>
@@ -70,7 +70,7 @@ export function NoResultsState({
                   key={ex}
                   type="button"
                   onClick={() => onExample(ex)}
-                  className="rounded-full border bg-background/60 px-3 py-1 text-xs font-medium text-foreground/80 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in-0 zoom-in-95 fill-mode-both duration-300"
+                  className="rounded-full border border-border/70 bg-card/60 px-3 py-1 font-mono text-[12px] text-foreground/80 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent hover:text-foreground hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in-0 zoom-in-95 fill-mode-both duration-300"
                   style={{ animationDelay: `${240 + i * 50}ms` }}
                 >
                   {ex}

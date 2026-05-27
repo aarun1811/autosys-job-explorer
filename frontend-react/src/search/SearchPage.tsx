@@ -125,7 +125,7 @@ export function SearchPage(): React.ReactElement {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header
-        className="bg-background/70 supports-[backdrop-filter]:bg-background/55 sticky top-0 z-50 flex items-center gap-3 border-b px-4 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-xl"
+        className="bg-background/70 supports-[backdrop-filter]:bg-background/55 sticky top-0 z-50 flex items-center gap-3 border-b border-border/70 px-5 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_4%,transparent)] backdrop-blur-xl"
         style={{ height: 'var(--header-height, 3.5rem)' }}
       >
         <Link
@@ -174,7 +174,7 @@ export function SearchPage(): React.ReactElement {
           onClear={handleClear}
         />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="rectrace-results-canvas flex min-h-0 flex-1 flex-col overflow-hidden">
           <CategoryTabBar categories={results} activeKey={activeCategory?.key ?? results[0].key} onSelect={handleSelectTab} />
           {activeCategory && (
             <m.div
