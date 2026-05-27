@@ -3,7 +3,7 @@ import { STATUS_CONFIG, VISUAL_STATES, findJobStatus } from '../statusConfig'
 import type { JobStatusInfo } from '../types'
 
 describe('STATUS_CONFIG', () => {
-  test('covers all five visual states with label + class names', () => {
+  test('covers all five visual states with label + class names + accent + pulse', () => {
     expect(VISUAL_STATES).toEqual(['COMPLETED', 'FAILED', 'RUNNING', 'WAITING', 'INACTIVE'])
     for (const s of VISUAL_STATES) {
       const c = STATUS_CONFIG[s]
@@ -11,6 +11,13 @@ describe('STATUS_CONFIG', () => {
       expect(c.nodeClassName).toBe(`eo-node-${s.toLowerCase()}`)
       expect(c.dotClassName).toBe(`eo-dot-${s.toLowerCase()}`)
       expect(c.badgeClassName).toBe(`eo-badge-${s.toLowerCase()}`)
+      expect(c.accentClassName).toBe(`eo-accent-${s.toLowerCase()}`)
+    }
+  })
+  test('only RUNNING pulses', () => {
+    expect(STATUS_CONFIG.RUNNING.pulse).toBe(true)
+    for (const s of VISUAL_STATES.filter((x) => x !== 'RUNNING')) {
+      expect(STATUS_CONFIG[s].pulse).toBe(false)
     }
   })
 })
@@ -20,6 +27,9 @@ describe('findJobStatus', () => {
     'PRE-LOAD-ABC-123': {
       jobName: 'PRE-LOAD-ABC-123', status: 4, statusName: 'Success',
       nextStartEpoch: null, nextStartFormatted: null,
+      lastStartEpoch: null, lastStartFormatted: null,
+      lastEndEpoch: null, lastEndFormatted: null,
+      exitCode: null, runNum: null, retries: null, runMachine: null, owner: null,
       scheduledToday: false, currentlyActive: false, visualState: 'COMPLETED',
     },
   }

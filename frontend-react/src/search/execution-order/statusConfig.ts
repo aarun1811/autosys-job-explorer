@@ -11,14 +11,18 @@ export interface StatusConfig {
   nodeClassName: string
   dotClassName: string
   badgeClassName: string
+  /** Left accent-bar tint (4px rail) — eo-accent-* in index.css. */
+  accentClassName: string
+  /** RUNNING is the one moving thing on the canvas; everything else is still. */
+  pulse: boolean
 }
 
 export const STATUS_CONFIG: Record<VisualState, StatusConfig> = {
-  COMPLETED: { label: 'Completed', icon: CheckCircle2Icon, nodeClassName: 'eo-node-completed', dotClassName: 'eo-dot-completed', badgeClassName: 'eo-badge-completed' },
-  FAILED:    { label: 'Failed',    icon: XCircleIcon,      nodeClassName: 'eo-node-failed',    dotClassName: 'eo-dot-failed',    badgeClassName: 'eo-badge-failed' },
-  RUNNING:   { label: 'Running',   icon: PlayCircleIcon,   nodeClassName: 'eo-node-running',   dotClassName: 'eo-dot-running',   badgeClassName: 'eo-badge-running' },
-  WAITING:   { label: 'Waiting',   icon: ClockIcon,        nodeClassName: 'eo-node-waiting',   dotClassName: 'eo-dot-waiting',   badgeClassName: 'eo-badge-waiting' },
-  INACTIVE:  { label: 'Inactive',  icon: PauseCircleIcon,  nodeClassName: 'eo-node-inactive',  dotClassName: 'eo-dot-inactive',  badgeClassName: 'eo-badge-inactive' },
+  COMPLETED: { label: 'Completed', icon: CheckCircle2Icon, nodeClassName: 'eo-node-completed', dotClassName: 'eo-dot-completed', badgeClassName: 'eo-badge-completed', accentClassName: 'eo-accent-completed', pulse: false },
+  FAILED:    { label: 'Failed',    icon: XCircleIcon,      nodeClassName: 'eo-node-failed',    dotClassName: 'eo-dot-failed',    badgeClassName: 'eo-badge-failed',    accentClassName: 'eo-accent-failed',    pulse: false },
+  RUNNING:   { label: 'Running',   icon: PlayCircleIcon,   nodeClassName: 'eo-node-running',   dotClassName: 'eo-dot-running',   badgeClassName: 'eo-badge-running',   accentClassName: 'eo-accent-running',   pulse: true  },
+  WAITING:   { label: 'Waiting',   icon: ClockIcon,        nodeClassName: 'eo-node-waiting',   dotClassName: 'eo-dot-waiting',   badgeClassName: 'eo-badge-waiting',   accentClassName: 'eo-accent-waiting',   pulse: false },
+  INACTIVE:  { label: 'Inactive',  icon: PauseCircleIcon,  nodeClassName: 'eo-node-inactive',  dotClassName: 'eo-dot-inactive',  badgeClassName: 'eo-badge-inactive',  accentClassName: 'eo-accent-inactive',  pulse: false },
 }
 
 export const VISUAL_STATES: VisualState[] = ['COMPLETED', 'FAILED', 'RUNNING', 'WAITING', 'INACTIVE']
