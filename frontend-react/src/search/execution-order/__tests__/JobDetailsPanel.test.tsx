@@ -35,4 +35,20 @@ describe('JobDetailsPanel', () => {
     // Job fields still render.
     expect(screen.getByText('na-trade01')).toBeInTheDocument()
   })
+
+  test('renders Command and Description sections only when present', () => {
+    const withText: JobDetails = { ...details, command: '/scripts/run_pre.sh', description: 'Pre step for X' }
+    const { rerender } = render(
+      <JobDetailsPanel jobName="PRE_LOAD_TRADE_RECON_001" details={withText} status={null} statusAvailable={false} />,
+    )
+    expect(screen.getByText('Command')).toBeInTheDocument()
+    expect(screen.getByText('/scripts/run_pre.sh')).toBeInTheDocument()
+    expect(screen.getByText('Description')).toBeInTheDocument()
+    expect(screen.getByText('Pre step for X')).toBeInTheDocument()
+
+    // Empty command/description (the current backend default) → sections hidden.
+    rerender(<JobDetailsPanel jobName="PRE_LOAD_TRADE_RECON_001" details={details} status={null} statusAvailable={false} />)
+    expect(screen.queryByText('Command')).toBeNull()
+    expect(screen.queryByText('Description')).toBeNull()
+  })
 })

@@ -62,4 +62,44 @@ class ExecutionOrderServiceTest {
         Assertions.assertEquals(1, result.getExecutionSequence().get(0).getExecutionOrder());
         Assertions.assertEquals("PRE-X", result.getExecutionSequence().get(0).getJobName());
     }
+
+    /**
+     * The job-details query exposes the {@code command} / {@code description}
+     * CLOB columns. Hibernate hands small CLOBs back as plain {@link String}, so
+     * the {@code clobToString(Object)} overload must accept a String (not only a
+     * {@link java.sql.Clob}) and map it through.
+     */
+    @Test
+    void mapsCommandAndDescriptionFromDetailsQuery() {
+        EntityManager em = Mockito.mock(EntityManager.class);
+        Query seqQuery = Mockito.mock(Query.class);
+        Query detailsQuery = Mockito.mock(Query.class);
+
+        when(em.createNativeQuery(contains("AUTOSYS_TLM_RECON_SEQUENCES"))).thenReturn(seqQuery);
+        when(em.createNativeQuery(contains("AUTOSYS_ALL_JOBS_DATA"))).thenReturn(detailsQuery);
+        when(seqQuery.setParameter(anyString(), Mockito.any())).thenReturn(seqQuery);
+        when(detailsQuery.setParameter(anyString(), Mockito.any())).thenReturn(detailsQuery);
+
+        List<Object[]> seqRows = new ArrayList<>();
+        seqRows.add(new Object[] { "PRE-X", "X", Integer.valueOf(1) });
+        when(seqQuery.getResultList()).thenReturn(seqRows);
+
+        // insert_job, job_type, machine, run_cal, exclude_cal, box_name, command, description
+        // command/description arrive as String (Hibernate materializes small CLOBs as String).
+        List<Object[]> detailsRows = new ArrayList<>();
+        detailsRows.add(new Object[] { "PRE-X", "CMD", "m1", "DAILY", "HOL", "BOX-X",
+                "/scripts/run_pre.sh", "Pre step for X" });
+        when(detailsQuery.getResultList()).thenReturn(detailsRows);
+
+        ExecutionOrderService service = new ExecutionOrderService(null);
+        ReflectionTestUtils.setField(service, "em", em);
+
+        ExecutionOrderDTO result = service.getExecutionOrder("X");
+
+        ExecutionOrderDTO.JobDetailsDTO details = result.getJobDetails().get("PRE-X");
+        Assertions.assertNotNull(details);
+        Assertions.assertEquals("/scripts/run_pre.sh", details.getCommand());
+        Assertions.assertEquals("Pre step for X", details.getDescription());
+        Assertions.assertEquals("m1", details.getMachine());
+    }
 }

@@ -1,4 +1,4 @@
-import { CodeIcon, FolderIcon, CalendarIcon, CalendarOffIcon, ServerIcon, BoxIcon, CalendarClockIcon, MousePointerClickIcon } from 'lucide-react'
+import { CodeIcon, FolderIcon, CalendarIcon, CalendarOffIcon, ServerIcon, BoxIcon, CalendarClockIcon, MousePointerClickIcon, TerminalIcon, InfoIcon } from 'lucide-react'
 import { m } from 'motion/react'
 
 import { cn } from '@/lib/utils'
@@ -69,6 +69,25 @@ export function JobDetailsPanel({ jobName, details, status, statusAvailable }: P
       <Row icon={CalendarIcon} label="Run Calendar" value={details.runCalendar} />
       <Row icon={CalendarOffIcon} label="Exclude Calendar" value={details.excludeCalendar} />
       {details.boxName && <Row icon={BoxIcon} label="Box Name" value={details.boxName} />}
+
+      {details.command && (
+        <div className="border-b px-4 py-3 last:border-b-0">
+          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <TerminalIcon className="size-3.5" />
+            Command
+          </div>
+          <pre className="overflow-x-auto rounded-md bg-muted/50 px-2.5 py-2 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">{details.command}</pre>
+        </div>
+      )}
+      {details.description && (
+        <div className="border-b px-4 py-3 last:border-b-0">
+          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <InfoIcon className="size-3.5" />
+            Description
+          </div>
+          <p className="text-sm leading-relaxed">{details.description}</p>
+        </div>
+      )}
     </m.div>
   )
 }

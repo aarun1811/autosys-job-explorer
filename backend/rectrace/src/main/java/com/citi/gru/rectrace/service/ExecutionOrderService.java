@@ -110,10 +110,8 @@ public class ExecutionOrderService {
             details.setRunCalendar((String) row[3]);
             details.setExcludeCalendar((String) row[4]);
             details.setBoxName((String) row[5]);
-            // details.setCommand(clobToString((Clob) row[6]));
-            // details.setDescription(clobToString((Clob) row[7]));
-            details.setCommand("");
-            details.setDescription("");
+            details.setCommand(clobToString(row[6]));
+            details.setDescription(clobToString(row[7]));
 
             jobDetails.put((String) row[0], details);
         }
@@ -139,20 +137,31 @@ public class ExecutionOrderService {
         return result;
     }
 
-    private String clobToString(Clob clob) {
-        if (clob == null)
+    /**
+     * Reads a native-query CLOB column to String. Hibernate may hand back the
+     * column as a plain String (small CLOBs) or a java.sql.Clob depending on
+     * driver/dialect, so tolerate both rather than casting to one (mirrors the
+     * (Number) tolerance used for exec_order).
+     */
+    private String clobToString(Object value) {
+        if (value == null)
             return "";
-        try (Reader reader = clob.getCharacterStream();
-                StringWriter writer = new StringWriter()) {
-            char[] buffer = new char[2048];
-            int bytesRead;
-            while ((bytesRead = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, bytesRead);
+        if (value instanceof String s)
+            return s;
+        if (value instanceof Clob clob) {
+            try (Reader reader = clob.getCharacterStream();
+                    StringWriter writer = new StringWriter()) {
+                char[] buffer = new char[2048];
+                int bytesRead;
+                while ((bytesRead = reader.read(buffer)) != -1) {
+                    writer.write(buffer, 0, bytesRead);
+                }
+                return writer.toString();
+            } catch (Exception e) {
+                logger.error("Error reading CLOB", e);
+                return "";
             }
-            return writer.toString();
-        } catch (Exception e) {
-            logger.error("Error reading CLOB", e);
-            return "";
         }
+        return value.toString();
     }
 }
