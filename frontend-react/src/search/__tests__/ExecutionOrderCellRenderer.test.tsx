@@ -10,6 +10,11 @@ vi.mock('@/lib/queryClient', () => ({
   reportRequestFailure: vi.fn(),
 }))
 
+vi.mock('@/search/execution-order/ExecutionOrderModal', () => ({
+  ExecutionOrderModal: ({ open, jobName }: { open: boolean; jobName: string }) =>
+    open ? <div data-testid="eo-modal">modal:{jobName}</div> : null,
+}))
+
 import { apiFetch, reportRequestFailure } from '@/lib/queryClient'
 import { ExecutionOrderCellRenderer } from '../renderers/ExecutionOrderCellRenderer'
 
@@ -110,9 +115,9 @@ describe('ExecutionOrderCellRenderer', () => {
     expect(button.textContent).not.toMatch(/view/i)
   })
 
-  test('on success, opens Dialog with title "Execution Order — {jobName}" and JSON <pre>', async () => {
+  test('on success, opens the ExecutionOrderModal with the job name', async () => {
     const mockApi = apiFetch as unknown as ReturnType<typeof vi.fn>
-    const responsePayload = { loadJob: 'JOB-1', executionSequence: [{ jobName: 'A', executionOrder: 1, loadJob: 'JOB-1' }] }
+    const responsePayload = { loadJob: 'JOB-1', executionSequence: [{ jobName: 'A', executionOrder: 1, loadJob: 'JOB-1' }], jobDetails: {}, jobStatuses: null, statusAvailable: true }
     mockApi.mockResolvedValue({ json: () => Promise.resolve(responsePayload) })
 
     render(
@@ -121,12 +126,8 @@ describe('ExecutionOrderCellRenderer', () => {
     fireEvent.click(screen.getByRole('button', { name: /view/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/Execution Order — JOB-1/)).toBeInTheDocument()
+      expect(screen.getByTestId('eo-modal')).toHaveTextContent('modal:JOB-1')
     })
-    // <pre> contains JSON.stringify of the response
-    const pre = document.querySelector('pre')
-    expect(pre).not.toBeNull()
-    expect(pre?.textContent).toContain('"loadJob": "JOB-1"')
   })
 
   test('on fetch failure, calls reportRequestFailure(err) — Dialog does NOT open; button re-enables', async () => {
@@ -149,12 +150,9 @@ describe('ExecutionOrderCellRenderer', () => {
     await waitFor(() => expect(button).not.toBeDisabled())
   })
 
-  test('source file contains literal "TODO(Phase 4)" marker (regression guard for Phase 4 placeholder swap)', async () => {
-    // Vite's `?raw` query returns the on-disk source as a string. Phase 4 will
-    // grep for this exact "TODO(Phase 4)" comment when replacing the
-    // placeholder Dialog with the Cytoscape modal — this test asserts the
-    // marker survives any refactor of the renderer file.
+  test('source no longer contains the Phase 4 placeholder marker or a JSON <pre>', async () => {
     const mod = await import('../renderers/ExecutionOrderCellRenderer.tsx?raw')
-    expect(mod.default.includes('TODO(Phase 4)')).toBe(true)
+    expect(mod.default.includes('TODO(Phase 4)')).toBe(false)
+    expect(mod.default.includes('JSON.stringify')).toBe(false)
   })
 })
