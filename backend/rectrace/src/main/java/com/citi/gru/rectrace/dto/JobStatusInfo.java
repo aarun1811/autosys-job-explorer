@@ -30,6 +30,17 @@ public class JobStatusInfo {
     private boolean isCurrentlyActive;
     private VisualState visualState;
 
+    // Runtime gold (spec §6.2) — epochs are SECONDS, formatted like next_start (IST).
+    private Long lastStartEpoch;
+    private String lastStartFormatted;
+    private Long lastEndEpoch;
+    private String lastEndFormatted;
+    private Integer exitCode;
+    private Integer runNum;
+    private Integer retries; // from ujo_job_status.ntry (retries used)
+    private String runMachine;
+    private String owner; // from ujo_job.owner
+
     private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("MMM dd, h:mm a");
 
     // Private constructor - use builder or factory
@@ -37,9 +48,24 @@ public class JobStatusInfo {
     }
 
     /**
-     * Factory method to create JobStatusInfo from database values
+     * Factory method to create JobStatusInfo from database values (status only).
+     * Back-compat 3-arg form — delegates to the richer overload with null runtime.
      */
     public static JobStatusInfo fromDatabase(String jobName, Integer statusCode, Long nextStart) {
+        return fromDatabase(jobName, statusCode, nextStart,
+                null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Factory method including the runtime gold (spec §6.2). All runtime args are
+     * null-tolerant: a job with no run history passes nulls and gets null runtime
+     * fields (not errors). Epochs are SECONDS; the two new epoch pairs format via
+     * the same {@link #formatNextStart} path used by next_start (IST).
+     */
+    public static JobStatusInfo fromDatabase(
+            String jobName, Integer statusCode, Long nextStart,
+            Long lastStart, Long lastEnd, Integer runNum, Integer ntry,
+            Integer exitCode, String runMachine, String owner) {
         Builder builder = builder().jobName(jobName).status(statusCode);
 
         String statusName = mapStatusCodeToName(statusCode);
@@ -58,7 +84,16 @@ public class JobStatusInfo {
                 .nextStartEpoch(nextStart)
                 .nextStartFormatted(formatNextStart(nextStart))
                 .isScheduledToday(scheduledToday)
-                .isCurrentlyActive(isActiveStatus(statusCode));
+                .isCurrentlyActive(isActiveStatus(statusCode))
+                .lastStartEpoch(lastStart)
+                .lastStartFormatted(formatNextStart(lastStart))
+                .lastEndEpoch(lastEnd)
+                .lastEndFormatted(formatNextStart(lastEnd))
+                .runNum(runNum)
+                .retries(ntry)
+                .exitCode(exitCode)
+                .runMachine(runMachine)
+                .owner(owner);
 
         return builder.build();
     }
@@ -230,6 +265,78 @@ public class JobStatusInfo {
         this.visualState = visualState;
     }
 
+    public Long getLastStartEpoch() {
+        return lastStartEpoch;
+    }
+
+    public void setLastStartEpoch(Long lastStartEpoch) {
+        this.lastStartEpoch = lastStartEpoch;
+    }
+
+    public String getLastStartFormatted() {
+        return lastStartFormatted;
+    }
+
+    public void setLastStartFormatted(String lastStartFormatted) {
+        this.lastStartFormatted = lastStartFormatted;
+    }
+
+    public Long getLastEndEpoch() {
+        return lastEndEpoch;
+    }
+
+    public void setLastEndEpoch(Long lastEndEpoch) {
+        this.lastEndEpoch = lastEndEpoch;
+    }
+
+    public String getLastEndFormatted() {
+        return lastEndFormatted;
+    }
+
+    public void setLastEndFormatted(String lastEndFormatted) {
+        this.lastEndFormatted = lastEndFormatted;
+    }
+
+    public Integer getExitCode() {
+        return exitCode;
+    }
+
+    public void setExitCode(Integer exitCode) {
+        this.exitCode = exitCode;
+    }
+
+    public Integer getRunNum() {
+        return runNum;
+    }
+
+    public void setRunNum(Integer runNum) {
+        this.runNum = runNum;
+    }
+
+    public Integer getRetries() {
+        return retries;
+    }
+
+    public void setRetries(Integer retries) {
+        this.retries = retries;
+    }
+
+    public String getRunMachine() {
+        return runMachine;
+    }
+
+    public void setRunMachine(String runMachine) {
+        this.runMachine = runMachine;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
     // Builder pattern
     public static Builder builder() {
         return new Builder();
@@ -279,6 +386,51 @@ public class JobStatusInfo {
 
         public Builder visualState(VisualState visualState) {
             jobStatusInfo.visualState = visualState;
+            return this;
+        }
+
+        public Builder lastStartEpoch(Long lastStartEpoch) {
+            jobStatusInfo.lastStartEpoch = lastStartEpoch;
+            return this;
+        }
+
+        public Builder lastStartFormatted(String lastStartFormatted) {
+            jobStatusInfo.lastStartFormatted = lastStartFormatted;
+            return this;
+        }
+
+        public Builder lastEndEpoch(Long lastEndEpoch) {
+            jobStatusInfo.lastEndEpoch = lastEndEpoch;
+            return this;
+        }
+
+        public Builder lastEndFormatted(String lastEndFormatted) {
+            jobStatusInfo.lastEndFormatted = lastEndFormatted;
+            return this;
+        }
+
+        public Builder exitCode(Integer exitCode) {
+            jobStatusInfo.exitCode = exitCode;
+            return this;
+        }
+
+        public Builder runNum(Integer runNum) {
+            jobStatusInfo.runNum = runNum;
+            return this;
+        }
+
+        public Builder retries(Integer retries) {
+            jobStatusInfo.retries = retries;
+            return this;
+        }
+
+        public Builder runMachine(String runMachine) {
+            jobStatusInfo.runMachine = runMachine;
+            return this;
+        }
+
+        public Builder owner(String owner) {
+            jobStatusInfo.owner = owner;
             return this;
         }
 
