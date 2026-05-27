@@ -9,4 +9,10 @@ describe('StatusLegend', () => {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
   })
+
+  test('renders the order/color honesty hint', () => {
+    render(<StatusLegend />)
+    expect(screen.getByTestId('eo-order-hint')).toHaveTextContent(/execution order/i)
+    expect(screen.getByTestId('eo-order-hint')).toHaveTextContent(/last run/i)
+  })
 })
