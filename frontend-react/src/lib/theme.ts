@@ -31,7 +31,12 @@ export const tokens = {
   sidebarAccentForeground: 'var(--sidebar-accent-foreground)',
   sidebarBorder: 'var(--sidebar-border)',
   sidebarRing: 'var(--sidebar-ring)',
-  // RECTRACE EXTENSIONS (empty — see index.css comment and STATE.md Deferred Items)
+  // RECTRACE EXTENSIONS — execution-order status palette (first data-viz component).
+  statusCompleted: 'var(--status-completed)',
+  statusFailed: 'var(--status-failed)',
+  statusRunning: 'var(--status-running)',
+  statusWaiting: 'var(--status-waiting)',
+  statusInactive: 'var(--status-inactive)',
 } as const
 
 export type TokenKey = keyof typeof tokens

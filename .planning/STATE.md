@@ -186,7 +186,7 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | Planning state | REQUIREMENTS.md missing LOCAL-DEV-01..06 entries (referenced by ROADMAP Phase 00.1 + every 00.1-*-PLAN.md) — see `.planning/phases/00.1-local-dev-seed-bootstrap/deferred-items.md` | Open | Plan 00.1-01 (2026-05-12) |
-| Design tokens | Add chart/series/ramp tokens to `frontend-react/src/index.css` "Rectrace extensions" overlay block — surfaces when first chart/data-viz component is planned (see Phase 2 CONTEXT.md D-2.7). Reference recviz `src/index.css` `--series-1..8`, `--ramp-low/high`, `--chart-positive/negative/warning`. Phase 8 DESIGN-01 audits the lot. | Open | Phase 2 discuss (2026-05-13) |
+| Design tokens | Add chart/series/ramp tokens to `frontend-react/src/index.css` "Rectrace extensions" overlay block — surfaces when first chart/data-viz component is planned (see Phase 2 CONTEXT.md D-2.7). Reference recviz `src/index.css` `--series-1..8`, `--ramp-low/high`, `--chart-positive/negative/warning`. Phase 8 DESIGN-01 audits the lot. | Partially closed 2026-05-27 — status palette (--status-completed/-failed/-running/-waiting/-inactive) introduced by the execution-order modal (first data-viz component); chart/series/ramp tokens still deferred. | Phase 2 discuss (2026-05-13) |
 | Docs hygiene | ROADMAP.md (Phase 2 SC#5, Phase 3 SC#1) + REQUIREMENTS.md (REACT-08, SEARCH-07) need edits: drop `/v6/` references (superseded by Phase 2 D-2.4); drop "angular" from ops-script component lists (superseded by Phase 2 D-2.15). Either fold into Phase 2 plan-phase or capture separately. | Closed — resolved in Plan 02-05 | Phase 2 discuss (2026-05-13) |
 
 ## Session Continuity

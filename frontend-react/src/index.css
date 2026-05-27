@@ -91,6 +91,13 @@
   --sidebar-accent-foreground: oklch(0.32 0.06 256);
   --sidebar-border: oklch(0.915 0.006 256);
   --sidebar-ring: oklch(0.515 0.176 256);
+  /* Execution-order graph status palette (first data-viz component — see the
+   * RECTRACE EXTENSIONS note above). green / red / azure / amber / gray. */
+  --status-completed: oklch(0.62 0.15 150);
+  --status-failed: oklch(0.585 0.214 25.5);
+  --status-running: oklch(0.515 0.176 256);
+  --status-waiting: oklch(0.72 0.15 75);
+  --status-inactive: oklch(0.6 0.02 256);
 }
 
 .dark {
@@ -123,6 +130,11 @@
   --sidebar-accent-foreground: oklch(0.965 0.004 256);
   --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: oklch(0.625 0.168 254);
+  --status-completed: oklch(0.72 0.16 152);
+  --status-failed: oklch(0.704 0.19 22.5);
+  --status-running: oklch(0.7 0.16 254);
+  --status-waiting: oklch(0.8 0.14 80);
+  --status-inactive: oklch(0.7 0.02 256);
 }
 
 @layer base {
@@ -354,3 +366,30 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ================================================================
+ * Execution-order graph — status-tinted node / legend-dot / badge classes.
+ * Token-driven (color-mix over the --status-* palette), theme-aware.
+ * ================================================================ */
+.eo-node { background: var(--card); border-color: var(--border); color: var(--card-foreground); }
+.eo-node-completed { background: color-mix(in oklab, var(--status-completed) 12%, var(--card)); border-color: color-mix(in oklab, var(--status-completed) 42%, var(--border)); }
+.eo-node-failed    { background: color-mix(in oklab, var(--status-failed) 12%, var(--card));    border-color: color-mix(in oklab, var(--status-failed) 42%, var(--border)); }
+.eo-node-running   { background: color-mix(in oklab, var(--status-running) 12%, var(--card));   border-color: color-mix(in oklab, var(--status-running) 42%, var(--border)); }
+.eo-node-waiting   { background: color-mix(in oklab, var(--status-waiting) 12%, var(--card));   border-color: color-mix(in oklab, var(--status-waiting) 42%, var(--border)); }
+.eo-node-inactive  { background: color-mix(in oklab, var(--status-inactive) 8%, var(--card));   border-color: color-mix(in oklab, var(--status-inactive) 30%, var(--border)); }
+
+.eo-dot-completed { background: var(--status-completed); }
+.eo-dot-failed    { background: var(--status-failed); }
+.eo-dot-running   { background: var(--status-running); }
+.eo-dot-waiting   { background: var(--status-waiting); }
+.eo-dot-inactive  { background: var(--status-inactive); }
+
+.eo-badge-completed { background: color-mix(in oklab, var(--status-completed) 16%, transparent); color: var(--status-completed); }
+.eo-badge-failed    { background: color-mix(in oklab, var(--status-failed) 16%, transparent);    color: var(--status-failed); }
+.eo-badge-running   { background: color-mix(in oklab, var(--status-running) 16%, transparent);   color: var(--status-running); }
+.eo-badge-waiting   { background: color-mix(in oklab, var(--status-waiting) 18%, transparent);   color: var(--status-waiting); }
+.eo-badge-inactive  { background: color-mix(in oklab, var(--status-inactive) 16%, transparent);  color: var(--status-inactive); }
+
+/* React Flow edges + arrowheads — token-driven, theme-aware (no hex). */
+.react-flow__edge-path { stroke: color-mix(in oklab, var(--foreground) 28%, transparent); }
+.react-flow__arrowhead { fill: color-mix(in oklab, var(--foreground) 28%, transparent); }
