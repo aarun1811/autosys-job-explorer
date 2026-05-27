@@ -13,6 +13,8 @@ export interface JobNodeData extends Record<string, unknown> {
   isLoadJob: boolean
   /** Full status object (runtime gold) for the hover popover; null when no live status. */
   status: JobStatusInfo | null
+  /** Set by ExecutionOrderGraph for quick-find / select-emphasis dimming (not by buildGraphFromData). */
+  dimmed?: boolean
 }
 
 export type FlowNode = Node<JobNodeData, 'job'>
