@@ -1,14 +1,25 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { NetworkIcon } from 'lucide-react'
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 import { ExecutionOrderGraph } from './ExecutionOrderGraph'
-import { JobDetailsPanel } from './JobDetailsPanel'
+import { JobInspector } from './JobInspector'
+import { PipelineSummaryStrip } from './PipelineSummaryStrip'
 import { StatusLegend } from './StatusLegend'
 import { findJobStatus } from './statusConfig'
-import { isEmptyExecutionOrder, type ExecutionOrderData } from './types'
+import {
+  isEmptyExecutionOrder, rollup, type ExecutionOrderData, type OverallState,
+} from './types'
+
+const PILL_LABEL: Record<OverallState, string> = {
+  ATTENTION: 'Attention', RUNNING: 'Running', HEALTHY: 'Healthy', IDLE: 'Idle',
+}
+const PILL_BADGE: Record<OverallState, string> = {
+  ATTENTION: 'eo-badge-failed', RUNNING: 'eo-badge-running', HEALTHY: 'eo-badge-completed', IDLE: 'eo-badge-inactive',
+}
 
 interface Props {
   data: ExecutionOrderData
@@ -17,12 +28,26 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-/** The execution-order graph modal — graph pane + job-details side panel. */
+/**
+ * Execution-order modal shell (spec §5.1):
+ *   Header (network icon · title · mono load-job chip · pipeline-state pill) →
+ *   PipelineSummaryStrip (segmented bar + counts + quick-find) →
+ *   body split: graph canvas ‖ persistent JobInspector rail.
+ * Owns the cross-cutting selection + quick-find match state; the active match is
+ * threaded through `selected` so the graph centers it and the inspector opens it.
+ */
 export function ExecutionOrderModal({ data, jobName, open, onOpenChange }: Props) {
   const [selected, setSelected] = useState<string | null>(null)
+  const [matches, setMatches] = useState<string[]>([])
+
   const empty = isEmptyExecutionOrder(data)
+  const r = rollup(data.jobStatuses)
   const selectedDetails = selected ? data.jobDetails?.[selected] : undefined
   const selectedStatus = selected ? findJobStatus(data.jobStatuses, selected) : null
+
+  // Stable callbacks so QuickFind's effect deps don't re-fire each render.
+  const handleActiveMatch = useCallback((name: string | null) => setSelected(name), [])
+  const handleMatchesChange = useCallback((m: string[]) => setMatches(m), [])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,6 +60,14 @@ export function ExecutionOrderModal({ data, jobName, open, onOpenChange }: Props
               {data.loadJob || jobName}
             </span>
           </div>
+          {!empty && data.statusAvailable && (
+            <span
+              data-testid="eo-pipeline-pill"
+              className={cn('ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', PILL_BADGE[r.overall])}
+            >
+              {PILL_LABEL[r.overall]}{r.failedCount > 0 ? ` — ${r.failedCount} failed` : ''}
+            </span>
+          )}
           <DialogDescription className="sr-only">Execution sequence for {jobName}</DialogDescription>
         </DialogHeader>
 
@@ -43,30 +76,45 @@ export function ExecutionOrderModal({ data, jobName, open, onOpenChange }: Props
             No execution sequence found for {jobName}.
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1">
-            <div className="flex min-w-0 flex-1 flex-col">
-              <div className="flex shrink-0 items-center border-b px-4 py-2">
-                {data.statusAvailable ? (
-                  <StatusLegend />
-                ) : (
-                  <span className="text-[11px] text-muted-foreground" data-testid="eo-status-unavailable">
-                    Live status unavailable
-                  </span>
-                )}
-              </div>
-              <div className="min-h-0 flex-1">
-                <ExecutionOrderGraph data={data} onSelect={setSelected} />
-              </div>
-            </div>
-            <div className="w-[360px] shrink-0 overflow-y-auto border-l">
-              <JobDetailsPanel
-                jobName={selected}
-                details={selectedDetails}
-                status={selectedStatus}
-                statusAvailable={data.statusAvailable}
+          <>
+            <div className="shrink-0 border-b">
+              <PipelineSummaryStrip
+                data={data}
+                onActiveMatch={handleActiveMatch}
+                onMatchesChange={handleMatchesChange}
               />
             </div>
-          </div>
+            <div className="flex min-h-0 flex-1">
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1">
+                  <ExecutionOrderGraph
+                    data={data}
+                    selected={selected}
+                    matches={matches}
+                    onSelect={setSelected}
+                  />
+                </div>
+                <div className="flex shrink-0 items-center border-t px-4 py-2">
+                  {data.statusAvailable ? (
+                    <StatusLegend />
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground" data-testid="eo-status-unavailable">
+                      Live status unavailable
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="w-[42%] min-w-[340px] max-w-[440px] shrink-0 overflow-y-auto border-l">
+                <JobInspector
+                  jobName={selected}
+                  details={selectedDetails}
+                  status={selectedStatus}
+                  statusAvailable={data.statusAvailable}
+                  data={data}
+                />
+              </div>
+            </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
