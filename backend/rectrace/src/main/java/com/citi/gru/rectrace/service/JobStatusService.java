@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
@@ -34,6 +35,34 @@ public class JobStatusService {
     }
 
     /**
+     * Maps a ujo_job (+ owner) LEFT JOIN ujo_job_status row to JobStatusInfo.
+     * Package-private + static so it is unit-testable against a mocked ResultSet
+     * (see JobStatusServiceTest) without a live Oracle. rs.getObject(col, T.class)
+     * returns null for SQL NULL, so runtime columns are null-tolerant.
+     */
+    static final RowMapper<JobStatusInfo> JOB_STATUS_ROW_MAPPER = new JobStatusRowMapper();
+
+    static final class JobStatusRowMapper implements RowMapper<JobStatusInfo> {
+        @Override
+        public JobStatusInfo mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
+            String jobName = rs.getString("job_name");
+            String owner = rs.getString("owner");
+            Integer status = rs.getObject("status", Integer.class);
+            Long nextStart = rs.getObject("next_start", Long.class);
+            Long lastStart = rs.getObject("last_start", Long.class);
+            Long lastEnd = rs.getObject("last_end", Long.class);
+            Integer runNum = rs.getObject("run_num", Integer.class);
+            Integer ntry = rs.getObject("ntry", Integer.class);
+            Integer exitCode = rs.getObject("exit_code", Integer.class);
+            String runMachine = rs.getString("run_machine");
+
+            return JobStatusInfo.fromDatabase(
+                    jobName, status, nextStart,
+                    lastStart, lastEnd, runNum, ntry, exitCode, runMachine, owner);
+        }
+    }
+
+    /**
      * Fetch live job status for multiple jobs in a single query
      */
     public Map<String, JobStatusInfo> getBatchJobStatus(List<String> jobNames) {
@@ -44,10 +73,12 @@ public class JobStatusService {
         logger.debug("Fetching status for {} jobs from schema {}", jobNames.size(), schema);
 
         String sql = String.format(
-                "SELECT uj.job_name, ujs.status, ujs.next_start " +
-                        "FROM %s.ujo_job uj " +
-                        "LEFT JOIN %s.ujo_job_status ujs ON uj.joid = ujs.joid " +
-                        "WHERE UPPER(uj.job_name) IN (:jobNames)",
+                "SELECT uj.job_name, uj.owner, ujs.status, ujs.next_start, "
+                        + "ujs.last_start, ujs.last_end, ujs.run_num, ujs.ntry, "
+                        + "ujs.exit_code, ujs.run_machine "
+                        + "FROM %s.ujo_job uj "
+                        + "LEFT JOIN %s.ujo_job_status ujs ON uj.joid = ujs.joid "
+                        + "WHERE UPPER(uj.job_name) IN (:jobNames)",
                 schema, schema);
 
         try {
@@ -59,13 +90,7 @@ public class JobStatusService {
             MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("jobNames", upperJobNames);
 
-            List<JobStatusInfo> statusList = jdbcTemplate.query(sql, parameters, (rs, rowNum) -> {
-                String jobName = rs.getString("job_name");
-                Integer status = rs.getObject("status", Integer.class);
-                Long nextStart = rs.getObject("next_start", Long.class);
-
-                return JobStatusInfo.fromDatabase(jobName, status, nextStart);
-            });
+            List<JobStatusInfo> statusList = jdbcTemplate.query(sql, parameters, JOB_STATUS_ROW_MAPPER);
 
             // Convert to map for easy lookup
             Map<String, JobStatusInfo> statusMap = statusList.stream()
