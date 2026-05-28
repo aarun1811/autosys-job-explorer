@@ -57,10 +57,10 @@
 
 - Create `frontend/src/lib/visibility.ts` — shared `isVisible(visibleWhen, kpiResults)` helper.
 - Create `frontend/src/lib/visibility.test.ts` — unit tests.
-- Modify `frontend/src/types/dashboard-config.ts` — add `visibleWhen?: VisibleWhen` to `KpiConfig` AND `DashboardChartConfig`. Add `coalesceZero?: boolean` to `GridConfig`.
+- Modify `frontend/src/types/dashboard-config.ts` — add `visibleWhen?: VisibleWhen` to `KpiConfig` AND `DashboardChartConfig`. Add `accentColor?: string` to `KpiConfig`. Add `coalesceZero?: boolean` to `GridConfig`.
 - Modify `frontend/src/hooks/use-data-source-merge.ts` — add `coalesceZero?: boolean` to `MergeConfig`; forward `coalesce_zero` in POST body.
 - Modify `frontend/src/components/dashboard/config-data-grid.tsx` — replace local `isVisible` with shared import; in `MergedSourceGrid`, forward `coalesceZero: grid.coalesceZero` into `mergeConfig` memo.
-- Modify `frontend/src/components/dashboard/config-kpi-row.tsx` — gate per-KPI render on `isVisible(kpi.visibleWhen, effectiveKpis)` inside the existing `kpis.map(...)`.
+- Modify `frontend/src/components/dashboard/config-kpi-row.tsx` — gate per-KPI render on `isVisible(kpi.visibleWhen, effectiveKpis)` inside the existing `kpis.map(...)`; apply `accentColor` to card border + trend pill via `color-mix`.
 - Modify `frontend/src/components/dashboard/config-chart-grid.tsx` — gate per-chart render on `isVisible(chart.visibleWhen, kpiResults)`.
 - Modify `backend/app/services/merge_engine.py` — add `coalesce_zero` parameter; fill missing numeric cells with `0` when set.
 - Modify `backend/app/api/data_sources.py` — accept `coalesce_zero` on `MergeRequest`, forward to engine.
@@ -200,14 +200,18 @@ Expected: 9 tests passing.
 
 - [ ] **Step 6: Extend the type definitions**
 
-Edit `/Users/aarun/Workspace/Projects/RecViz/frontend/src/types/dashboard-config.ts`. Add `visibleWhen?: VisibleWhen` to BOTH `KpiConfig` (lines ~32-39) AND `DashboardChartConfig` (lines ~60-87). The `GridConfig.visibleWhen` field already exists at line 113 — leave it.
-
-Also add `coalesceZero?: boolean` to `GridConfig` (will be consumed in Task 2 frontend wiring):
+Edit `/Users/aarun/Workspace/Projects/RecViz/frontend/src/types/dashboard-config.ts`. Add:
+1. `visibleWhen?: VisibleWhen` to BOTH `KpiConfig` (lines ~32-39) AND `DashboardChartConfig` (lines ~60-87). The `GridConfig.visibleWhen` field already exists at line 113 — leave it.
+2. `accentColor?: string` to `KpiConfig`. Plan 2 added this on `feature/quickrec-dashboard` (it drives KPI card border + trend pill colors), but that branch isn't reachable from `feature/tlm-dashboard`. Task 5's dashboard config sets `accentColor` per-KPI (`--chart-1`, `--chart-warning`, etc.); without this field declaration + the wiring in Step 8, the field would be a dead JSONB round-trip.
+3. `coalesceZero?: boolean` to `GridConfig` (will be consumed in Task 2 frontend wiring).
 
 ```ts
 export interface KpiConfig {
   // ... existing fields ...
   visibleWhen?: VisibleWhen   // <-- ADD
+  accentColor?: string         // <-- ADD. CSS custom-property name like
+                               // '--chart-1' / '--chart-warning'. Wired in
+                               // Step 8 (KPI card border + trend pill tint).
 }
 
 export interface DashboardChartConfig {
@@ -231,9 +235,11 @@ import { isVisible } from '@/lib/visibility'
 
 Leave the call site at line ~373 (`if (!isVisible(grid.visibleWhen, kpiResults)) return null`) intact.
 
-- [ ] **Step 8: Add visibility gating to KPI row**
+- [ ] **Step 8: Add visibility gating + `accentColor` to KPI row**
 
-Edit `/Users/aarun/Workspace/Projects/RecViz/frontend/src/components/dashboard/config-kpi-row.tsx`. The component has its own `useDashboardKpis` and computes `effectiveKpis = crossFilteredKpis ?? serverKpis` at line ~102. Inside the per-KPI map (currently at lines ~110-120), add an early-return:
+Edit `/Users/aarun/Workspace/Projects/RecViz/frontend/src/components/dashboard/config-kpi-row.tsx`. The component has its own `useDashboardKpis` and computes `effectiveKpis = crossFilteredKpis ?? serverKpis` at line ~102. Two additions inside the per-KPI map (currently at lines ~110-120):
+
+(a) **Visibility gate** — early-return when the rule says hide. (b) **`accentColor` consumption** — when `kpi.accentColor` is set (e.g. `'--chart-1'`), tint the card border and trend pill from that CSS variable.
 
 ```tsx
 import { isVisible } from '@/lib/visibility'
@@ -242,17 +248,43 @@ import { isVisible } from '@/lib/visibility'
 return (
   <div className="grid grid-cols-4 gap-3">
     {kpis.map((kpi, i) => {
-      // Gate on KPI-value condition; uses the same effectiveKpis used to
-      // compute each card's displayed value. Returns null = card unmounted.
+      // Visibility gate — uses the same effectiveKpis used to compute the
+      // displayed value. Returns null = card unmounted.
       if (!isVisible(kpi.visibleWhen, effectiveKpis)) return null
 
+      // accentColor — CSS variable name (e.g. '--chart-1', '--chart-warning').
+      // Drives card border-left tint and trend-pill bg/text via color-mix.
+      // When undefined, card uses the default (no tinting).
+      const accentVar = kpi.accentColor ? `var(${kpi.accentColor})` : undefined
+      const accentBorderStyle = accentVar ? { borderLeftColor: accentVar } : undefined
+      const accentBadgeStyle = accentVar
+        ? {
+            backgroundColor: `color-mix(in oklab, ${accentVar} 14%, transparent)`,
+            color: accentVar,
+          }
+        : undefined
+
       const result = kpiResultsMap.get(kpi.id)
-      // ... existing per-card render unchanged ...
+      // ... existing per-card render unchanged EXCEPT:
+      //   - on the outer motion.div / Card border element, merge accentBorderStyle into style
+      //   - on the trend pill (where it renders the % change), merge accentBadgeStyle into style
+      //
+      // Concrete points of insertion vary with the existing JSX — look for
+      // the outer Card element with className containing 'border-l' or
+      // similar, and the trend pill (TrendPill / motion.span with the %).
+      // Apply `style={{ ...existingStyle, ...accentBorderStyle }}` and
+      // `style={{ ...existingStyle, ...accentBadgeStyle }}` respectively.
 ```
 
 The `effectiveKpis` variable already exists in scope at line ~102 — no new prop plumbing needed. The `isVisible` import is the only new symbol.
 
 [CAVEAT] There's a pre-existing Rules-of-Hooks issue in this file (the early-return at line 64 happens before `useDashboardKpis` is called when `kpis.length === 0`). Do NOT fix it as part of this task — adding the `isVisible` gate inside the map preserves the existing structure. Note it as a follow-up.
+
+[VERIFICATION] After applying, compare against Plan 2's `feature/quickrec-dashboard` branch — if the QuickRec branch's `config-kpi-row.tsx` already has this same `accentVar`/`accentBorderStyle`/`accentBadgeStyle` pattern, mirror exactly so the eventual integration merge produces a clean diff. Check:
+```bash
+cd /Users/aarun/Workspace/Projects/RecViz && git show feature/quickrec-dashboard:frontend/src/components/dashboard/config-kpi-row.tsx | grep -A20 "accentColor"
+```
+If Plan 2 used a different idiom (e.g. CSS variable on the className itself), match THAT instead.
 
 - [ ] **Step 9: Add visibility gating to chart grid**
 
@@ -290,7 +322,7 @@ git add frontend/src/lib/visibility.ts frontend/src/lib/visibility.test.ts \
        frontend/src/components/dashboard/config-data-grid.tsx \
        frontend/src/components/dashboard/config-kpi-row.tsx \
        frontend/src/components/dashboard/config-chart-grid.tsx
-git commit -m "feat(dashboard): extend visibleWhen to KPIs and charts; add GridConfig.coalesceZero (Plan 4 §12.1)
+git commit -m "feat(dashboard): extend visibleWhen to KPIs and charts; add KpiConfig.accentColor + GridConfig.coalesceZero (Plan 4 §12.1)
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ```
@@ -1092,20 +1124,34 @@ Legacy `TlmStatsV2Service.buildManualMatchQuery` (547-622) handles this by proje
         ),
         "database_routing": {"type": "static", "database": "reconmgmt"},
         "sql_template": (
+            # Per-leg COUNT(*) + GROUP BY inside each UNION leg (matches the
+            # legacy buildManualMatchQuery shape — verbatim from
+            # TlmStatsV2Service.java 568-586 and 599-617). The outer SELECT
+            # sums the two per-leg counts. Pre-aggregation inside legs keeps
+            # the UNION ALL row volume small.
+            #
+            # {{filters}} appears in BOTH legs. RecViz's _build_sql uses
+            # str.replace which substitutes ALL occurrences, so the same
+            # filter clauses get applied to both legs (verified in §12.8 spike).
             "SELECT tlm_instance, agent_code, set_id, stmt_date, bran_code, "
             "       corr_acc_no, SUM(manual_match_count) AS total_manual_match_count "
             "FROM ( "
             "  SELECT m.tlm_instance, m.agent_code, m.setid AS set_id, "
             "         m.corr_acc_no, m.bran_code, m.stmt_date, "
-            "         1 AS manual_match_count "
+            "         COUNT(*) AS manual_match_count "
             "  FROM mr_csum_man_match_details m "
+            "  WHERE 1=1 {{filters}} "
+            "  GROUP BY m.tlm_instance, m.agent_code, m.setid, "
+            "           m.corr_acc_no, m.bran_code, m.stmt_date "
             "  UNION ALL "
             "  SELECT n.tlm_instance, n.agent_code, n.local_acc_no AS set_id, "
             "         n.corr_acc_no, n.bran_code, n.stmt_date, "
-            "         1 AS manual_match_count "
+            "         COUNT(*) AS manual_match_count "
             "  FROM mr_csum_netting_hist n "
+            "  WHERE 1=1 {{filters}} "
+            "  GROUP BY n.tlm_instance, n.agent_code, n.local_acc_no, "
+            "           n.corr_acc_no, n.bran_code, n.stmt_date "
             ") "
-            "WHERE 1=1 {{filters}} "
             "GROUP BY tlm_instance, agent_code, set_id, stmt_date, bran_code, corr_acc_no"
         ),
         "columns": [
@@ -1718,33 +1764,36 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 **Files:**
 - Modify `backend/rectrace/src/main/resources/search-config-v4.json`
 
-The legacy Angular modal accepts THREE entry-point types (`tlm_instance`, `recon`, `set_id`). The TLM renderer should be wired on every plain (non-rowGroup) column matching those names. Rowgroup-flagged columns are skipped — renderer behavior on group-header cells is undefined and would render the link on group rollups too.
+The legacy Angular modal accepts THREE entry-point types (`tlm_instance`, `recon`, `set_id`). The TLM renderer should be wired on every plain (non-rowGroup) column matching those names. Rowgroup-flagged columns are skipped — renderer behavior on group-header cells is undefined and would render the link on group rollups too. `hide:true` columns are INCLUDED so a user-toggle-unhide produces consistent clickable behavior with the visible siblings.
 
 **Authoritative target column list** (verified against `search-config-v4.json` content):
 
-| Category (key) | Column | Renderer | Entry point |
-|---|---|---|---|
-| `reconName` | `tlm_instance` (L60) | tlmStatsButtonRenderer | `tlm_instance` |
-| `boxName` | `tlm_instance` (L92) | tlmStatsButtonRenderer | `tlm_instance` |
-| `setId` | `tlm_instance` (L123) | tlmStatsButtonRenderer | `tlm_instance` |
-| `subAcc` | `tlm_instance` (L154) | tlmStatsButtonRenderer | `tlm_instance` |
-| `loadFileName` | `tlm_instance` (L185) | tlmStatsButtonRenderer | `tlm_instance` |
-| `tlmInstance` | `tlm_instance` (L311) | **SKIP** — rowGroup column |  |
-| `setId` | `set_id` (L116) | **SKIP** — rowGroup column |  |
-| `subAcc` | `set_id` (L150) | tlmStatsButtonRenderer | `set_id` |
-| `tlmInstance` | `set_id` (L317) | tlmStatsButtonRenderer | `set_id` |
-| `reconName` | `recon` (L52) | **SKIP** — rowGroup column |  |
-| `boxName` | `recon` (L86) | tlmStatsButtonRenderer | `recon` |
-| `setId` | `recon` (L117) | tlmStatsButtonRenderer | `recon` |
-| `subAcc` | `recon` (L148) | tlmStatsButtonRenderer | `recon` |
-| `loadFileName` | `recon` (L179) | tlmStatsButtonRenderer | `recon` |
-| `jobName` | `recon` (L211) | tlmStatsButtonRenderer | `recon` |
-| `tlmInstance` | `recon` (L312) | tlmStatsButtonRenderer | `recon` |
-| `reconId` | `recon` (L336) | tlmStatsButtonRenderer | `recon` |
-| `reconPortalId` | `recon` (L357) | tlmStatsButtonRenderer | `recon` |
-| `fileName` | `recon` (L26) | tlmStatsButtonRenderer | `recon` |
+| Category (key) | Column | Notes | Renderer | Entry point |
+|---|---|---|---|---|
+| `reconName` | `tlm_instance` (L60) | | tlmStatsButtonRenderer | `tlm_instance` |
+| `boxName` | `tlm_instance` (L92) | | tlmStatsButtonRenderer | `tlm_instance` |
+| `setId` | `tlm_instance` (L123) | | tlmStatsButtonRenderer | `tlm_instance` |
+| `subAcc` | `tlm_instance` (L154) | | tlmStatsButtonRenderer | `tlm_instance` |
+| `loadFileName` | `tlm_instance` (L185) | | tlmStatsButtonRenderer | `tlm_instance` |
+| `tlmInstance` | `tlm_instance` (L311) | rowGroup | **SKIP** — rowGroup column |  |
+| `fileName` | `set_id` (L27) | hide | tlmStatsButtonRenderer | `set_id` |
+| `reconName` | `set_id` (L58) | hide | tlmStatsButtonRenderer | `set_id` |
+| `setId` | `set_id` (L116) | rowGroup | **SKIP** — rowGroup column |  |
+| `subAcc` | `set_id` (L150) | | tlmStatsButtonRenderer | `set_id` |
+| `loadFileName` | `set_id` (L183) | hide | tlmStatsButtonRenderer | `set_id` |
+| `tlmInstance` | `set_id` (L317) | | tlmStatsButtonRenderer | `set_id` |
+| `fileName` | `recon` (L26) | | tlmStatsButtonRenderer | `recon` |
+| `reconName` | `recon` (L52) | rowGroup | **SKIP** — rowGroup column |  |
+| `boxName` | `recon` (L86) | | tlmStatsButtonRenderer | `recon` |
+| `setId` | `recon` (L117) | | tlmStatsButtonRenderer | `recon` |
+| `subAcc` | `recon` (L148) | | tlmStatsButtonRenderer | `recon` |
+| `loadFileName` | `recon` (L179) | | tlmStatsButtonRenderer | `recon` |
+| `jobName` | `recon` (L211) | | tlmStatsButtonRenderer | `recon` |
+| `tlmInstance` | `recon` (L312) | | tlmStatsButtonRenderer | `recon` |
+| `reconId` | `recon` (L336) | | tlmStatsButtonRenderer | `recon` |
+| `reconPortalId` | `recon` (L357) | | tlmStatsButtonRenderer | `recon` |
 
-Total: **14 column-entries** receive the renderer. **3 rowGroup-flagged columns** (`reconName.recon`, `setId.set_id`, `tlmInstance.tlm_instance`) are skipped.
+Total: **19 column-entries** receive the renderer (5 `tlm_instance` + 5 `set_id` + 9 `recon`). **3 rowGroup-flagged columns** (`reconName.recon`, `setId.set_id`, `tlmInstance.tlm_instance`) are skipped — renderer behavior on group-header cells is undefined.
 
 - [ ] **Step 1: Read the QuickRec JSON wiring as the precedent shape**
 
@@ -1753,7 +1802,7 @@ cd /Users/aarun/Workspace/Projects/autosys-job-explorer && grep -B1 -A3 'quickRe
 ```
 Note: `cellRenderer` and `cellRendererParams` are sibling fields at the column-object root.
 
-- [ ] **Step 2: Edit `search-config-v4.json` and add the 14 renderer wirings**
+- [ ] **Step 2: Edit `search-config-v4.json` and add the 19 renderer wirings**
 
 For each column in the table above (excluding rowGroup-flagged), insert `cellRenderer` and `cellRendererParams` as sibling fields:
 
@@ -1774,7 +1823,7 @@ to:
 }
 ```
 
-Same shape for each of the 14 target columns; `entryPoint` matches the column field name (`tlm_instance`, `set_id`, or `recon`).
+Same shape for each of the 19 target columns; `entryPoint` matches the column field name (`tlm_instance`, `set_id`, or `recon`).
 
 - [ ] **Step 3: Rebuild + restart the rectrace backend so the new config loads**
 
@@ -1793,7 +1842,7 @@ for cat in config.get('categories', []):
 print(f'total: {hits} tlmStatsButtonRenderer wirings')
 "
 ```
-(Per `[[project_ops_backend_orphan]]` — kill the `:6088` listener first.) Expected: 14 lines printed + `total: 14`.
+(Per `[[project_ops_backend_orphan]]` — kill the `:6088` listener first.) Expected: 19 lines printed + `total: 19`.
 
 - [ ] **Step 4: Manually verify in the React UI**
 
@@ -1807,7 +1856,7 @@ echo "Open: http://localhost:5173/search?q=TLMP_CONSUMER&tab=tlmInstance"
 ```bash
 cd /Users/aarun/Workspace/Projects/autosys-job-explorer
 git add backend/rectrace/src/main/resources/search-config-v4.json
-git commit -m "feat(search): wire tlmStatsButtonRenderer on 14 tlm_instance/set_id/recon columns (Plan 4)
+git commit -m "feat(search): wire tlmStatsButtonRenderer on 19 tlm_instance/set_id/recon columns (Plan 4)
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ```
@@ -1914,12 +1963,9 @@ test.describe('TLM stats modal — embedded RecViz dashboard', () => {
     await setIdCell.waitFor({ state: 'visible', timeout: 10_000 })
 
     // The embed URL is captured via the iframe src. After clicking, assert
-    // the src contains filter.lock=tlm_instance,recon,set_id.
-    const clickedHref = await setIdCell.evaluate((btn) => {
-      btn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-      return null
-    })
-    expect(clickedHref).toBeNull() // sanity
+    // the src contains filter.lock=tlm_instance,recon,set_id (URLSearchParams
+    // percent-encodes commas as %2C).
+    await setIdCell.click()
 
     const iframe = page.locator('iframe[src*="/embed/dashboards/dash-tlm-stats"]').first()
     await iframe.waitFor({ state: 'visible', timeout: 10_000 })
@@ -1960,13 +2006,13 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 
 ## Done criteria for Plan 4
 
-- `visibleWhen` supported on `KpiConfig` + `DashboardChartConfig`; shared `lib/visibility.ts` extracted; grid behavior preserved.
+- `visibleWhen` supported on `KpiConfig` + `DashboardChartConfig`; shared `lib/visibility.ts` extracted; grid behavior preserved. `accentColor` field on `KpiConfig` consumed by `ConfigKpiRow` (card border + trend pill tint via `color-mix`).
 - `coalesce_zero` flows end-to-end: backend `MergeRequest` → `MergeEngine` (cursor-typed numeric coalescing) → frontend `MergeConfig` → `useDataSourceMerge` POST body → `GridConfig.coalesceZero` → `MergedSourceGrid` consumer. Default off preserves existing behavior; TLM merge sets it on.
 - `FilterMapping.options` accepts JSON dict; `_build_date_range_clause(exclude_today=True)` honors per-mapping. TLM datasets use `exclude_today: True`; QuickRec stays on default.
 - `conn-reconmgmt` registered alongside `conn-recportal` and `conn-tcosprd`.
 - `ds-tlm-automatch` + `ds-tlm-breaks` + `ds-tlm-manual-match` produce correct rows; cross-DB merge with `coalesce_zero=true` works end-to-end via curl.
 - `dash-tlm-stats` renders 4 KPIs (with trend + accentColor), 2 grids (reconciliation cross-DB merge + breaks gated visibleWhen), filter bar with dependent multi-selects.
-- `TlmStatsCellRenderer` mirrors `QuickRecStatsCellRenderer` exactly; wired on 14 `tlm_instance` / `set_id` / `recon` columns across 9 categories (rowGroup columns skipped).
+- `TlmStatsCellRenderer` mirrors `QuickRecStatsCellRenderer` exactly; wired on 19 `tlm_instance` / `set_id` / `recon` columns across 10 categories (3 rowGroup columns skipped; `hide:true` columns included for consistency).
 - Registry length-assertion bumped to 5; both renderers (Plan 2 + Plan 4) have presence checks.
 - Playwright installed; e2e smoke passes (modal opens, 4 KPIs visible, lock list correct on set_id click).
 - All commits local; nothing pushed.
@@ -1991,7 +2037,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
   12. Test fixture typo fixed (Task 2 Step 1 — `manual_match` column entry now correct).
   13. e2e zero-fill assertion dropped; smoke verifies modal opens + KPIs visible (Task 8 Step 4).
   14. `setid` (no underscore) column name used in `data/03-reconmgmt-inserts.sql` matched in SQL (Task 4 Step 5).
-  15. 14 specific column-entries enumerated for Task 7 wiring (rowGroup columns skipped).
+  15. 19 specific column-entries enumerated for Task 7 wiring (rowGroup columns skipped; `hide:true` columns included for unhide-consistency).
 - **Type consistency** — `VisibleWhen {kpi, condition, value}` consistent across Tasks 1 + 5. `coalesce_zero`/`coalesceZero` consistent across Tasks 2 + 5. `FilterMapping.options` consistent Tasks 3 + 4. `dash-tlm-stats` / `ds-tlm-*` / `kpi-tlm-*` / `tlmStatsButtonRenderer` consistent across all referencing tasks.
 - **Branch hygiene** — Tasks 1-5 on `feature/tlm-dashboard`; Tasks 6-8 on `milestone/modernization`. No cross-branch contamination.
 - **No push** — every commit step is local-only per the standing rule.
@@ -2005,7 +2051,6 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 - Empty-state Markdown panel and dashboard-renderer-level "no data" UX — deferred to the broader "Empty-state no-results bug + contextual dashboards" sub-project (next in the user's queue after Plan 4).
 - Pre-existing Rules-of-Hooks issue in `config-kpi-row.tsx` (early-return before `useDashboardKpis`) — flagged in Task 1 Step 8; not fixed as part of Plan 4.
 - Pre-existing `DataSourceQueryResponse` type lie (`columns: string[]` vs actual `list[dict]`) — frontend never reads the field so it's benign; flagged but not fixed.
-- Frontend `accentColor` type field on KPI cards — Plan 4 uses it inline matching `dash-quickrec-stats` precedent; if the frontend type doesn't formally declare it the JSONB round-trip still works (TS reads `unknown` extra fields gracefully). Adding the type is a follow-up.
 - Branch-topology rebase of `feature/tlm-instance-seed` onto `feature/volume-seed-data` — finishing-time concern; Plan 3 follow-up.
 
 This unblocks the **rectrace TLM-stats modal end-to-end**: the legacy Angular modal v2 can be hidden behind a feature flag (or deleted) once Plan 4 is verified.
