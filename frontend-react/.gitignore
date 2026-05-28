@@ -12,3 +12,8 @@ node_modules/
 
 # TanStack Router generated file (auto-generated from src/routes/)
 src/routeTree.gen.ts
+
+# Playwright artifacts (per-run, never committed)
+test-results/
+playwright-report/
+.playwright/
