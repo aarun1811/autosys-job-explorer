@@ -19,13 +19,15 @@ export function QuickRecStatsCellRenderer(params: ICellRendererParams) {
   const { resolvedTheme } = useTheme()
   const [open, setOpen] = useState(false)
 
-  const value = typeof params.value === 'string' ? params.value : undefined
-  if (data?.tlm_instance !== 'QuickRec' || !value || value.trim().length === 0) return null
-
+  // Gate on tlm_instance only — the sentinel column (quickrec_stats_button) is in
+  // FRONTEND_ONLY_COLUMNS so it carries no underlying value. The cross-id fields
+  // (recon_id / recon_portal_id) are real columns; both must be present to compose
+  // a useful embed URL.
   // Row field is `recon_portal_id` (per rectrace_core schema); RecViz filter id is
   // `rec_portal_id` (per the qr_automatch/qr_manual filter_mappings). Translate at the boundary.
-  const reconId = typeof data.recon_id === 'string' ? data.recon_id : undefined
-  const recPortalId = typeof data.recon_portal_id === 'string' ? data.recon_portal_id : undefined
+  const reconId = typeof data?.recon_id === 'string' ? data.recon_id : undefined
+  const recPortalId = typeof data?.recon_portal_id === 'string' ? data.recon_portal_id : undefined
+  if (data?.tlm_instance !== 'QuickRec' || (!reconId && !recPortalId)) return null
 
   const url = buildEmbedUrl({
     origin: getRecvizOrigin(),
