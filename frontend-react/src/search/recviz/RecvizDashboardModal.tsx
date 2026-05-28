@@ -11,7 +11,7 @@ export interface RecvizDashboardModalProps {
 export function RecvizDashboardModal({ open, onOpenChange, title, url }: RecvizDashboardModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[85vh] w-[min(95vw,1100px)] max-w-[min(95vw,1100px)] flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[90vh] w-[95vw] max-w-[1600px] sm:max-w-[1600px] flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b px-4 py-3">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">Embedded RecViz dashboard</DialogDescription>
