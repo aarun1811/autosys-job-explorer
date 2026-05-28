@@ -80,7 +80,11 @@ export function RecvizEmbed({ url, q, title, minHeight = 320, fillContainer = fa
           ref={ref}
           src={src}
           title={title ?? 'Dashboard'}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups-to-escape-sandbox"
+          // allow-popups is required for target="_blank" links inside the embed to
+          // actually open ("Open in RecViz" was no-op without it).
+          // allow-popups-to-escape-sandbox lets the popped window run outside the iframe
+          // sandbox so the standalone RecViz page works normally.
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
           // NOTE: onError does NOT fire when a cross-origin embed is refused via
           // X-Frame-Options / CSP frame-ancestors — the browser renders its own error
           // page inside the frame and fires onLoad instead. So error/Retry only covers
