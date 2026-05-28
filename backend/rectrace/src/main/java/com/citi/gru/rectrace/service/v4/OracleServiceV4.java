@@ -20,6 +20,7 @@ public class OracleServiceV4 {
     // Define frontend-only columns that don't exist in database
     private static final Set<String> FRONTEND_ONLY_COLUMNS = new HashSet<>(Arrays.asList(
         "execution_order",
+        "quickrec_stats_button",
         "ag-Grid-AutoColumn"
     ));
     

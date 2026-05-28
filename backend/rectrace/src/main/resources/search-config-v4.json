@@ -326,7 +326,10 @@
         {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true}
+        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "recon_portal_id", "headerName": "Rec Portal ID", "sortable": true, "filter": true},
+        {"field": "quickrec_stats_button", "headerName": "QuickRec Stats", "width": 110, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon_id"}, "cellStyle": {"display": "flex", "align-items": "center", "justify-content": "center"}, "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
       ]
     },
     {
@@ -347,7 +350,10 @@
         {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
-        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true}
+        {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "recon_id", "headerName": "Recon ID", "sortable": true, "filter": true},
+        {"field": "quickrec_stats_button", "headerName": "QuickRec Stats", "width": 110, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "rec_portal_id"}, "cellStyle": {"display": "flex", "align-items": "center", "justify-content": "center"}, "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
       ]
     },
     {
