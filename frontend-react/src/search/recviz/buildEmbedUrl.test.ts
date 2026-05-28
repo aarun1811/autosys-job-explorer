@@ -15,7 +15,7 @@ describe('buildEmbedUrl', () => {
     expect(u.searchParams.get('filter.recon_id')).toBe('RECON_42')
     expect(u.searchParams.get('filter.rec_portal_id')).toBe('RP_7')
     expect(u.searchParams.get('filter.lock')).toBe('recon_id,rec_portal_id')
-    expect(u.searchParams.get('hide')).toBe('title')
+    expect(u.searchParams.get('hide')).toBe('title,toolbar')
     expect(u.searchParams.get('theme')).toBe('dark')
   })
 
