@@ -3,6 +3,7 @@ declare const __BUILD_SHA__: string
 
 interface ImportMetaEnv {
   readonly VITE_AG_GRID_LICENSE_KEY: string
+  readonly VITE_RECVIZ_ORIGIN?: string
 }
 
 interface ImportMeta {
