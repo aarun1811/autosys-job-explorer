@@ -4,6 +4,7 @@ import type { ICellRendererParams } from 'ag-grid-community'
 import { AppIDCellRenderer } from './AppIDCellRenderer'
 import { SupportEmailCellRenderer } from './SupportEmailCellRenderer'
 import { ExecutionOrderCellRenderer } from './ExecutionOrderCellRenderer'
+import { QuickRecStatsCellRenderer } from './QuickRecStatsCellRenderer'
 
 /**
  * String-key → component map consumed by the AG-Grid `components` prop in
@@ -23,4 +24,5 @@ export const cellRenderers: Record<string, ComponentType<ICellRendererParams>> =
   appIDCellRenderer: AppIDCellRenderer,
   supportEmailCellRenderer: SupportEmailCellRenderer,
   executionOrderButtonRenderer: ExecutionOrderCellRenderer,
+  quickRecStatsButtonRenderer: QuickRecStatsCellRenderer,
 }
