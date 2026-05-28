@@ -3,7 +3,7 @@ import type { ColumnState, GetRowIdParams } from 'ag-grid-community'
 import type { CategoryResultV4, InitialFilter } from '@/search/types'
 
 /** Columns that exist only in the grid UI — never sent to the backend SELECT. */
-export const FRONTEND_ONLY_COLUMNS = new Set(['execution_order', 'quickrec_stats_button', 'actions', 'ag-Grid-AutoColumn'])
+export const FRONTEND_ONLY_COLUMNS = new Set(['execution_order', 'actions', 'ag-Grid-AutoColumn'])
 
 const SEP = '\u0001' // low-collision separator for composite row ids
 
