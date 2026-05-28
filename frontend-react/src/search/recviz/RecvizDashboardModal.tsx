@@ -17,7 +17,7 @@ export function RecvizDashboardModal({ open, onOpenChange, title, url }: RecvizD
           <DialogDescription className="sr-only">Embedded RecViz dashboard</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1">
-          <RecvizEmbed url={url} q="" title={title} minHeight={400} />
+          <RecvizEmbed url={url} q="" title={title} fillContainer />
         </div>
       </DialogContent>
     </Dialog>

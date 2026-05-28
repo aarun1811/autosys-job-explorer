@@ -17,9 +17,13 @@ export interface RecvizEmbedProps {
   q: string
   title?: string
   minHeight?: number
+  /** When true (modal context), the iframe fills its container at 100% height
+   * and ignores the height-handshake state. Defaults to false (inline embedding
+   * where the iframe grows to fit content via RECTRACE_IFRAME_HEIGHT messages). */
+  fillContainer?: boolean
 }
 
-export function RecvizEmbed({ url, q, title, minHeight = 320 }: RecvizEmbedProps) {
+export function RecvizEmbed({ url, q, title, minHeight = 320, fillContainer = false }: RecvizEmbedProps) {
   const src = useMemo(() => resolveEmbedUrl(url, q), [url, q])
   const origin = useMemo(() => {
     try {
@@ -54,7 +58,7 @@ export function RecvizEmbed({ url, q, title, minHeight = 320 }: RecvizEmbedProps
   }, [state, resolvedTheme, origin])
 
   return (
-    <div className="relative h-full w-full" style={{ minHeight }}>
+    <div className="relative h-full w-full" style={fillContainer ? undefined : { minHeight }}>
       {state === 'loading' && <Skeleton className="absolute inset-2 rounded-lg" />}
       {state === 'error' ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
@@ -89,7 +93,9 @@ export function RecvizEmbed({ url, q, title, minHeight = 320 }: RecvizEmbedProps
           animate={{ opacity: state === 'ready' ? 1 : 0 }}
           transition={{ duration: 0.2 }}
           className="h-full w-full border-0"
-          style={{ height }}
+          // Modal context: fill the container (parent has a fixed h-[85vh]). Inline
+          // context: use the height-handshake state so the iframe grows to content.
+          style={fillContainer ? undefined : { height }}
         />
       )}
     </div>
