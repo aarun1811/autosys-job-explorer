@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { ICellRendererParams } from 'ag-grid-community'
-import { BarChart3Icon } from 'lucide-react'
+import { SparklesIcon, Loader2Icon } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useTheme } from '@/components/layout/theme-provider'
 import { buildEmbedUrl } from '@/search/recviz/buildEmbedUrl'
 import { getRecvizOrigin } from '@/search/recviz/recvizConfig'
@@ -10,8 +10,16 @@ import { RecvizDashboardModal } from '@/search/recviz/RecvizDashboardModal'
 
 const DASHBOARD_ID = 'dash-quickrec-stats'
 
-/** Opens the QuickRec RecViz dashboard for a row. Only rendered for QuickRec rows
- * (tlm_instance === 'QuickRec'); entryPoint (recon_id | rec_portal_id) locks that filter. */
+/**
+ * QuickRecStatsCellRenderer — React port of Angular's `reconIdRenderer` /
+ * `recPortalIdRenderer`. The cell value is rendered as text always; on rows
+ * where `tlm_instance === 'QuickRec'` it becomes a clickable link (insights
+ * icon + the value) that opens the embedded RecViz QuickRec dashboard.
+ *
+ * Wired via `cellRenderer: "quickRecStatsButtonRenderer"` on both `recon_id`
+ * and `recon_portal_id` columns; `cellRendererParams.entryPoint` (recon_id |
+ * rec_portal_id) decides which filter is locked when the modal opens.
+ */
 export function QuickRecStatsCellRenderer(params: ICellRendererParams) {
   const colDef = params.colDef as { cellRendererParams?: { entryPoint?: 'recon_id' | 'rec_portal_id' } } | undefined
   const entryPoint = colDef?.cellRendererParams?.entryPoint ?? 'recon_id'
@@ -19,15 +27,25 @@ export function QuickRecStatsCellRenderer(params: ICellRendererParams) {
   const { resolvedTheme } = useTheme()
   const [open, setOpen] = useState(false)
 
-  // Gate on tlm_instance only — the sentinel column (quickrec_stats_button) is in
-  // FRONTEND_ONLY_COLUMNS so it carries no underlying value. The cross-id fields
-  // (recon_id / recon_portal_id) are real columns; both must be present to compose
-  // a useful embed URL.
-  // Row field is `recon_portal_id` (per rectrace_core schema); RecViz filter id is
-  // `rec_portal_id` (per the qr_automatch/qr_manual filter_mappings). Translate at the boundary.
+  const rawValue = typeof params.value === 'string' ? params.value : ''
+  const value = rawValue.trim()
+  if (!value || value === '-') return null
+
+  const isClickable = data?.tlm_instance === 'QuickRec'
+
+  // Plain text for non-QuickRec rows — preserves the cell's data display.
+  if (!isClickable) {
+    return <span className="text-foreground">{value}</span>
+  }
+
+  // QuickRec row → render as a clickable link with insights icon.
   const reconId = typeof data?.recon_id === 'string' ? data.recon_id : undefined
   const recPortalId = typeof data?.recon_portal_id === 'string' ? data.recon_portal_id : undefined
-  if (data?.tlm_instance !== 'QuickRec' || (!reconId && !recPortalId)) return null
+  if (!reconId && !recPortalId) {
+    // Defensive: tlm_instance==='QuickRec' but no id fields — shouldn't happen,
+    // but fall back to plain text rather than a broken link.
+    return <span className="text-foreground">{value}</span>
+  }
 
   const url = buildEmbedUrl({
     origin: getRecvizOrigin(),
@@ -39,16 +57,19 @@ export function QuickRecStatsCellRenderer(params: ICellRendererParams) {
 
   return (
     <>
-      <Button
-        size="sm" variant="ghost" onClick={() => setOpen(true)}
-        aria-label="View QuickRec stats"
-        className="h-6 min-w-[80px] px-2 text-primary text-[12px] font-normal hover:bg-accent"
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`View QuickRec stats for ${value}`}
+        className={cn(
+          'inline-flex items-center gap-1 text-primary hover:underline',
+          'cursor-pointer text-[12px] font-normal',
+        )}
       >
-        <span className="inline-flex items-center gap-1">
-          <BarChart3Icon className="size-3.5 opacity-70" />
-          View
-        </span>
-      </Button>
+        <SparklesIcon className="size-3.5 opacity-70" aria-hidden />
+        <span className="font-mono">{value}</span>
+        {open && <Loader2Icon className="size-3 animate-spin opacity-60" aria-hidden />}
+      </button>
       <RecvizDashboardModal open={open} onOpenChange={setOpen} title="QuickRec Statistics" url={url} />
     </>
   )
