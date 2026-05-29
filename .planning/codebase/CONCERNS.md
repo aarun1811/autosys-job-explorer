@@ -1,12 +1,15 @@
 # Codebase Concerns
 
 **Analysis Date:** 2026-05-12
+**Last reviewed:** 2026-05-18 — CRITICAL items 1-4 closed; "STATUS" markers added inline.
 
 ---
 
 ## CRITICAL
 
 ### Plaintext Database Password in Version-Controlled Properties File
+
+**STATUS:** CLOSED 2026-05-18 — value externalized to `${AUTOSYS_DB_PASSWORD:}` env var in `backend/rectrace/src/main/resources/application.properties:32`. User confirmed the previously committed literal was a placeholder, not a live credential, so no rotation needed. The local profile retains a dev-only literal in `application-local.properties` per LOCAL-DEV scope.
 
 **Area:** Backend configuration
 - Issue: `autosys.db.password` is set to a real-looking plaintext password in the default `application.properties`. The file is not `.gitignored`.
@@ -18,6 +21,8 @@
 
 ### Elasticsearch SSL Validation Bypassed — No Profile Guard
 
+**STATUS:** CLOSED — `ElasticsearchDevConfiguration.java` was deleted during the Boot 3.5.14 / ES Java API Client migration in Phase 1. No replacement equivalent exists. Re-audit if any new SSL-bypass code is introduced in Phase 9.
+
 **Area:** Backend security configuration
 - Issue: `ElasticsearchDevConfiguration` disables all SSL certificate validation and hostname verification. It is annotated only `@Configuration` — there is **no** `@Profile("dev")` annotation. It will activate in all Spring environments unless the class is explicitly excluded.
 - Files: `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java`
@@ -27,6 +32,8 @@
 ---
 
 ### SQL Injection via Unsanitized Column Names in ORDER BY
+
+**STATUS:** CLOSED 2026-05-18 — `ColumnNameWhitelist.forCategory(config)` (new) validates every client-supplied column name (sort `colId`, filter keys, `visibleColumns`, `rowGroupCols`) and every sort direction at the entry to `OracleServiceV4.fetchSSRMData`. `IllegalArgumentException` surfaces as 400 Bad Request (already wired in `SearchControllerV4:67-69`). 23 new tests cover the closure (`ColumnNameWhitelistTest`, `OracleServiceV4SqlInjectionTest`). The V3 reference is moot — V3 service classes were deleted in Phase 1.
 
 **Area:** Backend Oracle query building
 - Issue: `buildOrderByClause()` concatenates `sort.getColId()` (a client-supplied string) directly into the `ORDER BY` clause without any whitelist validation. `buildFilterClause()` similarly interpolates the `column` key from the client's filter model directly into SQL predicates. `buildGroupExpansionQuery()` in `OracleSearchProviderV3` also injects `visibleColumns` directly via `String.join`.
@@ -39,6 +46,8 @@
 ---
 
 ### CORS Configured to Allow All Origins Globally
+
+**STATUS:** CLOSED 2026-05-18 — both `CorsConfig.java` files now bind to the `app.cors.allowed-origins` property (comma-separated explicit list). Local-profile defaults to dev origins. Prod / UAT profiles ship `[NEEDS USER REVIEW]` placeholders awaiting the Citi portal origin(s). `allowCredentials(true)` dropped in tlm-stats — auth is via the custom `x-citiportal-loginid` header, not cookies. The seven `@CrossOrigin(origins = "*")` controller annotations were removed so global config is the single source of truth.
 
 **Area:** Backend CORS configuration
 - Issue: Both backend services use `allowedOrigins("*")` / `allowedOriginPatterns("*")` across all routes with all HTTP methods.

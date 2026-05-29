@@ -19,12 +19,12 @@
         {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
-        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
+        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer", "cellRendererParams": {"urlTemplate": "https://REPLACE-WITH-CITI-APP-PORTAL/{value}"}},
         {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
         {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
         {"field": "receive_path", "headerName": "Receive Path", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
+        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "set_id"}},
         {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
@@ -55,9 +55,11 @@
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
         {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
         {"field": "load_file_name", "headerName": "Load file name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true},
+        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "set_id"}},
         {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "tlm_instance"}},
+        {"field": "recon_id", "headerName": "Recon ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon_id"}},
+        {"field": "recon_portal_id", "headerName": "Recon Portal ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "rec_portal_id"}},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
           "cellRenderer": "executionOrderButtonRenderer",
           "cellRendererParams": {"jobNameField": "load_job"},
@@ -81,13 +83,15 @@
       "columns": [
         {"field": "box_name", "headerName": "Box Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
         {"field": "job_name", "headerName": "Job Name", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
         {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
         {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "tlm_instance"}},
+        {"field": "recon_id", "headerName": "Recon ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon_id"}},
+        {"field": "recon_portal_id", "headerName": "Recon Portal ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "rec_portal_id"}},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
           "cellRenderer": "executionOrderButtonRenderer",
           "cellRendererParams": {"jobNameField": "load_job"},
@@ -110,13 +114,15 @@
       },
       "columns": [
         {"field": "set_id", "headerName": "Set ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true},
         {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "tlm_instance"}},
+        {"field": "recon_id", "headerName": "Recon ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon_id"}},
+        {"field": "recon_portal_id", "headerName": "Recon Portal ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "rec_portal_id"}},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
           "cellRenderer": "executionOrderButtonRenderer",
           "cellRendererParams": {"jobNameField": "load_job"},
@@ -139,13 +145,15 @@
       },
       "columns": [
         {"field": "sub_acc", "headerName": "Sub Account", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
+        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "set_id"}},
         {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "tlm_instance"}},
+        {"field": "recon_id", "headerName": "Recon ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon_id"}},
+        {"field": "recon_portal_id", "headerName": "Recon Portal ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "rec_portal_id"}},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
           "cellRenderer": "executionOrderButtonRenderer",
           "cellRendererParams": {"jobNameField": "load_job"},
@@ -168,13 +176,15 @@
       },
       "columns": [
         {"field": "load_file_name_pattern", "headerName": "Load File Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true},
+        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "hide": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "set_id"}},
         {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true, "hide": true},
-        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true},
+        {"field": "tlm_instance", "headerName": "TLM Instance", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "tlm_instance"}},
+        {"field": "recon_id", "headerName": "Recon ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon_id"}},
+        {"field": "recon_portal_id", "headerName": "Recon Portal ID", "sortable": true, "filter": true, "cellRenderer": "quickRecStatsButtonRenderer", "cellRendererParams": {"entryPoint": "rec_portal_id"}},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
           "cellRenderer": "executionOrderButtonRenderer",
           "cellRendererParams": {"jobNameField": "load_job"},
@@ -198,14 +208,14 @@
       "columns": [
         {"field": "job_name", "headerName": "Job Name", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "machine", "headerName": "Machine", "sortable": true, "filter": true},
         {"field": "run_calendar", "headerName": "Run Calendar", "sortable": true, "filter": true},
         {"field": "exclude_calendar", "headerName": "Exclude Calendar", "sortable": true, "filter": true},
         {"field": "app_name", "headerName": "App Name", "hide": true, "sortable": true, "filter": true},
-        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer"},
+        {"field": "app_id", "headerName": "App ID", "sortable": true, "filter": true, "cellRenderer": "appIDCellRenderer", "cellRendererParams": {"urlTemplate": "https://REPLACE-WITH-CITI-APP-PORTAL/{value}"}},
         {"field": "support_email", "headerName": "Support Email", "sortable": true, "filter": true, "cellRenderer": "supportEmailCellRenderer"},
         {"field": "support_hotline", "headerName": "Support Hotline", "sortable": true, "filter": true},
         {"field": "execution_order", "headerName": "Execution Order", "width": 100,
@@ -213,7 +223,13 @@
           "cellRendererParams": {"jobNameField": "load_job"},
           "cellStyle": {"display": "flex", "align-items": "center", "justify-content": "center", "padding": "0", "height": "100%"},
           "sortable": false, "filter": false, "resizable": false, "pinned": "right"}
-      ]
+      ],
+      "dashboard": {
+        "url": "http://localhost:5173/recviz-placeholder.html?term={q}",
+        "title": "Job summary",
+        "defaultOpen": false,
+        "height": 320
+      }
     },
     {
       "key": "machineName",
@@ -293,12 +309,12 @@
       },
       "columns": [
         {"field": "tlm_instance", "headerName": "TLM Instance", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true},
         {"field": "load_file_name", "headerName": "Load File Name", "sortable": true, "filter": true},
-        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true},
+        {"field": "set_id", "headerName": "Set ID", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "set_id"}},
         {"field": "sub_acc", "headerName": "Sub Account", "sortable": true, "filter": true}
       ]
     },
@@ -317,7 +333,7 @@
       },
       "columns": [
         {"field": "recon_id", "headerName": "Recon ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true}
@@ -338,11 +354,22 @@
       },
       "columns": [
         {"field": "recon_portal_id", "headerName": "Recon Portal ID", "rowGroup": true, "hide": true, "sortable": true, "filter": true},
-        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true},
+        {"field": "recon", "headerName": "Recon Name", "sortable": true, "filter": true, "cellRenderer": "tlmStatsButtonRenderer", "cellRendererParams": {"entryPoint": "recon"}},
         {"field": "recon_engine", "headerName": "Recon Engine", "sortable": true, "filter": true},
         {"field": "load_job", "headerName": "Load Job", "sortable": true, "filter": true},
         {"field": "box_name", "headerName": "Box Name", "sortable": true, "filter": true}
       ]
+    },
+    {
+      "key": "overview",
+      "label": "Overview",
+      "searchColumn": "",
+      "dashboard": {
+        "url": "http://localhost:5173/recviz-placeholder.html?term={q}",
+        "title": "Search overview",
+        "defaultOpen": true,
+        "height": 360
+      }
     }
   ]
 }

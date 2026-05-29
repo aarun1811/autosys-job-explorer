@@ -1,0 +1,505 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Brand typefaces — Geist (chrome/body) + Geist Mono (identifiers/numbers).
+   * Wiring these as Tailwind tokens makes `font-sans` / `font-mono` resolve to
+   * the self-hosted faces everywhere. */
+  --font-sans: "Geist Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  /* ================================================================
+   * RECTRACE EXTENSIONS — currently empty
+   * Chart/series/ramp tokens are deferred to the first phase that
+   * introduces a chart or data-viz component. See STATE.md Deferred
+   * Items table and Phase 8 DESIGN-01 anchor.
+   *
+   * To add tokens, read recviz src/index.css first:
+   *   --color-series-1..8, --color-ramp-low/high,
+   *   --color-chart-positive/negative/warning
+   * DO NOT add tokens here without updating STATE.md and theme.ts.
+   * ================================================================ */
+}
+
+:root {
+  /* Crisper radius reads as "precision instrument" rather than soft consumer app. */
+  --radius: 0.5rem;
+  /* Shared chrome height — consumed by the results navbar AND the SearchGrid
+   * viewport-height calc, so they stay in lockstep. */
+  --header-height: 3.5rem;
+  /* ---- Refined & airy, light ----
+   * Cool near-neutral canvas, a single confident azure-cobalt accent (NOT the
+   * old indigo-violet), hairline borders, ink with a whisper of blue. */
+  --background: oklch(0.994 0.0015 256);
+  --foreground: oklch(0.205 0.022 257);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.022 257);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.022 257);
+  --primary: oklch(0.515 0.176 256);
+  --primary-foreground: oklch(0.985 0.005 250);
+  --secondary: oklch(0.967 0.004 256);
+  --secondary-foreground: oklch(0.26 0.02 257);
+  --muted: oklch(0.966 0.005 256);
+  --muted-foreground: oklch(0.505 0.022 256);
+  --accent: oklch(0.955 0.013 252);
+  --accent-foreground: oklch(0.32 0.06 256);
+  --destructive: oklch(0.585 0.214 25.5);
+  --border: oklch(0.915 0.006 256);
+  --input: oklch(0.915 0.006 256);
+  --ring: oklch(0.515 0.176 256);
+  --sidebar: oklch(0.985 0.004 256);
+  --sidebar-foreground: oklch(0.205 0.022 257);
+  --sidebar-primary: oklch(0.515 0.176 256);
+  --sidebar-primary-foreground: oklch(0.985 0.005 250);
+  --sidebar-accent: oklch(0.955 0.013 252);
+  --sidebar-accent-foreground: oklch(0.32 0.06 256);
+  --sidebar-border: oklch(0.915 0.006 256);
+  --sidebar-ring: oklch(0.515 0.176 256);
+  /* Execution-order graph status palette (first data-viz component — see the
+   * RECTRACE EXTENSIONS note above). green / red / azure / amber / gray. */
+  --status-completed: oklch(0.62 0.15 150);
+  --status-failed: oklch(0.585 0.214 25.5);
+  --status-running: oklch(0.515 0.176 256);
+  --status-waiting: oklch(0.72 0.15 75);
+  --status-inactive: oklch(0.6 0.02 256);
+}
+
+.dark {
+  /* ---- Refined & airy, dark ----
+   * Deep slate-blue (not flat near-black) so panels can layer above the canvas
+   * with believable depth; azure lifts to stay vivid against it. */
+  --background: oklch(0.171 0.013 257);
+  --foreground: oklch(0.965 0.004 256);
+  --card: oklch(0.213 0.015 257);
+  --card-foreground: oklch(0.965 0.004 256);
+  --popover: oklch(0.213 0.015 257);
+  --popover-foreground: oklch(0.965 0.004 256);
+  --primary: oklch(0.625 0.168 254);
+  --primary-foreground: oklch(0.16 0.022 257);
+  --secondary: oklch(0.27 0.014 257);
+  --secondary-foreground: oklch(0.965 0.004 256);
+  --muted: oklch(0.265 0.014 257);
+  --muted-foreground: oklch(0.715 0.02 252);
+  --accent: oklch(0.288 0.024 256);
+  --accent-foreground: oklch(0.965 0.004 256);
+  --destructive: oklch(0.704 0.19 22.5);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.625 0.168 254);
+  --sidebar: oklch(0.196 0.014 257);
+  --sidebar-foreground: oklch(0.965 0.004 256);
+  --sidebar-primary: oklch(0.625 0.168 254);
+  --sidebar-primary-foreground: oklch(0.16 0.022 257);
+  --sidebar-accent: oklch(0.288 0.024 256);
+  --sidebar-accent-foreground: oklch(0.965 0.004 256);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.625 0.168 254);
+  --status-completed: oklch(0.72 0.16 152);
+  --status-failed: oklch(0.704 0.19 22.5);
+  --status-running: oklch(0.7 0.16 254);
+  --status-waiting: oklch(0.8 0.14 80);
+  --status-inactive: oklch(0.7 0.02 256);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    scrollbar-color: var(--border) transparent;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: "Geist Variable", system-ui, -apple-system, sans-serif;
+    /* Slightly tightened tracking is the Geist/Vercel signature — keeps dense
+     * UI text crisp without feeling cramped. */
+    letter-spacing: -0.006em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Smooth theme cross-fade */
+    transition: background-color 320ms ease, color 320ms ease, font-size 200ms ease;
+  }
+  /* Headings carry the tracking a touch further for an editorial, confident feel. */
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+  }
+  /* Identifiers, numbers, code — the technical texture of this tool. */
+  .font-mono, code, kbd, pre, samp {
+    font-feature-settings: "ss01", "zero";
+  }
+}
+
+/* ================================================================
+ * RECTRACE premium surface treatments — token-driven (oklch + color-mix),
+ * theme-aware, no hardcoded colors. Motion is gated by prefers-reduced-motion.
+ * ================================================================ */
+
+/* Atmospheric aura behind the hero — a soft, off-center primary glow plus a
+ * faint dotted grid for depth. Sits on a pseudo-element so content stays crisp. */
+.rectrace-aura {
+  position: relative;
+  isolation: isolate;
+}
+.rectrace-aura::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      62% 48% at 50% 34%,
+      color-mix(in oklab, var(--primary) 16%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      38% 34% at 82% 8%,
+      color-mix(in oklab, var(--primary) 9%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      34% 32% at 14% 86%,
+      color-mix(in oklab, var(--accent-foreground) 6%, transparent),
+      transparent 70%
+    );
+}
+.rectrace-aura::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(60% 55% at 50% 40%, black, transparent 75%);
+  mask-image: radial-gradient(60% 55% at 50% 40%, black, transparent 75%);
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) 14%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}
+
+/* Elevated search surface used on the hero — soft layered shadow + a primary
+ * focus halo when focus lands inside. */
+.rectrace-search-elevated {
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--foreground) 8%, transparent),
+    0 12px 32px -12px color-mix(in oklab, var(--foreground) 22%, transparent);
+  transition: box-shadow 240ms ease, transform 240ms ease;
+}
+/* Hover: lift toward the user with a primary-tinted shadow. Declared BEFORE
+ * :focus-within so the focus halo wins when the field is focused. */
+.rectrace-search-elevated:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 6px color-mix(in oklab, var(--foreground) 10%, transparent),
+    0 20px 48px -14px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+.rectrace-search-elevated:focus-within {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--primary) 18%, transparent),
+    0 16px 44px -12px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+/* Tactile primary Search button — lifts with a soft primary glow on hover,
+ * crisp press on active. Pairs with a group-hover icon nudge in markup. */
+.rectrace-search-btn {
+  transition: transform 200ms ease, box-shadow 220ms ease, filter 200ms ease;
+}
+.rectrace-search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -8px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+.rectrace-search-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 12px -8px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+
+/* Compact (navbar) search input — primary-tinted border on hover. */
+.rectrace-search-bar-input {
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.rectrace-search-bar-input:hover:not(:focus-visible) {
+  border-color: color-mix(in oklab, var(--primary) 40%, var(--input));
+}
+
+/* Rolling placeholder word — rises into place from below (the "scroll up"
+ * effect). Lives inside an overflow-hidden clip so it reads as a roll. */
+@keyframes rectrace-word-roll {
+  0% {
+    transform: translateY(0.85em);
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.rectrace-word-roll {
+  animation: rectrace-word-roll 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Sonar ping — slow concentric rings emanating from the empty-state search
+ * icon (a search that swept the index and surfaced nothing). The rings live on
+ * a layer BEHIND the opaque icon medallion and expand outward. Premium, quiet,
+ * theme-aware (primary token), and auto-stilled by the reduced-motion clamp. */
+.rectrace-sonar::before,
+.rectrace-sonar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid var(--primary);
+  animation: rectrace-sonar-ping 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.rectrace-sonar::after {
+  animation-delay: 1.5s;
+}
+@keyframes rectrace-sonar-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70% {
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Clickable cell link — quiet underline at rest, subtle tint on hover (clip-safe inside grid cells). */
+.rectrace-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: 3px;
+  padding: 1px 2px;
+  transition: background-color 150ms ease;
+}
+.rectrace-link:hover {
+  text-decoration: none;
+  background-color: color-mix(in oklab, var(--color-primary) 8%, transparent);
+}
+
+/* Refined panel elevation — a hairline ring plus a soft, low-opacity drop so the
+ * grid + dashboard float a hair above the canvas. Reads premium without shouting. */
+.rectrace-panel {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 6%, transparent),
+    0 1px 2px -1px color-mix(in oklab, var(--foreground) 10%, transparent),
+    0 12px 32px -18px color-mix(in oklab, var(--foreground) 26%, transparent);
+}
+
+/* Whisper-soft azure wash high on the results canvas — gives the page depth and
+ * a faint brand glow behind the tab strip, then fades to nothing. Atmosphere,
+ * not decoration. */
+.rectrace-results-canvas {
+  background-image: radial-gradient(
+    120% 60% at 50% -8%,
+    color-mix(in oklab, var(--primary) 6%, transparent),
+    transparent 58%
+  );
+}
+
+/* Monospaced numerals + zero-slash for identifier/number cells and chips. */
+.rectrace-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "zero" 1;
+}
+
+/* Scrollable-but-chromeless: hide the native scrollbar (used by the overflowing
+ * category tab strip, which signals overflow with edge fade-masks instead). */
+.rectrace-no-scrollbar {
+  scrollbar-width: none;            /* Firefox */
+  -ms-overflow-style: none;         /* legacy Edge */
+}
+.rectrace-no-scrollbar::-webkit-scrollbar {
+  display: none;                    /* WebKit */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ================================================================
+ * Execution-order graph — status-tinted node / legend-dot / badge classes.
+ * Token-driven (color-mix over the --status-* palette), theme-aware.
+ * ================================================================ */
+.eo-node { background: var(--card); border-color: var(--border); color: var(--card-foreground); }
+.eo-node-completed { background: color-mix(in oklab, var(--status-completed) 12%, var(--card)); border-color: color-mix(in oklab, var(--status-completed) 42%, var(--border)); }
+.eo-node-failed    { background: color-mix(in oklab, var(--status-failed) 12%, var(--card));    border-color: color-mix(in oklab, var(--status-failed) 42%, var(--border)); }
+.eo-node-running   { background: color-mix(in oklab, var(--status-running) 12%, var(--card));   border-color: color-mix(in oklab, var(--status-running) 42%, var(--border)); }
+.eo-node-waiting   { background: color-mix(in oklab, var(--status-waiting) 12%, var(--card));   border-color: color-mix(in oklab, var(--status-waiting) 42%, var(--border)); }
+.eo-node-inactive  { background: color-mix(in oklab, var(--status-inactive) 8%, var(--card));   border-color: color-mix(in oklab, var(--status-inactive) 30%, var(--border)); }
+
+.eo-dot-completed { background: var(--status-completed); }
+.eo-dot-failed    { background: var(--status-failed); }
+.eo-dot-running   { background: var(--status-running); }
+.eo-dot-waiting   { background: var(--status-waiting); }
+.eo-dot-inactive  { background: var(--status-inactive); }
+
+.eo-badge-completed { background: color-mix(in oklab, var(--status-completed) 16%, transparent); color: var(--status-completed); }
+.eo-badge-failed    { background: color-mix(in oklab, var(--status-failed) 16%, transparent);    color: var(--status-failed); }
+.eo-badge-running   { background: color-mix(in oklab, var(--status-running) 16%, transparent);   color: var(--status-running); }
+.eo-badge-waiting   { background: color-mix(in oklab, var(--status-waiting) 18%, transparent);   color: var(--status-waiting); }
+.eo-badge-inactive  { background: color-mix(in oklab, var(--status-inactive) 16%, transparent);  color: var(--status-inactive); }
+
+/* React Flow edges + arrowheads — token-driven, theme-aware (no hex). */
+.react-flow__edge-path { stroke: color-mix(in oklab, var(--foreground) 28%, transparent); }
+.react-flow__arrowhead { fill: color-mix(in oklab, var(--foreground) 28%, transparent); }
+
+/* React Flow MiniMap + Controls chrome — RF ships light-mode defaults (white
+   minimap / white control buttons) that clash in dark mode. Drive RF's OWN theme
+   variables (consumed by its built-in rules, so they win regardless of stylesheet
+   import order) with our tokens. No hex. */
+.react-flow {
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background) 55%, transparent);
+  --xy-minimap-node-background-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+/* Additive framing (not cascade-fighting): hairline border + radius. */
+.react-flow__minimap { border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.react-flow__controls { border-radius: var(--radius-sm); overflow: hidden; }
+
+/* ================================================================
+ * Execution-order redesign (Slice 1) — accent bars, neutral order-rail,
+ * runtime popover surface, running pulse, hover lift. Token-driven, theme-aware,
+ * reduced-motion stilled. No raw hex.
+ * ================================================================ */
+
+/* Left status accent bar (4px rail) — solid status token. */
+.eo-accent-completed { background: var(--status-completed); }
+.eo-accent-failed    { background: var(--status-failed); }
+.eo-accent-running   { background: var(--status-running); }
+.eo-accent-waiting   { background: var(--status-waiting); }
+.eo-accent-inactive  { background: var(--status-inactive); }
+
+/* Neutral order-rail (spine) edge — muted, NOT status-tinted, no arrowhead.
+   Drives the custom `spine` edge type rendered by ExecutionOrderGraph. */
+.eo-spine-path {
+  stroke: color-mix(in oklab, var(--foreground) 18%, transparent);
+  stroke-width: 1.5;
+  fill: none;
+  pointer-events: none; /* belt-and-suspenders: spine is a passive guide (spec §5.3) */
+}
+/* Adjacent-to-selection emphasis: passive highlight of the rail next to the
+   active node; non-adjacent rails dim. Both derived from selected/hovered id. */
+.eo-spine-path-active { stroke: color-mix(in oklab, var(--primary) 55%, transparent); }
+.eo-spine-path-dim    { stroke: color-mix(in oklab, var(--foreground) 8%, transparent); }
+
+/* Runtime hover popover surface — sits above the canvas, no layout shift. */
+.eo-popover-surface {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent),
+    0 10px 30px -12px color-mix(in oklab, var(--foreground) 28%, transparent);
+}
+
+/* Node hover lift — soft shadow toward the user (overlay popover handles content). */
+.eo-node-lift { transition: box-shadow 180ms ease, transform 180ms ease; }
+.eo-node-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -10px color-mix(in oklab, var(--foreground) 30%, transparent);
+}
+
+/* Find/select dimming — the spine stays intact; non-matches recede. */
+.eo-node-dim { opacity: 0.42; transition: opacity 180ms ease; }
+
+/* RUNNING glow + gentle pulse — the one moving thing is the one thing happening
+   now. Stilled under prefers-reduced-motion by the global clamp in this file. */
+@keyframes eo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--status-running) 42%, transparent); }
+  50%      { box-shadow: 0 0 0 5px color-mix(in oklab, var(--status-running) 0%, transparent); }
+}
+.eo-pulse {
+  animation: eo-pulse 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--status-running) 42%, transparent);
+}
+
+/* Segmented summary bar fills (proportions) — reuse the status palette. */
+.eo-seg-completed { background: var(--status-completed); }
+.eo-seg-failed    { background: var(--status-failed); }
+.eo-seg-running   { background: var(--status-running); }
+.eo-seg-waiting   { background: var(--status-waiting); }
+.eo-seg-inactive  { background: var(--status-inactive); }
+
+/* Hover runtime popover must float ABOVE every other node — including a SELECTED
+   one. React Flow paints nodes in array order (a later sibling would clip an
+   overflowing overlay) AND elevateNodesOnSelect sets the selected node's inline
+   z-index to 1000. So the hovered node must beat 1000: 1001 !important wins over
+   both base nodes (z 0) and the selected node (z 1000), so its popover is always
+   on top. */
+.react-flow__node:hover { z-index: 1001 !important; }
+
+/* Selected node — soft primary glow + a one-shot scale pop on select (the focus
+   ring is applied inline on the node). The pop is stilled under
+   prefers-reduced-motion by the global clamp in this file; the glow remains. */
+@keyframes eo-select-pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.eo-node-selected {
+  animation: eo-select-pop 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Crisp 3px primary ring + soft halo + strong outer glow — one cohesive,
+     unmistakable selected state (the box is overflow-hidden, but outset
+     box-shadow is not clipped). */
+  box-shadow:
+    0 0 0 3px var(--primary),
+    0 0 0 7px color-mix(in oklab, var(--primary) 32%, transparent),
+    0 0 32px 4px color-mix(in oklab, var(--primary) 75%, transparent);
+}

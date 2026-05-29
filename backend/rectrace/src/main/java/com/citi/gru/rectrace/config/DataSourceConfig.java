@@ -1,20 +1,24 @@
 package com.citi.gru.rectrace.config;
 
 import javax.sql.DataSource;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import java.util.Properties;
 import org.springframework.transaction.PlatformTransactionManager;
-import com.citi.gru.rectrace.util.ScriptExecutor;
 
+import com.citi.gru.rectrace.util.ScriptExecutor;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+@Profile("!test")
 @Configuration
 public class DataSourceConfig {
 
@@ -33,19 +37,57 @@ public class DataSourceConfig {
     @Value("${datasource.db-schema}")
     private String dbschema;
 
+    @Value("${datasource.password:}")
+    private String datasourcePassword;
+
+    @Value("${datasource.hikari.maximum-pool-size:5}")
+    private int maximumPoolSize;
+
+    @Value("${datasource.hikari.minimum-idle:2}")
+    private int minimumIdle;
+
+    @Value("${datasource.hikari.connection-timeout:30000}")
+    private long connectionTimeout;
+
+    @Value("${datasource.hikari.idle-timeout:600000}")
+    private long idleTimeout;
+
+    @Value("${datasource.hikari.max-lifetime:1800000}")
+    private long maxLifetime;
+
     @Bean
     @Primary
     public DataSource dataSource() {
-        ScriptExecutor scriptExecutor = new ScriptExecutor();
-        String decryptedPassword = scriptExecutor.executeScript("/opt/rectify/control/scripts/get_password.sh",
-                serviceName.toUpperCase(), dbschema.toUpperCase());
-        return DataSourceBuilder
-                .create()
-                .url(jdbcUrl)
-                .username(username)
-                .driverClassName(driverClassName)
-                .password(decryptedPassword)
-                .build();
+        // Phase 0.1 P07 KNOWN GAP closure (Phase 1 Wave 7): use ${datasource.password}
+        // when supplied (e.g. local profile via application-local.properties); fall back
+        // to /opt/rectify/control/scripts/get_password.sh only on Citi VMs where the
+        // property is unset and the script is the canonical credential source.
+        String decryptedPassword;
+        if (datasourcePassword != null && !datasourcePassword.isBlank()) {
+            decryptedPassword = datasourcePassword;
+        } else {
+            ScriptExecutor scriptExecutor = new ScriptExecutor();
+            decryptedPassword = scriptExecutor.executeScript("/opt/rectify/control/scripts/get_password.sh",
+                    serviceName.toUpperCase(), dbschema.toUpperCase());
+        }
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(username);
+        config.setPassword(decryptedPassword);
+        config.setDriverClassName(driverClassName);
+        config.setMaximumPoolSize(maximumPoolSize);
+        config.setMinimumIdle(minimumIdle);
+        config.setConnectionTimeout(connectionTimeout);
+        config.setIdleTimeout(idleTimeout);
+        config.setMaxLifetime(maxLifetime);
+        config.setPoolName("Rectrace-HikariCP");
+
+        // Oracle specific optimizations
+        config.addDataSourceProperty("oracle.jdbc.ReadTimeout", "60000");
+        config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
+
+        return new HikariDataSource(config);
     }
 
     @Bean
@@ -59,8 +101,6 @@ public class DataSourceConfig {
         em.setJpaVendorAdapter(vendorAdapter);
 
         Properties properties = new Properties();
-        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.Oracle12cDialect");
-        properties.setProperty("hibernate.show_sql", "true");
         properties.setProperty("hibernate.hbm2ddl.auto", "none");
         em.setJpaProperties(properties);
 

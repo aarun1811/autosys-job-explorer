@@ -1,0 +1,180 @@
+// src/search/__tests__/SearchGridPanel.test.tsx
+import { describe, test, expect, beforeEach, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import {
+  RouterProvider,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  createMemoryHistory,
+  Outlet,
+} from '@tanstack/react-router'
+import { SearchGridPanel } from '@/search/SearchGridPanel'
+import { encodeViewState, type GridViewState } from '@/search/lib/gridViewState'
+
+const exportMock = vi.hoisted(() => vi.fn())
+vi.mock('@/search/lib/exportSearch', () => ({ exportSearchToExcel: exportMock }))
+
+// --- mock GridApi ---
+const mockApi = {
+  setSideBarVisible: vi.fn(),
+  isSideBarVisible: vi.fn(() => false),
+  openToolPanel: vi.fn(),
+  autoSizeAllColumns: vi.fn(),
+  resetColumnState: vi.fn(),
+  setFilterModel: vi.fn(),
+  collapseAll: vi.fn(),
+  expandAll: vi.fn(),
+  refreshServerSide: vi.fn(),
+  getColumnState: vi.fn(() => [{ colId: 'job_name', hide: false }]),
+  getFilterModel: vi.fn(() => ({})),
+  getRowGroupColumns: vi.fn(() => []),
+  getColumns: vi.fn(() => []),
+  forEachNode: vi.fn(),
+  addEventListener: vi.fn(),
+}
+
+// Stub SearchGrid: fire onGridReady on mount; expose a dbl-click trigger.
+vi.mock('@/search/SearchGrid', () => ({
+  SearchGrid: ({ onGridReady, onRowDoubleClicked }: any) => {
+    if (onGridReady) onGridReady({ api: mockApi })
+    return (
+      <button data-testid="dbl" onClick={() => onRowDoubleClicked?.({ job_name: 'SAMPLE_TRADE_RECON_001' })}>
+        grid
+      </button>
+    )
+  },
+}))
+
+const clipboard = vi.fn(() => Promise.resolve())
+Object.assign(navigator, { clipboard: { writeText: clipboard } })
+
+function mkCategory() {
+  return {
+    key: 'jobName',
+    label: 'Job Name',
+    count: 4,
+    hasMore: false,
+    values: ['SAMPLE_TRADE_RECON_001'],
+    columns: [{ field: 'job_name', headerName: 'Job Name', rowGroup: true }],
+  }
+}
+
+function renderPanel(view?: string) {
+  const root = createRootRoute({ component: () => <Outlet /> })
+  const search = createRoute({
+    getParentRoute: () => root,
+    path: '/search',
+    validateSearch: (s: Record<string, unknown>) => ({
+      q: typeof s.q === 'string' ? s.q : undefined,
+      tab: typeof s.tab === 'string' ? s.tab : undefined,
+      view: typeof s.view === 'string' ? s.view : undefined,
+    }),
+    component: () => <SearchGridPanel q="recon" category={mkCategory() as any} />,
+  })
+  const initialEntry = view
+    ? `/search?q=recon&tab=jobName&view=${encodeURIComponent(view)}`
+    : '/search?q=recon&tab=jobName'
+  const router = createRouter({
+    routeTree: root.addChildren([search]),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
+  })
+  render(<RouterProvider router={router} />)
+  return router
+}
+
+beforeEach(() => {
+  Object.values(mockApi).forEach((fn) => (fn as any).mockClear?.())
+  clipboard.mockClear()
+})
+
+describe('SearchGridPanel', () => {
+  test('Toggle panel reveals the sidebar and opens the Columns panel (Angular parity)', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Toggle columns and filters panel' }))
+    // isSideBarVisible() is mocked false → opening: show sidebar + expand Columns.
+    expect(mockApi.setSideBarVisible).toHaveBeenCalledWith(true)
+    expect(mockApi.openToolPanel).toHaveBeenCalledWith('columns')
+  })
+
+  test('Expand all calls api.expandAll', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Expand all groups' }))
+    expect(mockApi.expandAll).toHaveBeenCalledTimes(1)
+  })
+
+  test('Clear filters calls api.setFilterModel(null)', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Clear filters' }))
+    expect(mockApi.setFilterModel).toHaveBeenCalledWith(null)
+  })
+
+  test('Refresh purges the server side', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh' }))
+    expect(mockApi.refreshServerSide).toHaveBeenCalledWith({ purge: true })
+  })
+
+  test('Remove duplicates toggles active + refreshes (Angular-faithful)', async () => {
+    renderPanel()
+    const btn = await screen.findByRole('button', { name: 'Remove duplicates' })
+    expect(btn).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(btn)
+    expect(mockApi.refreshServerSide).toHaveBeenCalledWith({ purge: true })
+    expect(screen.getByRole('button', { name: 'Remove duplicates' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('Reset view restores columns + filters + collapses', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset view' }))
+    expect(mockApi.resetColumnState).toHaveBeenCalled()
+    expect(mockApi.setFilterModel).toHaveBeenCalledWith(null)
+    expect(mockApi.collapseAll).toHaveBeenCalled()
+  })
+
+  test('double-clicking a row opens the detail drawer', async () => {
+    renderPanel()
+    fireEvent.click(await screen.findByTestId('dbl'))
+    // The static "Row details" title is gone — the sheet now titles with the
+    // record's primary value and describes it with the category label.
+    expect(await screen.findByText(/record/i)).toBeInTheDocument()
+    // The primary value titles the sheet (and also renders as its job_name cell).
+    expect(screen.getAllByText('SAMPLE_TRADE_RECON_001').length).toBeGreaterThan(0)
+  })
+
+  test('Share view copies a link with the view param WITHOUT navigating the session', async () => {
+    const router = renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Share view' }))
+    await waitFor(() => expect(clipboard).toHaveBeenCalledTimes(1))
+    expect(clipboard).toHaveBeenCalledWith(expect.stringContaining('view='))
+    // The current session URL is NOT mutated — navigating would re-render the
+    // grid and reset column visibility / collapse groups (the bug this fixes).
+    expect(router.state.location.search).not.toHaveProperty('view')
+  })
+
+  test('seeds the active-filter badge from a restored shared view on first paint', async () => {
+    const state: GridViewState = {
+      columnState: [{ colId: 'job_name', hide: false }],
+      filterModel: { job_name: { filterType: 'text', type: 'contains', filter: 'recon' } },
+      dedup: false,
+      density: 'normal',
+      expandedGroups: [],
+    }
+    renderPanel(encodeViewState(state))
+    // No interaction: initialState applies the filter without a filterChanged
+    // event, so the seeded count must reflect the 1-key filter model immediately.
+    expect(await screen.findByLabelText('active filters')).toHaveTextContent('1')
+  })
+
+  test('Export downloads via the backend export endpoint', async () => {
+    exportMock.mockReset().mockResolvedValue(undefined)
+    renderPanel()
+    fireEvent.click(await screen.findByRole('button', { name: 'Export to Excel' }))
+    await waitFor(() => expect(exportMock).toHaveBeenCalledTimes(1))
+    const [category, body] = exportMock.mock.calls[0]
+    expect(category).toBe('jobName')
+    expect(body.category).toBe('jobName')
+    // mockApi.getColumnState → [{colId:'job_name',hide:false}], getRowGroupColumns → []
+    expect(body.columns).toEqual(['job_name'])
+  })
+})

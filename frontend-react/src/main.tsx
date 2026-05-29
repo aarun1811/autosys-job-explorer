@@ -1,0 +1,77 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { LicenseManager } from 'ag-grid-enterprise'
+import {
+  ModuleRegistry,
+  TextFilterModule,
+  CellStyleModule,
+  ColumnAutoSizeModule,
+  RowApiModule,
+  ColumnApiModule,
+  GridStateModule,
+  EventApiModule,
+} from 'ag-grid-community'
+import {
+  ServerSideRowModelModule,
+  ExcelExportModule,
+  ColumnsToolPanelModule,
+  FiltersToolPanelModule,
+  SideBarModule,
+  RowGroupingModule,
+  RowGroupingPanelModule,
+  ServerSideRowModelApiModule,
+  ColumnMenuModule,
+} from 'ag-grid-enterprise'
+// Self-hosted brand typefaces (no runtime CDN — works on locked-down Citi VMs).
+// Geist (chrome/body) + Geist Mono (technical identifiers, numbers, codes).
+import '@fontsource-variable/geist'
+import '@fontsource-variable/geist-mono'
+import './index.css'
+import App from './App'
+
+// License MUST be set before any ModuleRegistry.registerModules() call (AG-Grid requirement)
+LicenseManager.setLicenseKey(import.meta.env.VITE_AG_GRID_LICENSE_KEY ?? '')
+
+// AG-Grid v35 is fully modular — every grid feature must be explicitly
+// registered. License-set MUST precede registerModules (Pitfall 9).
+//
+// Server-side row model + Excel export + ToolPanels are the Phase 3 core.
+// TextFilterModule / CellStyleModule / ColumnAutoSizeModule / RowApiModule
+// are required by features the columns already use (default text filter,
+// kebab-converted cellStyle on Execution Order, autoSizeStrategy on the grid,
+// and RowApiModule backs forEachNode (used by the toolbar Copy action)). SideBarModule
+// is what makes `sideBar={{ toolPanels: ['columns','filters'] }}` work in
+// v35 — previous versions bundled it with the tool-panel modules.
+ModuleRegistry.registerModules([
+  ServerSideRowModelModule,
+  ExcelExportModule,
+  ColumnsToolPanelModule,
+  FiltersToolPanelModule,
+  SideBarModule,
+  TextFilterModule,
+  CellStyleModule,
+  ColumnAutoSizeModule,
+  RowApiModule,
+  ColumnApiModule,
+  RowGroupingModule,
+  RowGroupingPanelModule,
+  ServerSideRowModelApiModule,
+  ColumnMenuModule,
+  // GridStateModule backs `initialState` — used to restore a shared view
+  // (columns/grouping/sort/filter) at grid construction. Without it AG-Grid
+  // throws error #200 and silently ignores initialState.
+  GridStateModule,
+  // EventApiModule backs api.addEventListener / removeEventListener — used by
+  // SearchGridPanel's onGridReady to track filterChanged for the toolbar's
+  // active-filter badge. Without it AG-Grid v35 throws error #200 and the
+  // listener silently never attaches.
+  EventApiModule,
+])
+
+const rootElement = document.getElementById('root')
+if (!rootElement) throw new Error('Root element #root not found in DOM. Check index.html.')
+createRoot(rootElement).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)

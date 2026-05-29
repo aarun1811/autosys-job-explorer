@@ -1,0 +1,10 @@
+{
+  "tabs": [
+    {
+      "key": "unbounded",
+      "label": "Unbounded",
+      "query": "SELECT * FROM rectrace_core",
+      "columns": []
+    }
+  ]
+}

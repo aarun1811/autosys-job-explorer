@@ -28,24 +28,24 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### React Foundation (scaffolding + cross-cutting filter)
 
-- [ ] **REACT-01**: Scaffold `frontend-react/` with Vite 7 + React 19 + TypeScript 5.6 + shadcn/ui (Tailwind v4).
-- [ ] **REACT-02**: Wire TanStack Router + TanStack Query + Zustand + React Hook Form + Zod.
-- [ ] **REACT-03**: Integrate AG-Grid Enterprise via `ag-grid-react` with an SSRM datasource that calls the existing backend search endpoints unchanged.
-- [ ] **REACT-04**: Single canonical design-tokens file (`tokens.css` + `theme.ts`) aligned with recviz; ESLint rule rejects hex codes in components.
-- [ ] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
-- [ ] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
-- [ ] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
-- [ ] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, angular components registered; React added once `npm run dev` boots.
+- [x] **REACT-01**: Scaffold `frontend-react/` with Vite 7 + React 19 + TypeScript 5.6 + shadcn/ui (Tailwind v4).
+- [x] **REACT-02**: Wire TanStack Router + TanStack Query + Zustand + React Hook Form + Zod.
+- [x] **REACT-03**: Integrate AG-Grid Enterprise via `ag-grid-react` with an SSRM datasource that calls the existing backend search endpoints unchanged.
+- [x] **REACT-04**: Single canonical design-tokens file (`tokens.css` + `theme.ts`) aligned with recviz; ESLint rule rejects hex codes in components.
+- [x] **REACT-05**: Dark/light mode toggle at feature parity with the existing Angular app.
+- [x] **REACT-06**: Build version / SHA visible in app footer for bug-report reference.
+- [x] **REACT-07**: Correlation-ID propagation: backend writes `traceId` to MDC (post-BOOT-UPGRADE this uses Micrometer Tracing's native support rather than a hand-rolled filter); React shell sends the ID via `X-Correlation-Id` and renders it in error states ("Error — reference: \<ID\>").
+- [x] **REACT-08**: `ops/rectrace-ops.sh` v1 with backend, tlm-stats, and React components registered; no angular component (decommissioned at React go-live per D-2.15 / D-2.17).
 
 ### React Vertical Slice — Search
 
-- [ ] **SEARCH-01**: Port the **latest** search flow (currently v3/v4) to React end-to-end for one search category, consuming the existing backend without modification.
-- [ ] **SEARCH-02**: Port at least one custom cell renderer from `custom-interactions/components/renderers/` to React, preserving behavior.
+- [x] **SEARCH-01**: Port the **latest** search flow (currently v3/v4) to React end-to-end for one search category, consuming the existing backend without modification.
+- [x] **SEARCH-02**: Port at least one custom cell renderer from `custom-interactions/components/renderers/` to React, preserving behavior.
 - [ ] **SEARCH-03**: URL-synced search state — every meaningful UI parameter is reflected in / restored from the URL (deep-linkable).
-- [ ] **SEARCH-04**: Excel export carryover — feature parity with the Angular app's export.
-- [ ] **SEARCH-05**: Recent searches stored in `localStorage`; show last 10 in a typeahead/dropdown.
+- [x] **SEARCH-04**: Excel export carryover — feature parity with the Angular app's export.
+- [x] **SEARCH-05**: Recent searches stored in `localStorage`; show last 10 in a typeahead/dropdown.
 - [ ] **SEARCH-06**: All error states display the correlation ID so users can quote it in bug reports.
-- [ ] **SEARCH-07**: React app served behind a distinct URL prefix (e.g. `/v6/`) so Angular and React run side-by-side until the parity matrix says shutdown.
+- [ ] **SEARCH-07**: React app served at `/rectrace/` (no `/v6/` prefix — D-2.4; Angular is decommissioned at React go-live); React and Angular run side-by-side during development only (manual `npm start` in `frontend/rectrace/`).
 
 ### recviz Integration
 
@@ -65,37 +65,37 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 - [ ] **SQL-04**: Per-statement `setQueryTimeout`, `fetchSize`, and `maxRows` cap enforced inside `SqlQueryServiceV4` (NEVER set on the singleton `JdbcTemplate`).
 - [ ] **SQL-05**: Mandatory `WHERE` clause or `FETCH FIRST N ROWS ONLY` injection at executor level — runaway scans rejected.
 - [ ] **SQL-06**: `SqlSearchControllerV4` exposes SSRM-shaped responses compatible with the AG-Grid SSRM datasource shape.
-- [ ] **SQL-07**: At least one example configured SELECT-tab end-to-end (Angular grid can consume it as a sanity check during transition).
+- [x] **SQL-07**: At least one example configured SELECT-tab end-to-end (Angular grid can consume it as a sanity check during transition).
 
 ### ES Loader (Oracle → Elasticsearch, scheduled)
 
-- [ ] **LOADER-01**: Multi-job configuration: each job specifies source Oracle `SELECT`, target ES index (or alias), cron schedule, batch size.
-- [ ] **LOADER-02**: In-built scheduler — **Quartz JDBC JobStore OR `@Scheduled` + ShedLock** locked during phase planning (see open decision in research SUMMARY).
-- [ ] **LOADER-03**: ES indexes accessed via **aliases**, never literal names, from day one of this phase.
-- [ ] **LOADER-04**: Idempotent upserts via deterministic `_id` derived from source primary key.
-- [ ] **LOADER-05**: New `loader/` package in `backend/rectrace`: `LoaderConfigService`, `LoaderJobRegistry`, `OracleToEsLoaderJob`, `LoaderRunHistoryService`.
-- [ ] **LOADER-06**: Per-job last-run state persisted: timestamp, status, row count, last-error message, duration.
-- [ ] **LOADER-07**: Run-history view — last 20 runs per job, queryable via admin endpoint.
-- [ ] **LOADER-08**: `LoaderAdminControllerV4` endpoints: list jobs, run-now, run-history.
-- [ ] **LOADER-09**: Graceful shutdown on JVM signal — in-flight bulk requests flush before exit, no partial-batch loss.
-- [ ] **LOADER-10**: Bulk indexing via ES `BulkProcessor` (default batch 5000 rows / 5 MB / 5 s, tunable per job).
+- [x] **LOADER-01**: Multi-job configuration: each job specifies source Oracle `SELECT`, target ES index (or alias), cron schedule, batch size.
+- [x] **LOADER-02**: In-built scheduler — **Quartz JDBC JobStore OR `@Scheduled` + ShedLock** locked during phase planning (see open decision in research SUMMARY).
+- [x] **LOADER-03**: ES indexes accessed via **aliases**, never literal names, from day one of this phase.
+- [x] **LOADER-04**: Idempotent upserts via deterministic `_id` derived from source primary key.
+- [x] **LOADER-05**: New `loader/` package in `backend/rectrace`: `LoaderConfigService`, `LoaderJobRegistry`, `OracleToEsLoaderJob`, `LoaderRunHistoryService`.
+- [x] **LOADER-06**: Per-job last-run state persisted: timestamp, status, row count, last-error message, duration.
+- [x] **LOADER-07**: Run-history view — last 20 runs per job, queryable via admin endpoint.
+- [x] **LOADER-08**: `LoaderAdminControllerV4` endpoints: list jobs, run-now, run-history.
+- [x] **LOADER-09**: Graceful shutdown on JVM signal — in-flight bulk requests flush before exit, no partial-batch loss.
+- [x] **LOADER-10**: Bulk indexing via ES `BulkProcessor` (default batch 5000 rows / 5 MB / 5 s, tunable per job).
 
 ### Observability sweep
 
-- [ ] **OBS-01**: `logstash-logback-encoder` (8.x post-BOOT-UPGRADE) configured in `logback-spring.xml` (NEVER `logback.xml`) for `backend/rectrace` and `rectrace-tlm-stats`; JSON logs with `traceId`, `userId`, `path`, `method`, `status`, `durationMs`.
-- [ ] **OBS-02**: Custom `HealthIndicator` beans — Oracle reachability, ES reachability, loader-run-age, search-config validity — exposed via `/actuator/health`.
-- [ ] **OBS-03**: Actuator endpoints locked down: `management.endpoints.web.exposure.include` is an explicit list (no wildcards); `show-details=when-authorized` or `never`.
+- [x] **OBS-01**: `logstash-logback-encoder` (8.x post-BOOT-UPGRADE) configured in `logback-spring.xml` (NEVER `logback.xml`) for `backend/rectrace` and `rectrace-tlm-stats`; JSON logs with `traceId`, `userId`, `path`, `method`, `status`, `durationMs`.
+- [x] **OBS-02**: Custom `HealthIndicator` beans — Oracle reachability, ES reachability, loader-run-age, search-config validity — exposed via `/actuator/health`.
+- [x] **OBS-03**: Actuator endpoints locked down: `management.endpoints.web.exposure.include` is an explicit list (no wildcards); `show-details=when-authorized` or `never`.
 - [ ] **OBS-04**: `@Timed`/AOP slow-query logger around `JdbcTemplate` and ES calls; threshold-driven log line emitted.
-- [ ] **OBS-05**: Prometheus metrics via `micrometer-registry-prometheus` at `/actuator/prometheus`.
-- [ ] **OBS-06**: Correlation ID propagated through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations (`ScriptExecutor`).
-- [ ] **OBS-07**: Log aggregator forwarder wired (target — Splunk / ELK / Loki / OTel collector — locked during phase planning).
-- [ ] **OBS-08**: Micrometer (1.12+ post-BOOT-UPGRADE) pinned by the Boot BOM; CI guard rejects an override. Micrometer Tracing (Boot 3 native) replaces the hand-rolled correlation ID filter.
+- [x] **OBS-05**: Prometheus metrics via `micrometer-registry-prometheus` at `/actuator/prometheus`.
+- [x] **OBS-06**: Correlation ID propagated through `@Async` (`TaskDecorator`), scheduler jobs (fresh `traceId` per fire), and subprocess invocations (`ScriptExecutor`).
+- [x] **OBS-07**: Log aggregator forwarder wired (target — Splunk / ELK / Loki / OTel collector — locked during phase planning).
+- [x] **OBS-08**: Micrometer (1.12+ post-BOOT-UPGRADE) pinned by the Boot BOM; CI guard rejects an override. Micrometer Tracing (Boot 3 native) replaces the hand-rolled correlation ID filter.
 
 ### Hyphen / special-char search bug fix
 
-- [ ] **BUG-01**: ES `_analyze` diagnostic captured for the affected field(s); root-cause documented in `.planning/codebase/` or phase notes.
-- [ ] **BUG-02**: Fix landed — preferred path: add a `.keyword` subfield (additive, no reindex). Fallback: new analyzer + reindex via alias swap.
-- [ ] **BUG-03**: Regression test asserting `ABC-123` (and other documented hyphenated values) return the expected documents.
+- [x] **BUG-01**: ES `_analyze` diagnostic captured for the affected field(s); root-cause documented in `.planning/codebase/` or phase notes. (Plan 08-01: HYPHEN-DIAGNOSTIC.md with verbatim `_analyze` + `_search` curl outputs + root cause at `ElasticsearchServiceV4.java:35`)
+- [x] **BUG-02**: Fix landed — preferred path: add a `.keyword` subfield (additive, no reindex). Fallback: new analyzer + reindex via alias swap. (Plan 08-01: `caseInsensitive(true)` on `.keyword`-branch wildcards via `buildWildcard(field, pattern)` helper. Seed mapping already has the subfields; production-stack `PUT /_mapping` documented as deploy runbook in HYPHEN-DIAGNOSTIC.md.)
+- [x] **BUG-03**: Regression test asserting `ABC-123` (and other documented hyphenated values) return the expected documents. (Plan 08-01: `HyphenSearchRegressionTest` 4/4 PASS with `-Des.live=true` against `RID-XYZ-42`/`RECON-XYZ-42`/`SET-ABC-123` + mixed-case `recon-xyz-42`; `scripts/smoke-hyphen-search.sh` 6/6 PASS at the HTTP layer.)
 
 ### Design — shadcn × recviz consistency
 
@@ -105,10 +105,10 @@ Listed in user-stated priority order. v1 = this modernization milestone. Categor
 
 ### Ops script hardening
 
-- [ ] **OPS-01**: `rectrace-ops.sh` passes `shellcheck`; uses `#!/usr/bin/env bash`, `set -euo pipefail`; works on macOS bash 3.2 and Linux bash 4/5; no GNU-only flags.
-- [ ] **OPS-02**: Subcommands: `start`, `stop`, `restart`, `status`, `logs` — each operates per-component or all. `start` blocks on a readiness probe (curl against actuator health, not just `kill -0`).
-- [ ] **OPS-03**: PID files in `run/`, logs in `logs/`; signal handling correct; idempotent start (no zombie processes); component registry in `ops/components.sh` so adding a process is a one-line change.
-- [ ] **OPS-04**: CI job runs the script on Linux to catch portability regressions.
+- [x] **OPS-01**: `rectrace-ops.sh` passes `shellcheck`; uses `#!/usr/bin/env bash`, `set -euo pipefail`; works on macOS bash 3.2 and Linux bash 4/5; no GNU-only flags.
+- [x] **OPS-02**: Subcommands: `start`, `stop`, `restart`, `status`, `logs` — each operates per-component or all. `start` blocks on a readiness probe (curl against actuator health, not just `kill -0`).
+- [x] **OPS-03**: PID files in `run/`, logs in `logs/`; signal handling correct; idempotent start (no zombie processes); component registry in `ops/components.sh` so adding a process is a one-line change.
+- [x] **OPS-04**: CI job runs the script on Linux to catch portability regressions.
 
 ### Domain Security
 
@@ -176,18 +176,18 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | BOOT-08 | Phase 1 — Backend Platform Upgrade | Pending |
 | BOOT-09 | Phase 1 — Backend Platform Upgrade | Pending |
 | REACT-01 | Phase 2 — React Foundation | Pending |
-| REACT-02 | Phase 2 — React Foundation | Pending |
-| REACT-03 | Phase 2 — React Foundation | Pending |
+| REACT-02 | Phase 2 — React Foundation | Complete |
+| REACT-03 | Phase 2 — React Foundation | Complete |
 | REACT-04 | Phase 2 — React Foundation | Pending |
-| REACT-05 | Phase 2 — React Foundation | Pending |
-| REACT-06 | Phase 2 — React Foundation | Pending |
-| REACT-07 | Phase 2 — React Foundation | Pending |
-| REACT-08 | Phase 2 — React Foundation | Pending |
-| SEARCH-01 | Phase 3 — React Search Vertical Slice | Pending |
-| SEARCH-02 | Phase 3 — React Search Vertical Slice | Pending |
+| REACT-05 | Phase 2 — React Foundation | Complete |
+| REACT-06 | Phase 2 — React Foundation | Complete |
+| REACT-07 | Phase 2 — React Foundation | Complete |
+| REACT-08 | Phase 2 — React Foundation | Complete |
+| SEARCH-01 | Phase 3 — React Search Vertical Slice | Complete |
+| SEARCH-02 | Phase 3 — React Search Vertical Slice | Complete |
 | SEARCH-03 | Phase 3 — React Search Vertical Slice | Pending |
-| SEARCH-04 | Phase 3 — React Search Vertical Slice | Pending |
-| SEARCH-05 | Phase 3 — React Search Vertical Slice | Pending |
+| SEARCH-04 | Phase 3 — React Search Vertical Slice | Complete |
+| SEARCH-05 | Phase 3 — React Search Vertical Slice | Complete |
 | SEARCH-06 | Phase 3 — React Search Vertical Slice | Pending |
 | SEARCH-07 | Phase 3 — React Search Vertical Slice | Pending |
 | RECVIZ-01 | Phase 4 — recviz Integration | Pending |
@@ -203,35 +203,35 @@ Each requirement maps to exactly one phase. Filled during roadmap creation.
 | SQL-04 | Phase 5 — Config-driven SELECT | Pending |
 | SQL-05 | Phase 5 — Config-driven SELECT | Pending |
 | SQL-06 | Phase 5 — Config-driven SELECT | Pending |
-| SQL-07 | Phase 5 — Config-driven SELECT | Pending |
-| LOADER-01 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-02 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-03 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-04 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-05 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-06 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-07 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-08 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-09 | Phase 6 — ES Loader Subsystem | Pending |
-| LOADER-10 | Phase 6 — ES Loader Subsystem | Pending |
-| OBS-01 | Phase 7 — Observability Sweep | Pending |
-| OBS-02 | Phase 7 — Observability Sweep | Pending |
-| OBS-03 | Phase 7 — Observability Sweep | Pending |
+| SQL-07 | Phase 5 — Config-driven SELECT | Complete |
+| LOADER-01 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-02 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-03 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-04 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-05 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-06 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-07 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-08 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-09 | Phase 6 — ES Loader Subsystem | Complete |
+| LOADER-10 | Phase 6 — ES Loader Subsystem | Complete |
+| OBS-01 | Phase 7 — Observability Sweep | Complete |
+| OBS-02 | Phase 7 — Observability Sweep | Complete |
+| OBS-03 | Phase 7 — Observability Sweep | Complete |
 | OBS-04 | Phase 7 — Observability Sweep | Pending |
-| OBS-05 | Phase 7 — Observability Sweep | Pending |
-| OBS-06 | Phase 7 — Observability Sweep | Pending |
-| OBS-07 | Phase 7 — Observability Sweep | Pending |
-| OBS-08 | Phase 7 — Observability Sweep | Pending |
-| BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| BUG-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OBS-05 | Phase 7 — Observability Sweep | Complete |
+| OBS-06 | Phase 7 — Observability Sweep | Complete |
+| OBS-07 | Phase 7 — Observability Sweep | Complete |
+| OBS-08 | Phase 7 — Observability Sweep | Complete |
+| BUG-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| BUG-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| BUG-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
 | DESIGN-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | DESIGN-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
 | DESIGN-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| OPS-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| OPS-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| OPS-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
-| OPS-04 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Pending |
+| OPS-01 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| OPS-02 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| OPS-03 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
+| OPS-04 | Phase 8 — Hyphen Bug + Design Polish + Ops Hardening | Complete |
 | SEC-01 | Phase 9 — Domain Security | Pending |
 | SEC-02 | Phase 9 — Domain Security | Pending |
 | SEC-03 | Phase 9 — Domain Security | Pending |

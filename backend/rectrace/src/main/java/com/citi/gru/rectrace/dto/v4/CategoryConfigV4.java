@@ -18,4 +18,5 @@ public class CategoryConfigV4 {
     private ElasticsearchConfig elasticsearch;
     private OracleConfig oracle;
     private List<ColumnDefinition> columns;
+    private DashboardConfig dashboard;
 }

@@ -1,0 +1,19 @@
+# Local environment — never commit real secrets
+.env.local
+
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Vite cache
+.vite/
+
+# TanStack Router generated file (auto-generated from src/routes/)
+src/routeTree.gen.ts
+
+# Playwright artifacts (per-run, never committed)
+test-results/
+playwright-report/
+.playwright/

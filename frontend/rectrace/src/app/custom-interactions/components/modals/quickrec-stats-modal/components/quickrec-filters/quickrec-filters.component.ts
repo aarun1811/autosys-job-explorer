@@ -5,7 +5,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 @Component({
   selector: 'app-quickrec-filters',
   templateUrl: './quickrec-filters.component.html',
-  styleUrls: ['./quickrec-filters.component.css']
+  styleUrls: ['./quickrec-filters.component.scss']
 })
 export class QuickRecFiltersComponent implements OnInit {
   @Input() initialReconId?: string;

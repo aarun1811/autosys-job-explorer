@@ -4,22 +4,17 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.search.suggest.SuggestBuilder;
-import org.elasticsearch.search.suggest.SuggestBuilders;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption;
+import co.elastic.clients.elasticsearch.core.search.FieldSuggester;
+import co.elastic.clients.elasticsearch.core.search.Suggester;
+import co.elastic.clients.elasticsearch.core.search.Suggestion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -27,7 +22,7 @@ public class SuggestionService {
 
     private static final Logger logger = LoggerFactory.getLogger(SuggestionService.class);
 
-    private final RestHighLevelClient restHighLevelClient;
+    private final ElasticsearchClient esClient;
 
     @Value("${es.index.name:rectrace_core_index}")
     private String esIndexName;
@@ -51,8 +46,8 @@ public class SuggestionService {
 
 
     @Autowired
-    public SuggestionService(RestHighLevelClient restHighLevelClient) {
-        this.restHighLevelClient = restHighLevelClient;
+    public SuggestionService(ElasticsearchClient esClient) {
+        this.esClient = esClient;
     }
 
     /**
@@ -75,59 +70,52 @@ public class SuggestionService {
         logger.debug("Getting combined suggestions for prefix '{}'", prefix);
 
         try {
-            // 1. Build SuggestBuilder with multiple CompletionSuggesters
-            SuggestBuilder suggestBuilder = new SuggestBuilder();
+            // 1. Build one FieldSuggester per target field, keyed by field name for retrieval.
+            Map<String, FieldSuggester> namedSuggesters = new LinkedHashMap<>();
             for (String fieldName : suggestionFields) {
-                CompletionSuggestionBuilder completionSuggestionBuilder = SuggestBuilders
-                        .completionSuggestion(fieldName) // Target the specific _suggest field
+                final String f = fieldName;
+                namedSuggesters.put(fieldName, FieldSuggester.of(fs -> fs
                         .prefix(prefix)
-                        .skipDuplicates(true)
-                        .size(SUGGESTIONS_PER_FIELD); // Get a few suggestions for each field type
-
-                // Use the field name as the suggester name for easy retrieval
-                suggestBuilder.addSuggestion(fieldName, completionSuggestionBuilder);
+                        .completion(c -> c.field(f).skipDuplicates(true).size(SUGGESTIONS_PER_FIELD))
+                ));
             }
 
-            // 2. Build the SearchSourceBuilder
-            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-            sourceBuilder.suggest(suggestBuilder);
-            sourceBuilder.fetchSource(false); // Don't need _source
-            sourceBuilder.size(0); // Don't need hits
+            // 2. Execute the suggest-only search (no _source, no hits).
+            SearchResponse<Void> response = esClient.search(s -> s
+                            .index(esIndexName)
+                            .size(0)
+                            .source(src -> src.fetch(false))
+                            .suggest(Suggester.of(sg -> sg.suggesters(namedSuggesters))),
+                    Void.class);
 
-            // 3. Build the SearchRequest
-            SearchRequest searchRequest = new SearchRequest(esIndexName);
-            searchRequest.source(sourceBuilder);
-
-            // 4. Execute the request
-            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-
-            // 5. Process the Suggestion Response
-            Suggest suggest = searchResponse.getSuggest();
-            if (suggest == null) {
+            // 3. Collect and combine suggestions from all suggesters (preserve order, dedup).
+            Map<String, List<Suggestion<Void>>> suggestMap = response.suggest();
+            if (suggestMap == null || suggestMap.isEmpty()) {
                 logger.debug("No 'suggest' block found in ES response for prefix '{}'", prefix);
                 return Collections.emptyList();
             }
 
-            // 6. Collect and Combine Suggestions from all suggesters
-            Set<String> combinedSuggestions = new LinkedHashSet<>(); // Use LinkedHashSet to preserve order roughly but ensure uniqueness
+            Set<String> combinedSuggestions = new LinkedHashSet<>();
+            outer:
             for (String fieldName : suggestionFields) {
-                CompletionSuggestion completionSuggestion = suggest.getSuggestion(fieldName); // Get suggestions by field name
-                if (completionSuggestion != null && !CollectionUtils.isEmpty(completionSuggestion.getOptions())) {
-                    completionSuggestion.getOptions().forEach(option ->
-                            combinedSuggestions.add(option.getText().string())
-                    );
+                List<Suggestion<Void>> sugs = suggestMap.get(fieldName);
+                if (sugs == null) {
+                    continue;
                 }
-                // Limit total number early if needed
-                if (combinedSuggestions.size() >= MAX_TOTAL_SUGGESTIONS) {
-                    break;
+                for (Suggestion<Void> sug : sugs) {
+                    for (CompletionSuggestOption<Void> opt : sug.completion().options()) {
+                        combinedSuggestions.add(opt.text());
+                        if (combinedSuggestions.size() >= MAX_TOTAL_SUGGESTIONS) {
+                            break outer;
+                        }
+                    }
                 }
             }
 
-            // Limit the final list size
+            // 4. Limit the final list size (defensive — outer break above already caps it).
             List<String> finalSuggestions = combinedSuggestions.stream()
                     .limit(MAX_TOTAL_SUGGESTIONS)
                     .collect(Collectors.toList());
-
 
             logger.debug("Found {} combined suggestions for prefix '{}'", finalSuggestions.size(), prefix);
             return finalSuggestions;

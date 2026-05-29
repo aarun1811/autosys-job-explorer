@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.16</version>
+		<version>3.5.14</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.citi.gru</groupId>
@@ -27,8 +27,8 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>17</java.version>
-		<maven.test.skip>true</maven.test.skip>
+		<java.version>21</java.version>
+		<maven.compiler.release>21</maven.compiler.release>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -43,6 +43,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
 		<dependency>
@@ -66,6 +71,40 @@
 			<artifactId>osdt_cert</artifactId>
 			<version>21.5.0.0</version>
 		</dependency>
+
+		<!-- Phase 5 / SQL-03: SQL grammar parser for the config-driven SELECT tab
+		     validator. Pinned to 5.3 exactly (no version variable, no range) per
+		     05-RESEARCH.md Standard Stack. -->
+		<dependency>
+			<groupId>com.github.jsqlparser</groupId>
+			<artifactId>jsqlparser</artifactId>
+			<version>5.3</version>
+		</dependency>
+
+		<!-- Phase 6 / LOADER-02: ShedLock 7.7.0 for @Scheduled mutual exclusion.
+		     Pinned to 7.7.0 exactly (no version variable, no range) per 06-RESEARCH.md
+		     Standard Stack. 7.x line explicitly tested against Spring Boot 3.5 / JVM 17+.
+		     The shedlock table DDL lives in ../rectrace-local-dev/schema/01-rectrace.sql
+		     (Plan 06-01). Boot fails (Pitfall L1) if the table is missing. -->
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-spring</artifactId>
+			<version>7.7.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-jdbc-template</artifactId>
+			<version>7.7.0</version>
+		</dependency>
+		<!-- Phase 6 / Plan 06-04: in-memory LockProvider for ShedLock tests so the
+		     production JdbcTemplateLockProvider stays @Profile("!test")-gated. -->
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-inmemory</artifactId>
+			<version>7.7.0</version>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -86,13 +125,132 @@
 			<artifactId>poi</artifactId>
 			<version>5.2.3</version>
 		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!-- Phase 7 (OBS-01/04/05) — observability stack -->
+		<!-- logstash-logback-encoder 8.0 is explicitly pinned (D-7.1) because it is
+		     NOT part of the Spring Boot BOM and 9.0 migrated to Jackson 3 which
+		     would collide with Boot 3.5.14's Jackson 2 dependency tree. -->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>8.0</version>
+		</dependency>
+		<!-- micrometer-registry-prometheus is BOM-managed by spring-boot 3.5.14
+		     (pulls Micrometer 1.14.x line). Powers /actuator/prometheus. -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<!-- spring-boot-starter-aop is BOM-managed. Required for @Timed/@Observed
+		     annotation interception AND the slow-query / scheduled-trace-id aspects
+		     planned in 07-03. Brings in aspectjweaver transitively (proxy-based AOP). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- OBS-08 — Micrometer pin guard (Option A: scoped requireSameVersions).
+			     Three-execution defence per D-7.8:
+			       (1) enforce-micrometer-ceiling: bannedDependencies caps EVERY
+			           Micrometer artifact below 2.0.0 so a future BOM bump or
+			           transitive override cannot silently move us onto the 2.x
+			           line. This is the PRIMARY OBS-08 guard.
+			       (2) enforce-micrometer-core-convergence: scoped requireSameVersions
+			           on the micrometer-core release train (1.15.x under Boot 3.5.14).
+			       (3) enforce-micrometer-tracing-convergence: scoped requireSameVersions
+			           on the micrometer-tracing release train (1.5.x under Boot 3.5.14).
+			     Why split into two `requireSameVersions` executions: Micrometer ships
+			     `micrometer-core`/`micrometer-registry-prometheus` and
+			     `micrometer-tracing`/`micrometer-tracing-bridge-brave` as TWO
+			     INDEPENDENT release trains with separate version cadences (the Boot
+			     3.5.14 BOM blesses core 1.15.11 alongside tracing 1.5.11). A single
+			     unscoped requireSameVersions across all four artifacts would falsely
+			     trip on this BOM-blessed reality. The original Option-A spec
+			     (single group of four) was authored without knowledge of the
+			     dual-train release model; we discovered the trip live during `mvn
+			     validate` and split the rule on the spot — see
+			     .planning/phases/07-observability-sweep/07-05-SUMMARY.md "Deviations
+			     from Plan" (Rule 3 inline correction). Unscoped `dependencyConvergence`
+			     was ALREADY rejected for the prior executor due to an unrelated
+			     spring-data-elasticsearch:5.5.11 httpclient transitive split.
+			     Version omitted — managed by the Spring Boot BOM. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce-micrometer-ceiling</id>
+						<phase>validate</phase>
+						<goals><goal>enforce</goal></goals>
+						<configuration>
+							<rules>
+								<bannedDependencies>
+									<excludes>
+										<exclude>io.micrometer:*:[2.0.0,)</exclude>
+									</excludes>
+								</bannedDependencies>
+							</rules>
+						</configuration>
+					</execution>
+					<execution>
+						<id>enforce-micrometer-core-convergence</id>
+						<phase>validate</phase>
+						<goals><goal>enforce</goal></goals>
+						<configuration>
+							<rules>
+								<requireSameVersions>
+									<dependencies>
+										<dependency>io.micrometer:micrometer-core</dependency>
+										<dependency>io.micrometer:micrometer-registry-prometheus</dependency>
+									</dependencies>
+								</requireSameVersions>
+							</rules>
+						</configuration>
+					</execution>
+					<execution>
+						<id>enforce-micrometer-tracing-convergence</id>
+						<phase>validate</phase>
+						<goals><goal>enforce</goal></goals>
+						<configuration>
+							<rules>
+								<requireSameVersions>
+									<dependencies>
+										<dependency>io.micrometer:micrometer-tracing</dependency>
+										<dependency>io.micrometer:micrometer-tracing-bridge-brave</dependency>
+									</dependencies>
+								</requireSameVersions>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

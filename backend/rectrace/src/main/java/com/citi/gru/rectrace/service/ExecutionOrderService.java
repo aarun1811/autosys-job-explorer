@@ -2,20 +2,20 @@ package com.citi.gru.rectrace.service;
 
 import java.io.Reader;
 import java.io.StringWriter;
-import java.math.BigDecimal;
 import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO;
@@ -23,6 +23,7 @@ import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobDetailsDTO;
 import com.citi.gru.rectrace.dto.ExecutionOrderDTO.JobNodeDTO;
 import com.citi.gru.rectrace.dto.JobStatusInfo;
 
+@Profile("!test")
 @Service
 public class ExecutionOrderService {
 
@@ -71,7 +72,7 @@ public class ExecutionOrderService {
             ExecutionOrderDTO.JobNodeDTO node = new ExecutionOrderDTO.JobNodeDTO();
             node.setJobName((String) row[0]);
             node.setLoadJob((String) row[1]);
-            node.setExecutionOrder(((BigDecimal) row[2]).intValue());
+            node.setExecutionOrder(((Number) row[2]).intValue());
             sequence.add(node);
         }
         result.setExecutionSequence(sequence);
@@ -109,10 +110,8 @@ public class ExecutionOrderService {
             details.setRunCalendar((String) row[3]);
             details.setExcludeCalendar((String) row[4]);
             details.setBoxName((String) row[5]);
-            // details.setCommand(clobToString((Clob) row[6]));
-            // details.setDescription(clobToString((Clob) row[7]));
-            details.setCommand("");
-            details.setDescription("");
+            details.setCommand(clobToString(row[6]));
+            details.setDescription(clobToString(row[7]));
 
             jobDetails.put((String) row[0], details);
         }
@@ -138,20 +137,31 @@ public class ExecutionOrderService {
         return result;
     }
 
-    private String clobToString(Clob clob) {
-        if (clob == null)
+    /**
+     * Reads a native-query CLOB column to String. Hibernate may hand back the
+     * column as a plain String (small CLOBs) or a java.sql.Clob depending on
+     * driver/dialect, so tolerate both rather than casting to one (mirrors the
+     * (Number) tolerance used for exec_order).
+     */
+    private String clobToString(Object value) {
+        if (value == null)
             return "";
-        try (Reader reader = clob.getCharacterStream();
-                StringWriter writer = new StringWriter()) {
-            char[] buffer = new char[2048];
-            int bytesRead;
-            while ((bytesRead = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, bytesRead);
+        if (value instanceof String s)
+            return s;
+        if (value instanceof Clob clob) {
+            try (Reader reader = clob.getCharacterStream();
+                    StringWriter writer = new StringWriter()) {
+                char[] buffer = new char[2048];
+                int bytesRead;
+                while ((bytesRead = reader.read(buffer)) != -1) {
+                    writer.write(buffer, 0, bytesRead);
+                }
+                return writer.toString();
+            } catch (Exception e) {
+                logger.error("Error reading CLOB", e);
+                return "";
             }
-            return writer.toString();
-        } catch (Exception e) {
-            System.err.println("Error reading CLOB");
-            return "";
         }
+        return value.toString();
     }
 }

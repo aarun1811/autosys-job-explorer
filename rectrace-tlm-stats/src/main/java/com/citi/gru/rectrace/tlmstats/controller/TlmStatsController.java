@@ -25,7 +25,6 @@ import com.citi.gru.rectrace.tlmstats.service.TlmStatsService;
  */
 @RestController
 @RequestMapping("/api/tlm-stats")
-@CrossOrigin(origins = "*")
 public class TlmStatsController {
 
     private static final Logger logger = LoggerFactory.getLogger(TlmStatsController.class);

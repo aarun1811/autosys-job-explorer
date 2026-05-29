@@ -5,7 +5,7 @@ import { QuickRecAutoMatchStats } from 'src/app/services/quickrec-stats.service'
 @Component({
   selector: 'app-quickrec-automatch-table',
   templateUrl: './quickrec-automatch-table.component.html',
-  styleUrls: ['./quickrec-automatch-table.component.css']
+  styleUrls: ['./quickrec-automatch-table.component.scss']
 })
 export class QuickRecAutomatchTableComponent implements OnInit, OnChanges {
   @Input() data: QuickRecAutoMatchStats[] = [];

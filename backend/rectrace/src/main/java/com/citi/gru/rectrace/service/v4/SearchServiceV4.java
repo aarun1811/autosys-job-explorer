@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -15,8 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@Profile("!test")
 @Service
 @Slf4j
 public class SearchServiceV4 {
@@ -42,16 +44,33 @@ public class SearchServiceV4 {
         
         log.info("Performing initial search for keyword: {}", keyword);
         
-        Map<String, CategoryResultV4> categoryResults = new HashMap<>();
+        Map<String, CategoryResultV4> categoryResults = new ConcurrentHashMap<>();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         
         // Search all categories in parallel
         for (CategoryConfigV4 category : configService.getCategories()) {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
+                    // Dashboard-only category: no ES index configured. Emit the
+                    // category (so the dashboard tab renders) without running a
+                    // search. Coalesce columns null -> empty list so /initial
+                    // never emits columns: null (React Zod requires an array).
+                    if (category.getElasticsearch() == null) {
+                        categoryResults.put(category.getKey(), CategoryResultV4.builder()
+                                .key(category.getKey())
+                                .label(category.getLabel())
+                                .values(new ArrayList<>())
+                                .count(0)
+                                .hasMore(false)
+                                .columns(category.getColumns() != null ? category.getColumns() : new ArrayList<>())
+                                .dashboard(category.getDashboard())
+                                .build());
+                        return; // skip ES for a dashboard-only category
+                    }
+
                     // Get unique values from Elasticsearch
                     List<String> uniqueValues = esService.getUniqueValues(keyword, category);
-                    
+
                     // Build category result
                     CategoryResultV4 result = CategoryResultV4.builder()
                             .key(category.getKey())
@@ -60,12 +79,13 @@ public class SearchServiceV4 {
                             .count(uniqueValues.size())
                             .hasMore(uniqueValues.size() >= 1000)  // Hit the limit
                             .columns(category.getColumns())
+                            .dashboard(category.getDashboard())
                             .build();
-                    
+
                     categoryResults.put(category.getKey(), result);
-                    
+
                     log.debug("Category {} returned {} results", category.getKey(), uniqueValues.size());
-                    
+
                 } catch (Exception e) {
                     log.error("Error searching category: " + category.getKey(), e);
                     // Add empty result for failed category
@@ -76,6 +96,7 @@ public class SearchServiceV4 {
                             .count(0)
                             .hasMore(false)
                             .columns(category.getColumns())
+                            .dashboard(category.getDashboard())
                             .build();
                     categoryResults.put(category.getKey(), emptyResult);
                 }
@@ -120,36 +141,6 @@ public class SearchServiceV4 {
     
     public SearchConfigurationV4 getConfiguration() {
         return configService.getConfiguration();
-    }
-    
-    @Async
-    public CompletableFuture<CategoryResultV4> searchCategoryAsync(String keyword, CategoryConfigV4 category) {
-        try {
-            List<String> uniqueValues = esService.getUniqueValues(keyword, category);
-            
-            CategoryResultV4 result = CategoryResultV4.builder()
-                    .key(category.getKey())
-                    .label(category.getLabel())
-                    .values(uniqueValues)
-                    .count(uniqueValues.size())
-                    .hasMore(uniqueValues.size() >= 1000)
-                    .columns(category.getColumns())
-                    .build();
-            
-            return CompletableFuture.completedFuture(result);
-            
-        } catch (Exception e) {
-            log.error("Error in async search for category: " + category.getKey(), e);
-            CategoryResultV4 emptyResult = CategoryResultV4.builder()
-                    .key(category.getKey())
-                    .label(category.getLabel())
-                    .values(new ArrayList<>())
-                    .count(0)
-                    .hasMore(false)
-                    .columns(category.getColumns())
-                    .build();
-            return CompletableFuture.completedFuture(emptyResult);
-        }
     }
     
     public byte[] exportToExcel(String categoryKey, ExportRequestV4 request) throws IOException {

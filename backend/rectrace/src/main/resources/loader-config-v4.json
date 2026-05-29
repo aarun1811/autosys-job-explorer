@@ -1,0 +1,22 @@
+{
+  "jobs": [
+    {
+      "key": "rectrace_core_loader",
+      "source": {
+        "datasource": "primary",
+        "query": "SELECT file_name_pattern, ok_file_name, job_name, recon_engine, app_name, app_id, support_email, support_hotline, receive_path, recon, set_id, sub_acc, load_job, box_name, load_file_name, load_file_name_pattern, tlm_instance, machine, run_calendar, exclude_calendar, recon_id, recon_portal_id FROM rectrace.rectrace_core",
+        "primaryKey": ["job_name"]
+      },
+      "target": {
+        "alias": "rectrace_core_alias",
+        "batch": {
+          "rows": 5000,
+          "bytes": 5242880,
+          "flushMs": 5000
+        }
+      },
+      "schedule": "0 */5 * * * *",
+      "timezone": "UTC"
+    }
+  ]
+}

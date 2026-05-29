@@ -58,5 +58,6 @@ Thumbs.db
 *.pid
 
 # Application specific
-application-local.properties
-application-dev.properties 
+# application-local.properties intentionally tracked per Phase 0.1 plan 07
+# (scope concession to D-0.1.24; Phase 1 D-1.14 inherits it).
+application-dev.properties

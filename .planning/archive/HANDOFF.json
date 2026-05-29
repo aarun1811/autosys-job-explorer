@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-17T17:05:59.076Z",
+  "context": "milestone-pause",
+  "phase": null,
+  "phase_name": null,
+  "phase_dir": null,
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "autonomous_run_complete_awaiting_user",
+  "milestone": {
+    "name": "v1.0 — Modernization",
+    "total_phases": 11,
+    "completed_phases": 9,
+    "completed": ["0", "0.1", "1", "2", "3", "5", "6", "7", "8 (partial — BUG+OPS)"],
+    "pending": [
+      {"phase": "4", "name": "recviz Integration", "reason": "Needs Citi recviz deployment knowledge — user-only"},
+      {"phase": "8 DESIGN-01/02/03", "name": "Visual polish + recviz token audit", "reason": "User deferred earlier; needs recviz visual references"},
+      {"phase": "9", "name": "Domain Security", "reason": "Citi auth-mechanism choice — user-only"}
+    ]
+  },
+  "completed_this_session": [
+    {"phase": "3", "name": "React Search Vertical Slice", "tests": "138 unit + 13 Playwright UAT steps + 6 screenshots; 4 real defects fixed during UAT"},
+    {"phase": "5", "name": "Config-driven SELECT", "tests": "21 Sql* + 1 smoke"},
+    {"phase": "6", "name": "ES Loader Subsystem", "tests": "23 Loader* + 3 smokes (alias/sigterm/admin)"},
+    {"phase": "7", "name": "Observability Sweep", "tests": "82 backend + 10 tlm-stats + observability smoke (5/7 sections pass; 2 env-gap warnings)"},
+    {"phase": "8", "name": "BUG + OPS (DESIGN deferred)", "tests": "86 backend (4 designed skips) + 6/6 hyphen smoke + 11/11 ci-smoke"}
+  ],
+  "needs_user_review": [
+    {"id": "D-5.9", "context": "Phase 5", "what": "rectrace_readonly Oracle account naming for Citi VM (local-dev works as-is)"},
+    {"id": "D-7.7", "context": "Phase 7", "what": "splunk.hec.host / splunk.hec.token placeholders in application-prod.properties"},
+    {"id": "D-7.11", "context": "Phase 7", "what": "/actuator/health/loader health-group wired in test profile only; main config defers"},
+    {"id": "D-8.11", "context": "Phase 8", "what": ".github/workflows/ops-script.yml is GitHub Actions placeholder; Citi CI runner swap needed"},
+    {"id": "pre-existing", "context": "rectrace-tlm-stats", "what": "local-profile boot failure (entityManagerFactory bean missing). Surfaced by Phase 7 smoke. Not introduced by autonomous run."}
+  ],
+  "remaining_work": [
+    {"phase": "4", "what": "recviz Integration — CSP/cookie/SSO contract, postMessage envelope, RecvizFrame component", "blocker": "Citi-internal recviz deployment knowledge"},
+    {"phase": "8 DESIGN", "what": "shadcn↔recviz token audit (DESIGN-01), visual regression (DESIGN-02), component coverage parity (DESIGN-03)", "blocker": "recviz visual references"},
+    {"phase": "9", "what": "Domain Security — CitiPortal/SiteMinder/SPNEGO + keytab/Vault + ES SSL + Citi CA truststore + CORS allow-list", "blocker": "Citi auth-mechanism choice"}
+  ],
+  "decisions_made_during_autonomous_run": [
+    {"id": "D-6.0", "decision": "Scheduler = @Scheduled + ShedLock 7.7.0", "rationale": "Single-instance VM; Quartz JobStore overkill. ShedLock 7.x required for SB 3.5 + JVM 17+ (research corrected 5.16 → 7.7.0)."},
+    {"id": "D-6.4", "decision": "Deterministic _id = SHA-256 hex first 16 chars of JSON-encoded PK array", "rationale": "Internal data + low row counts; 16 chars sufficient. JSON encoding prevents separator-collision (Pitfall L5)."},
+    {"id": "D-7.0", "decision": "Log aggregator = Splunk HEC via LogstashTcpSocketAppender", "rationale": "Citi enterprise standard per CLAUDE.md context."},
+    {"id": "D-7.6", "decision": "@Async MDC propagation via built-in ContextPropagatingTaskDecorator", "rationale": "Boot 3.2+ ships this. Hand-rolled would lose Brave TraceContext."},
+    {"id": "D-7.8 Option A", "decision": "Maven Enforcer Micrometer pin = scoped requireSameVersions (core + tracing trains) + bannedDependencies ceiling at 2.0.0", "rationale": "Unscoped dependencyConvergence fails on pre-existing spring-data-elasticsearch httpclient transitive split."},
+    {"id": "D-8.2", "decision": "Hyphen-search fix = caseInsensitive(true) on .keyword wildcards", "rationale": "Planning thought it was a mapping change; actual bug was pattern.toLowerCase() against case-preserving .keyword. 3-line code fix."},
+    {"id": "skip_discuss=true + auto_advance=true", "decision": "Set config flags for hands-off autonomous run", "rationale": "User stepped out; smart_discuss still blocks on AskUserQuestion which would have hung."}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Decide Phase 4 recviz deployment shape (same-origin iframe vs cross-origin) and write the CSP/cookie/SSO contract", "context": "Phase 4 cannot start without this", "blocking": true},
+    {"action": "Choose Phase 9 auth mechanism (CitiPortal headers vs SiteMinder vs SPNEGO) + service auth (keytab vs Vault)", "context": "Phase 9 cannot start without this", "blocking": true},
+    {"action": "Decide whether to run /gsd-ui-review 3 or create a dedicated polish phase for Phase 8 DESIGN-01/02/03", "context": "User explicitly deferred", "blocking": false},
+    {"action": "Fill production secrets: splunk.hec.host, splunk.hec.token in backend/rectrace/src/main/resources/application-prod.properties", "context": "Before any prod deploy", "blocking": false},
+    {"action": "Resolve rectrace-tlm-stats local-profile boot failure (entityManagerFactory bean missing) — pre-existing", "context": "Independent of autonomous run; surfaced by Phase 7 smoke", "blocking": false}
+  ],
+  "uncommitted_files": [
+    ".playwright-mcp/ (untracked screenshot scratch dir)",
+    "uat-A-empty-state.png", "uat-B-csv-results.png", "uat-F-recents-popover.png",
+    "uat-G-correlation-id.png", "uat-theme-dark.png", "uat-theme-light.png"
+  ],
+  "infrastructure_state": {
+    "docker_oracle": "rectrace-oracle running on :1521 (healthy)",
+    "docker_elasticsearch": "rectrace-es running on :9200 (healthy)",
+    "backend_rectrace": "stopped",
+    "vite_dev_server": "stopped",
+    "rectrace_local_dev_repo": "../rectrace-local-dev/ has uncommitted-to-this-repo commits on its own main: rectrace_readonly user DDL, shedlock+loader_run_history DDL, rectrace_core_alias bootstrap"
+  },
+  "next_action": "Resume with /gsd-resume-work. Review autonomous-log.md for full decision trail. Phase 4 OR Phase 9 OR Phase 8 DESIGN polish are the three open paths.",
+  "context_notes": "User went out asking for autonomous execution of phases 5-8. Set workflow.skip_discuss=true and workflow.auto_advance=true to bypass the AskUserQuestion gates. All planning decisions logged with D-N.M IDs to autonomous-log.md. Multiple cwd-drift incidents during execution where worktree agents accidentally committed to milestone/modernization directly via absolute paths — every one was caught pre-commit; no protected refs were rewound. Real bugs were caught by Playwright UAT (Phase 3 had 4 defect rounds: /initial schema + 5 AG-Grid v35 modules missing + ColumnApiModule + useRecentSearches cross-instance sync). Phase 7 surfaced one planner defect (unscoped dependencyConvergence trips on pre-existing httpclient transitive conflict) — re-dispatched executor with Option A scoped requireSameVersions. Phase 8 found the hyphen bug was much smaller than expected — 3-line Java fix not a mapping change. All 86 backend tests + 10 tlm-stats tests green at pause time."
+}

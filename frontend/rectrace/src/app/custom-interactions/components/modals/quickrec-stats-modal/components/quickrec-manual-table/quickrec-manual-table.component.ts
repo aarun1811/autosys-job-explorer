@@ -5,7 +5,7 @@ import { QuickRecManualMatchStats } from 'src/app/services/quickrec-stats.servic
 @Component({
   selector: 'app-quickrec-manual-table',
   templateUrl: './quickrec-manual-table.component.html',
-  styleUrls: ['./quickrec-manual-table.component.css']
+  styleUrls: ['./quickrec-manual-table.component.scss']
 })
 export class QuickRecManualTableComponent implements OnInit, OnChanges {
   @Input() data: QuickRecManualMatchStats[] = [];

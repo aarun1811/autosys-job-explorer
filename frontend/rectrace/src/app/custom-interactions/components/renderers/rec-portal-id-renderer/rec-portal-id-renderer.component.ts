@@ -7,7 +7,7 @@ import { QuickRecStatsModalComponent } from '../../modals/quickrec-stats-modal/q
 @Component({
   selector: 'app-rec-portal-id-renderer',
   templateUrl: './rec-portal-id-renderer.component.html',
-  styleUrls: ['./rec-portal-id-renderer.component.css']
+  styleUrls: ['./rec-portal-id-renderer.component.scss']
 })
 export class RecPortalIdRendererComponent implements ICellRendererAngularComp {
   params: any;

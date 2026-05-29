@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -22,10 +23,13 @@ import com.citi.gru.rectrace.tlmstats.model.TlmInstanceConfig;
 import com.citi.gru.rectrace.tlmstats.model.TlmInstancesWrapper;
 import com.citi.gru.rectrace.tlmstats.util.ScriptExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Database configuration for multiple TLM instances and reconmgmt database
  */
+@Profile("!test")
 @Configuration
 public class DatabaseConfig {
 
@@ -46,6 +50,9 @@ public class DatabaseConfig {
     @Value("${reconmgmt.datasource.db-schema}")
     private String reconmgmtDbSchema;
 
+    @Value("${reconmgmt.datasource.password:}")
+    private String reconmgmtPassword;
+
     @Value("${recportal.datasource.driver-class-name:oracle.jdbc.OracleDriver}")
     private String recportalDriverClassName;
 
@@ -61,8 +68,41 @@ public class DatabaseConfig {
     @Value("${recportal.datasource.db-schema}")
     private String recportalDbSchema;
 
+    @Value("${recportal.datasource.password:}")
+    private String recportalPassword;
+
     @Value("${password.script.path:/opt/rectify/control/scripts/get_password.sh}")
     private String passwordScriptPath;
+
+    @Value("${reconmgmt.datasource.hikari.maximum-pool-size:5}")
+    private int reconmgmtMaximumPoolSize;
+
+    @Value("${reconmgmt.datasource.hikari.minimum-idle:2}")
+    private int reconmgmtMinimumIdle;
+
+    @Value("${reconmgmt.datasource.hikari.connection-timeout:30000}")
+    private long reconmgmtConnectionTimeout;
+
+    @Value("${reconmgmt.datasource.hikari.idle-timeout:600000}")
+    private long reconmgmtIdleTimeout;
+
+    @Value("${reconmgmt.datasource.hikari.max-lifetime:1800000}")
+    private long reconmgmtMaxLifetime;
+
+    @Value("${recportal.datasource.hikari.maximum-pool-size:5}")
+    private int recportalMaximumPoolSize;
+
+    @Value("${recportal.datasource.hikari.minimum-idle:2}")
+    private int recportalMinimumIdle;
+
+    @Value("${recportal.datasource.hikari.connection-timeout:30000}")
+    private long recportalConnectionTimeout;
+
+    @Value("${recportal.datasource.hikari.idle-timeout:600000}")
+    private long recportalIdleTimeout;
+
+    @Value("${recportal.datasource.hikari.max-lifetime:1800000}")
+    private long recportalMaxLifetime;
 
     @Autowired
     private ScriptExecutor scriptExecutor;
@@ -72,19 +112,37 @@ public class DatabaseConfig {
      */
     @Bean(name = "reconmgmtDataSource")
     public DataSource reconmgmtDataSource() {
-        logger.info("Creating reconmgmt DataSource for service: {} and schema: {}", 
+        logger.info("Creating reconmgmt DataSource for service: {} and schema: {}",
                    reconmgmtServiceName, reconmgmtDbSchema);
-        
-        String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
-                reconmgmtServiceName.toUpperCase(), reconmgmtDbSchema.toUpperCase());
-        
-        return DataSourceBuilder
-                .create()
-                .url(reconmgmtUrl)
-                .username(reconmgmtUsername)
-                .driverClassName(reconmgmtDriverClassName)
-                .password(decryptedPassword)
-                .build();
+
+        // Phase 0.1 P07 KNOWN GAP closure (Phase 1 Wave 7): use ${reconmgmt.datasource.password}
+        // when supplied (local profile via application-local.properties); fall back to
+        // get_password.sh only on Citi VMs where the property is unset.
+        String decryptedPassword;
+        if (reconmgmtPassword != null && !reconmgmtPassword.isBlank()) {
+            decryptedPassword = reconmgmtPassword;
+        } else {
+            decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
+                    reconmgmtServiceName.toUpperCase(), reconmgmtDbSchema.toUpperCase());
+        }
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(reconmgmtUrl);
+        config.setUsername(reconmgmtUsername);
+        config.setPassword(decryptedPassword);
+        config.setDriverClassName(reconmgmtDriverClassName);
+        config.setMaximumPoolSize(reconmgmtMaximumPoolSize);
+        config.setMinimumIdle(reconmgmtMinimumIdle);
+        config.setConnectionTimeout(reconmgmtConnectionTimeout);
+        config.setIdleTimeout(reconmgmtIdleTimeout);
+        config.setMaxLifetime(reconmgmtMaxLifetime);
+        config.setPoolName("Reconmgmt-HikariCP");
+
+        // Oracle specific optimizations
+        config.addDataSourceProperty("oracle.jdbc.ReadTimeout", "60000");
+        config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
+
+        return new HikariDataSource(config);
     }
 
     /**
@@ -100,19 +158,39 @@ public class DatabaseConfig {
      */
     @Bean(name = "recportalDataSource")
     public DataSource recportalDataSource() {
-        logger.info("Creating recportal DataSource for service: {} and schema: {}", 
+        logger.info("Creating recportal DataSource for service: {} and schema: {}",
                    recportalServiceName, recportalDbSchema);
-        
-        String decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
-                recportalServiceName.toUpperCase(), recportalDbSchema.toUpperCase());
-        
-        return DataSourceBuilder
-                .create()
-                .url(recportalUrl)
-                .username(recportalUsername)
-                .driverClassName(recportalDriverClassName)
-                .password(decryptedPassword)
-                .build();
+
+        // Phase 0.1 P07 KNOWN GAP closure (Phase 1 Wave 7): use ${recportal.datasource.password}
+        // when supplied (local profile via application-local.properties); fall back to
+        // get_password.sh only on Citi VMs where the property is unset. Line ~234
+        // (TlmJdbcTemplateFactory.getJdbcTemplate) is intentionally NOT wrapped here —
+        // CONCERNS LOW #2 defers it to a later cleanup phase.
+        String decryptedPassword;
+        if (recportalPassword != null && !recportalPassword.isBlank()) {
+            decryptedPassword = recportalPassword;
+        } else {
+            decryptedPassword = scriptExecutor.executeScript(passwordScriptPath,
+                    recportalServiceName.toUpperCase(), recportalDbSchema.toUpperCase());
+        }
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(recportalUrl);
+        config.setUsername(recportalUsername);
+        config.setPassword(decryptedPassword);
+        config.setDriverClassName(recportalDriverClassName);
+        config.setMaximumPoolSize(recportalMaximumPoolSize);
+        config.setMinimumIdle(recportalMinimumIdle);
+        config.setConnectionTimeout(recportalConnectionTimeout);
+        config.setIdleTimeout(recportalIdleTimeout);
+        config.setMaxLifetime(recportalMaxLifetime);
+        config.setPoolName("Recportal-HikariCP");
+
+        // Oracle specific optimizations
+        config.addDataSourceProperty("oracle.jdbc.ReadTimeout", "60000");
+        config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
+
+        return new HikariDataSource(config);
     }
 
     /**
