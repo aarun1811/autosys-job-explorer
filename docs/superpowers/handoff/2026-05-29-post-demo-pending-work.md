@@ -2,7 +2,7 @@
 
 **Created:** 2026-05-30 14:50 IST
 **Owner:** A Arun
-**Last updated:** 2026-05-30 (autonomous window resumed post-compact)
+**Last updated:** 2026-05-30 (autonomous window closed — B4/B5/A3 code complete + reviewed + pushed; runtime verification pending stack-up)
 
 After the successful TLM dashboard demo, we're working through the remaining task queue. This doc is the canonical "what's left" list. Status fields update in place.
 
@@ -14,14 +14,14 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 |---|---|---|
 | A1 | Empty-state no-results bug + Contextual dashboards inline in search results — needs its own brainstorm → spec → plan (UX redesign) | NOT STARTED — pick up with user |
 | A2 | AG-Grid styling inside the embedded RecViz dashboards (quartz tweaks, denser rows, column dividers) | NOT STARTED — pick up with user |
-| A3 | `Cache-Control: no-cache` on RecViz `index.html` so bundle-hash invalidation busts browser caches | NOT STARTED — autonomous attempt during user's 30-50min window |
+| A3 | `Cache-Control: no-cache` on RecViz `index.html` so bundle-hash invalidation busts browser caches | CODE COMPLETE + REVIEWED + PUSHED (RecViz `c4a59b3`); runtime verification pending |
 
 ## B. Plan 4 polish parked at the demo gate
 
 | # | Task | Status |
 |---|---|---|
-| B4 | Set_id identifier alignment in `gen_core_dicts` (rectrace-local-dev `volume.py`) — change bounded SETV_* pool to per-recon `LACC_{recon.seq:06d}`. Fixes the 0/0/0/0 result when clicking a specific recon+set_id cell. | NOT STARTED — autonomous attempt during user's window |
-| B5 | MultiSelectFilter array normalization (RecViz `dashboard-renderer.tsx`) — wrap URL string values as arrays for `multi-select` filters so the badge stops showing string-length as the selected count ("24 selected" → "1 selected" for the locked recon). | NOT STARTED — autonomous attempt during user's window |
+| B4 | Set_id identifier alignment in `gen_core_dicts` (rectrace-local-dev `volume.py`) — change bounded SETV_* pool to per-recon `LACC_{recon.seq:06d}`. Fixes the 0/0/0/0 result when clicking a specific recon+set_id cell. | CODE COMPLETE + REVIEWED (rectrace-local-dev `d4532ea` local-only; autosys-job-explorer `c33ab08` pushed); runtime verification pending |
+| B5 | MultiSelectFilter array normalization (RecViz `dashboard-renderer.tsx`) — wrap URL string values as arrays for `multi-select` filters so the badge stops showing string-length as the selected count ("24 selected" → "1 selected" for the locked recon). | CODE COMPLETE + REVIEWED + PUSHED (RecViz `df458b9`); runtime verification pending |
 
 ## C. Code-review hygiene (low-priority but real)
 
@@ -55,11 +55,34 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 
 ## Active work — autonomous window (2026-05-30, ~30-50 min user-away)
 
+### Window closing summary
+
+All three tasks: **CODE COMPLETE + REVIEWED + COMMITTED + PUSHED**. Runtime verification deferred — at start-of-window the entire local stack (Docker daemon, Oracle, ES, rectrace backend, RecViz uvicorn, React dev) was offline. Bringing it back up wasn't an action authorized by the brief, so the autonomous window completed everything possible without runtime: write code, code-review via subagents, type-check / lint / syntax-check, commit, push.
+
+**To verify everything in one pass (on return)**:
+1. Open Docker Desktop → wait for daemon
+2. `cd ../rectrace-local-dev && docker compose up -d` → wait for Oracle ready
+3. `cd ../rectrace-local-dev && .venv/bin/python apply.py --volume 10` → re-seeds with new B4 LACC_* set_ids
+4. `cd /Users/aarun/Workspace/Projects/autosys-job-explorer && ops/rectrace-ops.sh start backend` → :6088 up
+5. `cd /Users/aarun/Workspace/Projects/RecViz/backend && venv/bin/python -m uvicorn app.main:app --reload` → :8000 up (A3 middleware now applied)
+6. `cd /Users/aarun/Workspace/Projects/autosys-job-explorer/frontend-react && pnpm dev` → :5173 up
+7. Run each verification block in the B4/B5/A3 sections below (curl + Playwright).
+
+If any verification fails, halt and update the relevant Result placeholder with the failure details; I can take it from there on next session.
+
 Working through B4 → B5 → A3 in that order. Updates land here as I go.
 
 ### B4: Set_id alignment in `gen_core_dicts`
 
-- **Status**: DESIGN APPROVED (autonomous standing approval) — implementing
+- **Status**: CODE COMPLETE — RUNTIME VERIFICATION PENDING (local stack offline)
+- **Commits**: rectrace-local-dev `d4532ea` (local-only, no remote) + autosys-job-explorer `c33ab08` (pushed to main)
+- **Code review**: feature-dev:code-reviewer APPROVED with no findings (verified LACC_ format matches TLM-side generators byte-for-byte at volume.py:343, 360, 377, 392, 461; no SETV_* assertions in apply.py; recon-name prefixes don't collide with LACC_ regex)
+- **Runtime verification needed when stack is back up**:
+  1. Start Docker + Oracle + ES + rectrace backend + RecViz + React
+  2. `cd ../rectrace-local-dev && .venv/bin/python apply.py --volume 10` — should re-seed cleanly
+  3. Spot-check Oracle: `SELECT COUNT(DISTINCT set_id), MIN(set_id), MAX(set_id) FROM rectrace_core` should show ~14 distinct LACC_* values
+  4. Playwright: rectrace search `/search?q=TLMP_CONSUMER&tab=tlmInstance` → click recon row → expand → click any set_id cell (LACC_xxxxxx) → modal opens with non-zero KPIs (was 0/0/0/0)
+  5. `cd frontend-react && pnpm test:e2e -- tlm-stats-modal.spec.ts` should pass
 - **Repo**: `/Users/aarun/Workspace/Projects/rectrace-local-dev`
 - **Branch**: commit direct on `feature/tlm-instance-seed` (repo is local-only, no remote, no other open work on this branch).
 
@@ -91,7 +114,16 @@ Working through B4 → B5 → A3 in that order. Updates land here as I go.
 
 ### B5: MultiSelectFilter array normalization
 
-- **Status**: DESIGN APPROVED (autonomous standing approval) — implementing after B4
+- **Status**: CODE COMPLETE — RUNTIME VERIFICATION PENDING (RecViz dev stack offline)
+- **Commit**: RecViz main (will be pushed; see git log)
+- **Code review**: feature-dev:code-reviewer APPROVED — verified FilterConfig.type discriminant, idempotency, no other call sites, defaults handling correct, no store-level coercion conflict, share-URL round-trip clean
+- **Reviewer parked one Nit** (skipped per design): empty-string URL param (`?filter.recon=`) would normalize to `['']` → "1 selected" with empty token. Unreachable in practice (URLSearchParams behaviour) — not addressed.
+- **Static verification done**: `pnpm tsc -b --noEmit` clean; `pnpm lint` shows pre-existing 53-error baseline with **zero new errors** from this file; `pnpm build` succeeds (5.32s, no new warnings)
+- **Runtime verification needed when stack is back up**:
+  1. Start RecViz uvicorn + React dev
+  2. Rectrace → search → click any recon-leaf cell → modal opens → locked recon filter badge shows "1 selected" (was 24 / char-count)
+  3. Sanity check: open standalone (non-embed) RecViz dashboard with `?filter.region=APAC` — badge shows "1 selected"
+  4. Pick 3 items in an unlocked multi-select — badge shows "3 selected"
 - **Repo**: `/Users/aarun/Workspace/Projects/RecViz`
 - **Branch**: direct on `main`.
 
@@ -118,7 +150,17 @@ In `dashboard-renderer.tsx` between receiving `initialFilters` prop and calling 
 
 ### A3: Cache-Control no-cache on RecViz index.html
 
-- **Status**: DESIGN APPROVED (autonomous standing approval) — implementing after B5
+- **Status**: CODE COMPLETE — RUNTIME VERIFICATION PENDING (RecViz uvicorn offline)
+- **Commit**: RecViz main (will be pushed; see git log)
+- **Code review**: feature-dev:code-reviewer APPROVED — verified coverage of both HTML paths (StaticFiles(html=True) for GET / + spa_fallback exception_handler — both flow through BaseHTTPMiddleware), no precedence conflicts (only Cache-Control setter in backend), middleware ordering benign, content-type robustness handles all variants (charset suffix, mixed case, empty)
+- **Static verification done**: `venv/bin/python -m py_compile app/main.py` SYNTAX OK
+- **Runtime verification needed when stack is back up**:
+  1. Start RecViz uvicorn
+  2. `curl -I http://localhost:8000/` → `Cache-Control: no-cache, no-store, must-revalidate` + `Pragma: no-cache`
+  3. `curl -I http://localhost:8000/dashboards/quickrec` → same
+  4. `curl -I http://localhost:8000/embed/dashboards/dash-tlm-stats` → same
+  5. `curl -I http://localhost:8000/assets/<a-hashed-bundle>.js` → NO Cache-Control: no-cache (default ETag/Last-Modified)
+  6. `curl -I http://localhost:8000/health` → JSON, no Cache-Control change
 - **Repo**: `/Users/aarun/Workspace/Projects/RecViz`
 - **Branch**: direct on `main`.
 
