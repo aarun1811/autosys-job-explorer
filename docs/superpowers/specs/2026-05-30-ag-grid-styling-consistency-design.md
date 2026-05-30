@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-30
 **Author:** A Arun (with Claude)
-**Status:** DRAFT v2 — incorporates adversarial review findings; awaiting user re-review before plan
+**Status:** DRAFT v3 — incorporates two adversarial review passes; awaiting user review before plan
 **Related repos:** `autosys-job-explorer` (rectrace, frontend-react), `RecViz` (frontend)
 
 ## Purpose
@@ -105,8 +105,15 @@ AG-Grid rows are siblings stacked tight; outer shadow gets clipped by the next r
 
 - `RecViz/frontend/package.json` — add `@fontsource-variable/geist` and `@fontsource-variable/geist-mono` dependencies.
 - `RecViz/frontend/src/main.tsx` — add `import '@fontsource-variable/geist'` and `import '@fontsource-variable/geist-mono'`.
-- `RecViz/frontend/index.html` — remove the Inter Google-Fonts `<link>` tags (lines around 9).
-- `RecViz/frontend/src/index.css` — replace every `"Inter", system-ui, sans-serif` reference with `"Geist Variable", system-ui, sans-serif`; replace any `Inter` reference in `--font-sans` / `--font-mono` / `--ag-font-family` (the latter will be deleted in B.3 anyway).
+- `RecViz/frontend/index.html` — **remove three lines**: the two Google-Fonts preconnect `<link>` tags at lines 7-8 (orphaned once Inter is gone) AND the Inter Google-Fonts `<link>` tag at line 9.
+- `RecViz/frontend/src/index.css` — three concrete edits, each named:
+  1. **ADD `--font-sans` and `--font-mono` to the `@theme inline` block** (lines 7-59 currently). These tokens are NOT defined in RecViz today — without adding them, Tailwind v4's `font-sans` / `font-mono` utilities resolve to defaults (`ui-sans-serif`, `ui-monospace`) and Geist Mono silently won't apply to the 15+ `font-mono` consumers across RecViz (column-metadata-grid, kpi-builder, chart-builder-preview, data-source-sheet, connection-health-header, etc.). Mirror rectrace's `frontend-react/src/index.css:11-12`:
+     ```css
+     --font-sans: "Geist Variable", system-ui, sans-serif;
+     --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+     ```
+  2. **Update the body font literal at line ~182**: replace `body { font-family: "Inter", system-ui, sans-serif; ... }` → `body { font-family: "Geist Variable", system-ui, sans-serif; ... }`.
+  3. (The legacy `--ag-font-family: "Inter"` at line ~166 is inside the `.ag-theme-quartz {...}` block that B.4 deletes entirely — no separate edit needed here.)
 
 #### Smoke-test surface (B.1 verification)
 
@@ -260,17 +267,24 @@ After all three sites:
 
 #### Container attribute (B.3 addition)
 
-To match rectrace, the AG-Grid container `<div>` should carry `data-ag-theme-mode={resolvedTheme}` so AG-Grid popups and scrollbars pick the right colour scheme. Rectrace handles this at `frontend-react/src/search/...` — port the same pattern to each of the three RecViz grid components.
+To match rectrace, AG-Grid's container `<div>` should carry `data-ag-theme-mode={resolvedTheme}` so AG-Grid's own popups (filter popups, column menus) and scrollbars pick the right colour scheme. Rectrace handles this at `frontend-react/src/search/SearchGrid.tsx:126-130`:
 
 ```tsx
-const { resolvedTheme } = useTheme()  // re-introduce for the data-attribute
+const { resolvedTheme } = useTheme()
 // ...
-<div data-ag-theme-mode={resolvedTheme} className="...">
+<div className="h-full w-full" data-ag-theme-mode={resolvedTheme}>
   <AgGridReact theme={gridTheme} ... />
 </div>
 ```
 
-(Note: this re-introduces `useTheme` for a different purpose — the data-attribute, not the theme calculation. Per-render theme object recreation is avoided; container re-render is a cheap React update.)
+For each of the three RecViz grid sites, **add `data-ag-theme-mode={resolvedTheme}` to the EXISTING height-styled `<div>` that already wraps `<AgGridReact>`** — do NOT introduce a new outer wrapper. The existing wrappers are:
+- `config-data-grid.tsx` line 146 (`SingleSourceGrid`).
+- `config-data-grid.tsx` line 288 (`MergedSourceGrid`).
+- `drill-detail-grid.tsx` line 143.
+
+Re-introduce `const { resolvedTheme } = useTheme()` at the top of each grid component for the attribute (it was dropped earlier when removing the per-render theme calc — bring it back for this single attribute consumer).
+
+Why on the existing div: matches rectrace's pattern, avoids DOM churn, and keeps the attribute on the direct CSS-cascade ancestor of the AG-Grid root.
 
 ### B.4 — Remove legacy CSS bridge
 
@@ -284,7 +298,9 @@ const { resolvedTheme } = useTheme()  // re-introduce for the data-attribute
 **Static (per repo)**:
 - `pnpm tsc -b --noEmit` — clean
 - `pnpm lint` — no new errors against existing baseline (RecViz has 53 pre-existing)
-- `pnpm build` — succeeds; bundle bump from Geist install ~80KB woff2 (acceptable)
+- `pnpm build` — succeeds.
+- **Bundle-size delta check**: compare `dist/` size pre/post (`du -sh dist/`). Expect ~80KB delta from Geist woff2 assets only. Drill into the asset manifest to confirm — woff2 files only, no JS/CSS bloat. If the delta is materially larger, investigate before claiming done.
+- **Add one assertion to `frontend-react/src/search/__tests__/gridTheme.test.ts`**: `expect(themeJson).toContain('.ag-row-hover')` — locks in the new hover hairline rule so a future regression that removes it fails the test. Existing assertions (`.ag-row-selected`, `.ag-row-group-expanded`) remain backward-compatible (still present as substrings).
 
 **Runtime (live stack, screenshot-evidenced)**:
 1. **B.1 Geist app-wide** — visit each surface listed in B.1's smoke-test surface. Light + dark. Screenshot any surface where Geist swap causes unexpected reflow.
@@ -306,6 +322,7 @@ Both `gridTheme.ts` (rectrace) and `grid-theme.ts` (RecViz) carry a header banne
 | Risk | Mitigation |
 |---|---|
 | Geist letterforms slightly differ from Inter → button text wraps / grid cells truncate differently | B.1 smoke-test catches; case-by-case fix or accept |
+| `autoSizeAllColumns()` in `drill-detail-grid.tsx:71` lands at different widths under Geist (slightly wider letterforms → wider auto-size targets) | Acceptable; document the shift in B.1 smoke notes; users may see drill-down columns slightly wider than before |
 | Container `data-ag-theme-mode` missing → filter popups stay light in dark mode | B.3 adds the attribute on every grid container |
 | CSS box-shadow non-composition (hovered + selected loses primary left-edge) | Combined `.ag-row-hover.ag-row-selected` selector in both Part A and B.2 |
 | Existing rectrace `gridTheme.test.ts` snapshot mismatch | Add new CSS rules don't change the `withParams` output; tests pass. Verify post-edit. |
@@ -319,6 +336,7 @@ Both `gridTheme.ts` (rectrace) and `grid-theme.ts` (RecViz) carry a header banne
 - **A2 deeper** — Density variants (compact for embed). Revisit only if the modal feels cramped after this work.
 - **RecViz admin grids** — `query-results.tsx`, `dataset-editor.tsx`, `column-metadata-grid.tsx`. Will look different from dashboard grids until a follow-up port. Easy follow-up later — just import the same `gridTheme` and pass via `theme` prop. **Tradeoff accepted.**
 - **Rectrace typography/density changes**. User confirmed colors only (plus the hover hairline). No `fontSize`/`spacing` changes in rectrace.
+- **RecViz dashboard grid Card hover-lift**. RecViz's `index.css:187-199` applies a hover lift to non-`data-static` Cards. The dashboard grid Cards in `config-data-grid.tsx` lift on hover today; rectrace surfaces don't. Inside the embedded modal this may visually clash. **Not addressed in this spec** — easy follow-up by adding `data-static` to the grid Card containers, or accept as acceptable visual difference.
 
 ## References
 
@@ -332,7 +350,9 @@ Both `gridTheme.ts` (rectrace) and `grid-theme.ts` (RecViz) carry a header banne
 - AG-Grid v35 Theming API: `https://www.ag-grid.com/archive/35.0.0/javascript-data-grid/theming-migration`
 - AG-Grid v35 Colors & Dark Mode: `https://www.ag-grid.com/archive/35.0.0/javascript-data-grid/theming-colors`
 
-## Changelog from v1
+## Changelog
+
+### v1 → v2 (first adversarial review)
 
 - **Geist scope (review point 3)** — corrected the false "Same Geist font referenced" claim. Added Part B.1 to install Geist app-wide in RecViz per user decision.
 - **Hover composition (review point 5)** — added explicit combined `.ag-row-hover.ag-row-selected` selector to BOTH rectrace addition (Part A) and RecViz port (Part B.2). Removed the misleading "CSS handles overlap naturally" reasoning.
@@ -344,3 +364,12 @@ Both `gridTheme.ts` (rectrace) and `grid-theme.ts` (RecViz) carry a header banne
 - **Density tradeoff (review point 7)** — made explicit: RecViz will be slightly less dense than rectrace.
 - **Admin-grid transient inconsistency (review point 9)** — explicit acceptance in scope decision 7 and out-of-scope.
 - **Structure as two parts (review point 12)** — Part A lands first as visual reference; Part B builds on it.
+
+### v2 → v3 (second adversarial review)
+
+- **BLOCKER: Geist tokens missing in RecViz `@theme inline` (v2 review §1)** — RecViz `index.css` `@theme inline` block does NOT define `--font-sans` or `--font-mono`. Without adding them, Tailwind v4's `font-sans` / `font-mono` utilities resolve to defaults and 15+ existing `font-mono` callsites (column-metadata-grid, kpi-builder, chart-builder-preview, etc.) silently stay on system mono after Geist install. Part B.1 now explicitly enumerates the token additions mirroring rectrace's `index.css:11-12`.
+- **`index.html` preconnect orphans (v2 review §10a)** — Part B.1 now enumerates the TWO preconnect `<link>` tags at lines 7-8 in addition to the Inter link at line 9.
+- **`data-ag-theme-mode` placement clarity (v2 review §5)** — Part B.3 now explicitly says "add to the EXISTING height-styled `<div>` that already wraps `<AgGridReact>`, not a new outer wrapper" with file:line references to the three existing wrappers.
+- **Verification additions (v2 review §6)** — added bundle-size delta check (`du -sh dist/` before/after, expect ~80KB woff2-only) and a new `expect(themeJson).toContain('.ag-row-hover')` assertion in `gridTheme.test.ts`.
+- **Auto-size jitter risk (v2 review §3)** — added a risk-table row about `autoSizeAllColumns()` landing at different widths under Geist letterforms.
+- **Card hover-lift out-of-scope note (v2 review §10c)** — explicit out-of-scope item flagging RecViz's `data-slot="card"` hover-lift may visually clash inside the rectrace modal; deferred to follow-up.
