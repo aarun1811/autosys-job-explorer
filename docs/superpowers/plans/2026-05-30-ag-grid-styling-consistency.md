@@ -12,9 +12,9 @@
 
 **Standing rules** (apply to every task):
 - Direct-to-`main` commits per task. No feature branches.
-- Co-Authored-By footer on every commit: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`.
+- Co-Authored-By footer on every commit: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>` (adjust if the implementer model is different).
 - No raw hex literals in TS/TSX. Use `var(--…)` / `color-mix(in oklab, ...)`. Both repos have an ESLint rule that catches new hex.
-- After each task: `feature-dev:code-reviewer` subagent pass before commit (per CLAUDE.md). Standing convention in this session.
+- **Code-reviewer cadence** — the orchestrator (`superpowers:subagent-driven-development`) inserts a `feature-dev:code-reviewer` subagent pass between every implement+typecheck step and the commit step. Task bodies below do NOT enumerate the reviewer pass as a separate step; assume it runs automatically. If executing inline (without orchestrator), the executor MUST dispatch the reviewer manually before each commit.
 - Live stack is up: rectrace dev `:5173`, RecViz uvicorn `:8000`, Oracle `:1521`, ES `:9200`, rectrace backend `:6088`. Use it for runtime verification.
 
 **Sequencing:** Tasks 1-3 (rectrace) MUST complete and ship before Tasks 4+ (RecViz) start. Part A's hover hairline is the visual reference for Part B's port.
@@ -146,7 +146,7 @@ These are the right neighbours — append the new rules immediately after `.ag-r
 
 - [ ] **Step 2: Append the two new CSS rules**
 
-After the `.ag-row-selected` line, insert these two rules:
+Insert these two rules immediately AFTER the `.ag-row-selected` line (line 31) and BEFORE the `.ag-row-group-expanded` comment+rule at line 32-35. The hover rules belong to the same "row-state visual treatment" cluster as the `.ag-row` transition (line 29) and `.ag-row-selected` (line 31); slotting them between selected and the group-row block keeps related rules near each other:
 
 ```css
 /* Gmail-inspired hover hairline: bright top + bottom edges that read brighter
@@ -267,10 +267,10 @@ Use the Playwright MCP tools available in this session:
 1. `mcp__plugin_playwright_playwright__browser_navigate` to `http://localhost:5173/search?q=TLMP_CONSUMER&tab=tlmInstance`
 2. Wait for grid (`mcp__plugin_playwright_playwright__browser_wait_for` for text "TLMP_CONSUMER")
 3. Expand the group row (find `.ag-group-contracted`, click via `browser_evaluate`).
-4. Hover the FIRST leaf row using `browser_evaluate`:
+4. Hover the FIRST leaf row using `browser_evaluate`. AG-Grid normally manages `.ag-row-hover` itself in response to pointer events, but synthetic Playwright events across React + AG-Grid handlers are unreliable — manually injecting the class is equivalent for verification (the CSS rule matches purely on classList). The selector also explicitly excludes the header row + group row:
    ```js
    () => {
-     const firstLeaf = document.querySelector('[role="row"]:not(.ag-row-group)')
+     const firstLeaf = document.querySelector('.ag-center-cols-container .ag-row:not(.ag-row-group):not(.ag-header-row)')
      if (!firstLeaf) return 'no leaf'
      firstLeaf.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
      firstLeaf.classList.add('ag-row-hover')  // simulate AG-Grid's class-add on hover
@@ -317,6 +317,20 @@ Toggle dark via the rectrace theme toggle button OR navigate with `?theme=dark` 
 Repeat steps 3-4 and capture screenshots: `taskA3-rectrace-hover-dark.png` and `taskA3-rectrace-hover-selected-dark.png`.
 
 Verify the hairlines read against the dark row background (should be a brighter light-tinted line, since `var(--color-foreground)` flips light in dark mode).
+
+- [ ] **Step 5b: Regression check — existing group chevron hover still works**
+
+The spec preserves `.ag-row-group .ag-group-expanded:hover` (rectrace's existing chevron-color-flip on group-row hover). Confirm no interaction with the new `.ag-row-hover` rule by hovering a GROUP row (the parent TLMP_CONSUMER row, not a leaf) and inspecting its chevron color via `browser_evaluate`:
+```js
+() => {
+  const groupRow = document.querySelector('.ag-row-group')
+  if (!groupRow) return 'no group row'
+  groupRow.classList.add('ag-row-hover')
+  const chevron = groupRow.querySelector('.ag-group-expanded') || groupRow.querySelector('.ag-group-contracted')
+  return chevron ? getComputedStyle(chevron).color : 'no chevron'
+}
+```
+Expected: a color value resolved from `var(--color-primary)` (the rectrace chevron-hover rule turns the chevron primary on hover). If the result is a default neutral foreground, the rule didn't fire — investigate before claiming done.
 
 - [ ] **Step 6: Move screenshots into handoff dir**
 
@@ -571,7 +585,7 @@ URLs to visit (LIGHT mode):
 - `http://localhost:5173/search?q=TLMP_CONSUMER&tab=tlmInstance` then click a leaf row's set_id button → the embedded RecViz modal opens (smoke the cell-click flow)
 - `http://localhost:8000/datasets` (admin: dataset list)
 - `http://localhost:8000/explorer` (admin: query results)
-- `http://localhost:8000/connections` (admin: connection settings)
+- `http://localhost:8000/settings` (admin: connection / general settings — verified route, NOT `/connections`)
 
 For EACH URL, capture one screenshot via `browser_take_screenshot` named `task6-light-<surface>.png` (e.g. `task6-light-dashboards.png`).
 
@@ -594,9 +608,12 @@ Look for: button text wrapping to 2 lines, KPI numbers overflowing tiles, table 
 
 In the browser console at `/explorer`:
 ```js
-getComputedStyle(document.querySelector('.font-mono') || document.querySelector('[class*="font-mono"]')).fontFamily
+(() => {
+  const el = document.querySelector('.font-mono') || document.querySelector('[class*="font-mono"]')
+  return el ? getComputedStyle(el).fontFamily : 'NO_FONT_MONO_ELEMENT_FOUND'
+})()
 ```
-Expected: contains `"Geist Mono Variable"`. If it shows `ui-monospace` or similar, the token wiring didn't take — debug Task 5 before proceeding.
+Expected: contains `"Geist Mono Variable"`. If it shows `ui-monospace` or similar, the token wiring didn't take — debug Task 5 before proceeding. If it shows `NO_FONT_MONO_ELEMENT_FOUND`, navigate to a different surface that uses mono (eg `/datasets` or open a connection-edit sheet) and re-run.
 
 - [ ] **Step 6: Move screenshots into handoff dir + commit**
 
@@ -793,21 +810,28 @@ git push origin main
 
 ---
 
-### Task 8: Wire `gridTheme` into `config-data-grid.tsx` SingleSourceGrid
+### Task 8: Wire `gridTheme` into BOTH grid sites in `config-data-grid.tsx`
 
 **Files:**
 - Modify: `RecViz/frontend/src/components/dashboard/config-data-grid.tsx`
 
-- [ ] **Step 1: Read the file head + the SingleSourceGrid render block**
+> **Why one combined task**: the file's import-line cleanup (drop `themeQuartz` + `colorSchemeDark`) breaks BOTH grid functions' per-render ternary at once. If we did `SingleSourceGrid` and `MergedSourceGrid` as separate commits, the intermediate commit between them would have a broken build (`Cannot find name 'themeQuartz'` at the un-fixed line). This combined task touches both functions in one diff with one typecheck + one commit, keeping `main` always green.
+
+- [ ] **Step 1: Read the file head + locate both grid render blocks**
 
 Open `RecViz/frontend/src/components/dashboard/config-data-grid.tsx`. Confirm:
 - Line 3: `import { type ColDef, type GridApi, type GridReadyEvent, themeQuartz, colorSchemeDark } from 'ag-grid-community'`
 - Line 9: `import { useTheme } from '@/components/layout/theme-provider'`
-- Line 66 (inside `SingleSourceGrid`): `const { resolvedTheme } = useTheme()`
-- Line 80: `const gridTheme = resolvedTheme === 'dark' ? themeQuartz.withPart(colorSchemeDark) : themeQuartz`
-- Around line 146: a `<div>` wrapping `<AgGridReact theme={gridTheme} ... />`
+- **`SingleSourceGrid` function** (~line 56). Inside it:
+  - ~line 66: `const { resolvedTheme } = useTheme()`
+  - ~line 80: `const gridTheme = resolvedTheme === 'dark' ? themeQuartz.withPart(colorSchemeDark) : themeQuartz`
+  - ~line 146: a `<div style={{ height: 400, width: '100%' }}>` wrapping `<AgGridReact theme={gridTheme} ... />`
+- **`MergedSourceGrid` function** (~line 188). Inside it:
+  - ~line 198: `const { resolvedTheme } = useTheme()`
+  - ~line 222: `const gridTheme = resolvedTheme === 'dark' ? themeQuartz.withPart(colorSchemeDark) : themeQuartz`
+  - ~line 288: a `<div style={{ height: 400, width: '100%' }}>` wrapping `<AgGridReact theme={gridTheme} ... />`
 
-If line numbers have drifted slightly, find the patterns by content match.
+If line numbers have drifted, match by content.
 
 - [ ] **Step 2: Update the import line 3**
 
@@ -817,7 +841,7 @@ Remove `themeQuartz, colorSchemeDark` from the `ag-grid-community` import. The l
 import { type ColDef, type GridApi, type GridReadyEvent } from 'ag-grid-community'
 ```
 
-(Keep all the `type` imports intact — only the two value imports leave.)
+(Keep all `type` imports intact — only the two value imports leave.)
 
 - [ ] **Step 3: Add new import for the static theme**
 
@@ -827,32 +851,35 @@ Add immediately after the `ag-grid-community` import:
 import { gridTheme } from '@/lib/grid-theme'
 ```
 
-- [ ] **Step 4: Delete the per-render theme calc inside `SingleSourceGrid`**
+- [ ] **Step 4: Delete the per-render theme calc in BOTH grid functions**
 
-In `SingleSourceGrid` (around line 80), delete the line:
+Inside `SingleSourceGrid` (~line 80), delete:
 ```ts
 const gridTheme = resolvedTheme === 'dark' ? themeQuartz.withPart(colorSchemeDark) : themeQuartz
 ```
 
-The reference to `gridTheme` in the JSX below still resolves — now to the module-level import added in Step 3.
+Inside `MergedSourceGrid` (~line 222), delete the identical line.
 
-- [ ] **Step 5: Add `data-ag-theme-mode` to the existing height-styled wrapper div**
+Both functions' JSX references to `gridTheme` below now resolve to the module-level import from Step 3.
 
-Locate the existing `<div>` immediately wrapping `<AgGridReact>` inside `SingleSourceGrid` (around line 146). It currently looks something like:
+- [ ] **Step 5: Add `data-ag-theme-mode` to the existing wrapper div in BOTH grid functions**
+
+Inside `SingleSourceGrid` (~line 146), augment the existing div (DO NOT add a new wrapper):
+
 ```tsx
+// Before
 <div style={{ height: 400, width: '100%' }}>
   <AgGridReact theme={gridTheme} ... />
 </div>
-```
-
-Add the `data-ag-theme-mode` attribute (DO NOT add a new wrapper div):
-```tsx
+// After
 <div style={{ height: 400, width: '100%' }} data-ag-theme-mode={resolvedTheme}>
   <AgGridReact theme={gridTheme} ... />
 </div>
 ```
 
-The `resolvedTheme` reference is already in scope from the `useTheme()` call at line 66. KEEP that call — it's still needed for the attribute.
+Inside `MergedSourceGrid` (~line 288), apply the identical augmentation.
+
+Both `resolvedTheme` references are already in scope from the existing `useTheme()` calls (lines 66 and 198). KEEP both `useTheme()` calls — they now serve only the attribute.
 
 - [ ] **Step 6: Typecheck + lint + build**
 
@@ -863,7 +890,7 @@ cd /Users/aarun/Workspace/Projects/RecViz/frontend
 ./node_modules/.bin/vite build
 ```
 
-Expected: all clean.
+Expected: all clean. Both grid sites updated, no broken intermediate state.
 
 - [ ] **Step 7: Commit**
 
@@ -871,101 +898,25 @@ Expected: all clean.
 cd /Users/aarun/Workspace/Projects/RecViz
 git add frontend/src/components/dashboard/config-data-grid.tsx
 git commit -m "$(cat <<'EOF'
-feat(dashboard): wire gridTheme into SingleSourceGrid + scheme attr
+feat(dashboard): wire gridTheme into both grid sites + scheme attr
 
-  - Replace per-render themeQuartz.withPart(colorSchemeDark) ternary
-    with static `import { gridTheme } from '@/lib/grid-theme'`
-  - Drop themeQuartz + colorSchemeDark imports from ag-grid-community
-  - Keep useTheme() call — resolvedTheme now flows only into the
-    grid container's data-ag-theme-mode attribute so AG-Grid's own
-    popups + scrollbars follow the .dark cascade
-  - Place data-ag-theme-mode on the existing height-styled <div>
-    wrapper (mirrors rectrace SearchGrid.tsx:130 pattern; no new
-    DOM wrapper introduced)
+config-data-grid.tsx has two grid functions (SingleSourceGrid +
+MergedSourceGrid — the cross-DB merge variant used by the TLM
+dashboard's Reconciliation grid). Both updated in one commit to
+avoid a broken intermediate state (the shared import-line cleanup
+would otherwise break the un-fixed function).
 
-MergedSourceGrid lands in Task 9; drill-detail-grid in Task 10.
+Changes (applied identically to both functions):
+  - drop ag-grid-community imports of themeQuartz + colorSchemeDark
+  - add static `import { gridTheme } from '@/lib/grid-theme'`
+  - delete per-render themeQuartz.withPart(colorSchemeDark) ternary
+  - data-ag-theme-mode={resolvedTheme} on the existing
+    height-styled wrapper div (mirrors rectrace
+    SearchGrid.tsx:130 pattern; no new DOM wrapper)
+  - keep useTheme() calls — resolvedTheme now feeds only the
+    data-ag-theme-mode attribute
 
-Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
-EOF
-)"
-git push origin main
-```
-
----
-
-### Task 9: Wire `gridTheme` into `config-data-grid.tsx` MergedSourceGrid
-
-**Files:**
-- Modify: `RecViz/frontend/src/components/dashboard/config-data-grid.tsx` (same file as Task 8; second function)
-
-- [ ] **Step 1: Locate the MergedSourceGrid block**
-
-Open `RecViz/frontend/src/components/dashboard/config-data-grid.tsx`. The `MergedSourceGrid` function declared around line 188. Confirm:
-- Around line 198: `const { resolvedTheme } = useTheme()`
-- Around line 222: `const gridTheme = resolvedTheme === 'dark' ? themeQuartz.withPart(colorSchemeDark) : themeQuartz`
-- Around line 288: a `<div>` wrapping `<AgGridReact theme={gridTheme} ... />`
-
-(After Task 8 the import line 3 no longer has `themeQuartz, colorSchemeDark` — the line 222 reference is currently broken. tsc would have failed at the end of Task 8 if both grid sites weren't done together. **In practice Tasks 8 and 9 must be staged + committed together for a clean tsc pass — see Step 5 note**.)
-
-**IMPORTANT — pre-Task-8 fix order**: To keep the repo on a working build between commits, do Task 8 and Task 9 as one logical unit:
-- After Task 8 Step 5 (the data-ag-theme-mode add for SingleSourceGrid), immediately proceed to this task's Steps 2-4 BEFORE running tsc + commit.
-- Combine Task 8 Step 6+7 (typecheck + commit) and Task 9 Step 4+5 into one tsc/commit cycle.
-
-If Task 8 was already committed independently (rare — the implementer ignored the warning), `pnpm tsc -b --noEmit` will report `Cannot find name 'themeQuartz'` at line 222. Continue to Step 2 below to repair.
-
-- [ ] **Step 2: Delete the per-render theme calc**
-
-Inside `MergedSourceGrid` (around line 222), delete:
-```ts
-const gridTheme = resolvedTheme === 'dark' ? themeQuartz.withPart(colorSchemeDark) : themeQuartz
-```
-
-The reference to `gridTheme` in this function's JSX below now resolves to the module-level import added in Task 8 Step 3.
-
-- [ ] **Step 3: Add `data-ag-theme-mode` to the existing wrapper div**
-
-Locate the existing `<div>` immediately wrapping `<AgGridReact>` inside `MergedSourceGrid` (around line 288). Add the attribute:
-```tsx
-<div style={{ height: 400, width: '100%' }} data-ag-theme-mode={resolvedTheme}>
-  <AgGridReact theme={gridTheme} ... />
-</div>
-```
-
-`resolvedTheme` is already in scope from the `useTheme()` call at line 198 — KEEP that call.
-
-- [ ] **Step 4: Typecheck + lint + build**
-
-```bash
-cd /Users/aarun/Workspace/Projects/RecViz/frontend
-./node_modules/.bin/tsc -b --noEmit
-./node_modules/.bin/eslint src/components/dashboard/config-data-grid.tsx
-./node_modules/.bin/vite build
-```
-
-Expected: all clean (config-data-grid.tsx now has BOTH grid sites updated).
-
-- [ ] **Step 5: Commit**
-
-If Tasks 8 and 9 were staged together (recommended): rebase the Task 8 commit message to mention both, OR include both functions' diff in a single Task 8/9 combined commit.
-
-If Task 8 was committed independently first (so we now have a broken intermediate commit — the build was broken between commit 1 and this one): create a clean commit here that completes the wiring AND amend the commit message to acknowledge the brief inter-commit broken state for review history.
-
-Standard commit (separate from Task 8):
-```bash
-cd /Users/aarun/Workspace/Projects/RecViz
-git add frontend/src/components/dashboard/config-data-grid.tsx
-git commit -m "$(cat <<'EOF'
-feat(dashboard): wire gridTheme into MergedSourceGrid + scheme attr
-
-Same change pattern as Task 8, applied to the second grid function
-in config-data-grid.tsx (cross-DB merge variant — used by the TLM
-dashboard's Reconciliation grid):
-  - drop per-render themeQuartz.withPart(colorSchemeDark) ternary
-  - data-ag-theme-mode={resolvedTheme} on the existing wrapper div
-
-config-data-grid.tsx is now fully on the v35-canonical theme +
-scheme-attribute pattern across BOTH grid functions. The single
-remaining dashboard grid (drill-detail-grid.tsx) lands in Task 10.
+drill-detail-grid (Task 9) is the remaining wiring site.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -975,7 +926,7 @@ git push origin main
 
 ---
 
-### Task 10: Wire `gridTheme` into `drill-detail-grid.tsx`
+### Task 9: Wire `gridTheme` into `drill-detail-grid.tsx`
 
 **Files:**
 - Modify: `RecViz/frontend/src/components/dashboard/drill-detail-grid.tsx`
@@ -1060,7 +1011,7 @@ that just landed via Tasks 8-9.
 
 All three dashboard grid sites are now v35-canonical. Legacy
 .ag-theme-quartz CSS bridge in index.css is now provably dead and
-gets deleted in Task 11.
+gets deleted in Task 10.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -1070,20 +1021,21 @@ git push origin main
 
 ---
 
-### Task 11: Delete legacy `.ag-theme-quartz {...}` block from `index.css`
+### Task 10: Delete legacy `.ag-theme-quartz {...}` block from `index.css`
 
 **Files:**
 - Modify: `RecViz/frontend/src/index.css`
 
 - [ ] **Step 1: Locate the legacy block**
 
-Open `RecViz/frontend/src/index.css`. Search for the comment `AG Grid token bridge`:
+Open `RecViz/frontend/src/index.css`. Search for the comment `AG Grid token bridge` (use `-F` for fixed-string to avoid the `.` in `.ag-theme-quartz` being treated as a regex):
 ```bash
 cd /Users/aarun/Workspace/Projects/RecViz/frontend
-grep -n "AG Grid token bridge\|.ag-theme-quartz" src/index.css
+grep -nF "AG Grid token bridge" src/index.css
+grep -nF ".ag-theme-quartz" src/index.css
 ```
 
-Expected: two-ish matches — the comment line and the `.ag-theme-quartz {` opening line. The block spans ~20 lines (lines 156-176 ish in current source — match by content):
+Expected: comment match at line 156, opening-brace match at line 157, closing-brace match at line 173. The block spans 18 lines (lines 156-173 in current source — match by content):
 
 ```css
 /* AG Grid token bridge — reads shadcn CSS variables */
@@ -1108,14 +1060,15 @@ Expected: two-ish matches — the comment line and the `.ag-theme-quartz {` open
 
 - [ ] **Step 2: Delete the block (including the leading comment)**
 
-Remove all ~20 lines from the leading `/* AG Grid token bridge */` comment through the closing `}` of the `.ag-theme-quartz` rule. Leave a single blank line in place to preserve visual rhythm with surrounding rules.
+Remove all 18 lines (156-173) from the leading `/* AG Grid token bridge */` comment through the closing `}` of the `.ag-theme-quartz` rule. Leave a single blank line in place to preserve visual rhythm with surrounding rules.
 
 - [ ] **Step 3: Verify no references remain**
 
 ```bash
-grep -n "ag-theme-quartz\|--ag-" src/index.css
+grep -nF "ag-theme-quartz" src/index.css
+grep -nF "--ag-" src/index.css
 ```
-Expected: ZERO matches.
+Expected: ZERO matches in both.
 
 - [ ] **Step 4: Typecheck + lint + build**
 
@@ -1151,7 +1104,7 @@ Verified live: dashboard grids render identically before/after this
 deletion in both light + dark.
 
 This closes Part B of the spec. Final runtime verification + handoff
-screenshots land in Task 12.
+screenshots land in Task 11.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -1161,7 +1114,7 @@ git push origin main
 
 ---
 
-### Task 12: RecViz runtime verification + handoff evidence
+### Task 11: RecViz runtime verification + handoff evidence
 
 **Files:**
 - Read-only verification. Save evidence to `docs/superpowers/handoff/`.
@@ -1192,12 +1145,12 @@ Use Playwright MCP:
    }
    ```
    Expected: two `inset` stops (top + bottom hairlines).
-4. Screenshot: `task12-recviz-standalone-light.png`.
+4. Screenshot: `task11-recviz-standalone-light.png`.
 
 - [ ] **Step 3: Standalone dashboard with theme — dark**
 
 Toggle dark via topbar or `browser_evaluate(() => document.documentElement.classList.add('dark'))`.
-Repeat hover + screenshot: `task12-recviz-standalone-dark.png`.
+Repeat hover + screenshot: `task11-recviz-standalone-dark.png`.
 
 - [ ] **Step 4: Embedded modal from rectrace cell-click flow**
 
@@ -1205,35 +1158,34 @@ Repeat hover + screenshot: `task12-recviz-standalone-dark.png`.
 2. Expand the TLMP_CONSUMER group.
 3. Click a `View TLM stats for LACC_*` button.
 4. Wait for the modal iframe to load.
-5. Screenshot the modal: `task12-recviz-embedded-modal.png`.
+5. Screenshot the modal: `task11-recviz-embedded-modal.png`.
 
 The visual goal: the dashboard grids inside the modal should read as continuous with the rectrace search grid behind them. Same font, same header chrome, same hover hairlines, same selected primary left-edge.
 
 - [ ] **Step 5: Drill-down detail grid**
 
-The drill-detail-grid is reached by clicking a chart segment in a dashboard whose config has `features.drillDown: true`. Check whether any seeded dashboard exposes drill-down:
+The drill-detail-grid is reached by clicking a chart segment in a dashboard whose config has `features.drillDown: true`. **10 of 12 seeded dashboards have drillDown enabled** — verified against `RecViz/scripts/seed-oracle.py`. Recommended target: `dash-break-analysis` (clean chart-segment-clickable flow).
 
-```bash
-cd /Users/aarun/Workspace/Projects/RecViz
-grep -n '"drillDown"' scripts/seed-oracle.py | head -10
-```
+1. Navigate: `http://localhost:8000/dashboards/dash-break-analysis`.
+2. Wait for charts to render.
+3. Click any chart segment (donut slice / bar / etc) — this opens the drill-down modal containing the drill-detail-grid.
+4. Hover a row in the drill-detail-grid → confirm hairlines apply (the new theme is wired). Verify via `browser_evaluate`:
+   ```js
+   () => {
+     const row = document.querySelector('.ag-row-hover')
+     return row ? getComputedStyle(row).boxShadow : 'no hover row'
+   }
+   ```
+   Expected: two `inset` stops (top + bottom hairlines).
+5. Screenshot: `task11-recviz-drill-detail.png`.
 
-If no dashboard has `drillDown: True`, the user-flow runtime verification is not reachable in the current seed. In that case:
-1. Confirm the file imports + builds cleanly (already covered by Task 10 Step 6).
-2. Skip the user-flow screenshot.
-3. Note in the handoff commit message: "drill-detail-grid runtime user-flow not reachable in current seed (all dashboard configs have drillDown: false). File-level integration verified; user-flow verification deferred to next seed change that enables drill-down."
-
-If a dashboard DOES have drill-down enabled:
-1. Open it standalone.
-2. Click a chart segment.
-3. Drill-detail-grid renders. Hover a row → confirm hairlines apply here too.
-4. Screenshot: `task12-recviz-drill-detail.png`.
+**Fallback path** (unlikely): if the dashboards listed above no longer exist after a future seed-data refactor and no dashboard has `drillDown: True`, skip the user-flow screenshot and note in the commit message: "drill-detail-grid runtime user-flow not reachable in current seed; file-level integration covered by Task 9's build."
 
 - [ ] **Step 6: Filter popup adopts dark mode via `data-ag-theme-mode`**
 
 1. With the dashboard in dark mode, click a column-header filter icon to open the filter popup.
 2. The popup should adopt the dark scheme (dark background, light text). If it shows light-mode chrome inside a dark grid, the `data-ag-theme-mode` attribute didn't take effect — debug Tasks 8/9/10 wiring.
-3. Screenshot: `task12-recviz-filter-popup-dark.png`.
+3. Screenshot: `task11-recviz-filter-popup-dark.png`.
 
 - [ ] **Step 7: Regression sweep**
 
@@ -1250,22 +1202,22 @@ All should still function. If anything breaks, halt — likely a typo in Tasks 8
 
 ```bash
 cd /Users/aarun/Workspace/Projects/autosys-job-explorer
-find . -maxdepth 3 -name "task12-recviz-*.png" -not -path "*/node_modules/*" -exec mv {} docs/superpowers/handoff/ \;
-ls docs/superpowers/handoff/task12-recviz-*.png
+find . -maxdepth 3 -name "task11-recviz-*.png" -not -path "*/node_modules/*" -exec mv {} docs/superpowers/handoff/ \;
+ls docs/superpowers/handoff/task11-recviz-*.png
 ```
 Expected: 5 screenshots.
 
 ```bash
-git add docs/superpowers/handoff/task12-recviz-*.png
+git add docs/superpowers/handoff/task11-recviz-*.png
 git commit -m "$(cat <<'EOF'
-docs(handoff): Task 12 evidence — RecViz dashboard grids end-to-end
+docs(handoff): Task 11 evidence — RecViz dashboard grids end-to-end
 
 5 screenshots verify the full Part B port:
-  - task12-recviz-standalone-light.png
-  - task12-recviz-standalone-dark.png
-  - task12-recviz-embedded-modal.png (rectrace cell-click flow)
-  - task12-recviz-drill-detail.png (chart drill-down grid)
-  - task12-recviz-filter-popup-dark.png (data-ag-theme-mode adoption)
+  - task11-recviz-standalone-light.png
+  - task11-recviz-standalone-dark.png
+  - task11-recviz-embedded-modal.png (rectrace cell-click flow)
+  - task11-recviz-drill-detail.png (chart drill-down grid)
+  - task11-recviz-filter-popup-dark.png (data-ag-theme-mode adoption)
 
 Bundle-size delta confirmed ~80KB confined to Geist woff2 assets.
 Regression sweep passed (pagination, sorting, resize, quick filter,
@@ -1285,7 +1237,7 @@ git push origin main
 
 ## Post-Plan Updates
 
-After Task 12 ships, update the handoff doc with the close-out entry:
+After Task 11 ships, update the handoff doc with the close-out entry:
 
 ```bash
 # Edit docs/superpowers/handoff/2026-05-29-post-demo-pending-work.md
@@ -1293,7 +1245,7 @@ After Task 12 ships, update the handoff doc with the close-out entry:
 #   "AG-Grid styling inside the embedded RecViz dashboards ... NOT STARTED — pick up with user"
 # to
 #   "AG-Grid styling consistency — both repos ... ✅ DONE — spec + plan executed end-to-end"
-# Reference: spec 9b09c2a, plan <this file>, plus commit SHAs from Tasks 2, 5, 7, 8, 9, 10, 11
+# Reference: spec 9b09c2a, plan <this file>, plus commit SHAs from Tasks 2, 5, 7, 8, 9, 10
 ```
 
 Commit with a `docs(handoff): mark A2 done` message.
@@ -1308,17 +1260,18 @@ Commit with a `docs(handoff): mark A2 done` message.
 | Rectrace hover hairline in light mode | Task 3 (Playwright + screenshot) |
 | Rectrace hover hairline in dark mode | Task 3 |
 | Rectrace hover-selected composition (3 box-shadow stops) | Task 3 (`browser_evaluate` returning the computed boxShadow) |
+| Rectrace existing `.ag-row-group .ag-group-expanded:hover` regression check | Task 3 (verify chevron-hover still works on group rows) |
 | RecViz Geist installed | Task 4 (build succeeds; woff2 in dist) |
 | RecViz `font-mono` callsites resolve to Geist Mono | Task 6 (`getComputedStyle` console check) |
 | RecViz visual sweep (8 surfaces × 2 modes) | Task 6 (16 screenshots) |
-| RecViz dashboard grid uses new theme | Task 12 (standalone screenshots) |
-| RecViz drill-detail grid uses new theme | Task 12 |
-| `data-ag-theme-mode` flips filter popup with dark mode | Task 12 |
-| Embedded modal grids visually continuous with rectrace | Task 12 (cross-app screenshot) |
-| Bundle-size delta confined to woff2 | Task 12 (du -sh + asset breakdown) |
-| Regression: pagination, sorting, resize, filter, selection | Task 12 Step 7 |
-| No remaining legacy `--ag-*` references | Task 11 Step 3 |
-| No remaining per-render `themeQuartz.withPart(colorSchemeDark)` ternary | Task 10 Step 6 |
+| RecViz dashboard grid uses new theme | Task 11 (standalone screenshots) |
+| RecViz drill-detail grid uses new theme | Task 11 |
+| `data-ag-theme-mode` flips filter popup with dark mode | Task 11 |
+| Embedded modal grids visually continuous with rectrace | Task 11 (cross-app screenshot) |
+| Bundle-size delta confined to woff2 | Task 11 (du -sh + asset breakdown) |
+| Regression: pagination, sorting, resize, filter, selection | Task 11 Step 7 |
+| No remaining legacy `--ag-*` references | Task 10 Step 3 |
+| No remaining per-render `themeQuartz.withPart(colorSchemeDark)` ternary | Task 9 Step 6 |
 
 ---
 
@@ -1330,3 +1283,20 @@ Commit with a `docs(handoff): mark A2 done` message.
 - **A1** Empty-state no-results + Contextual dashboards inline (separate UX redesign).
 
 These are flagged in the spec's "Out of scope" section; no task implements them.
+
+---
+
+## Plan changelog
+
+### v1 → v2 (after adversarial plan review)
+
+- **Tasks 8 + 9 merged into a single combined Task 8** — original split created a broken intermediate build (after Task 8 committed, line 222 still referenced the just-deleted `themeQuartz` import). Now both `SingleSourceGrid` and `MergedSourceGrid` are touched in one diff with one typecheck + one commit, keeping `main` always green. Original Task 9 is gone; original Tasks 10/11/12 renumbered to 9/10/11.
+- **Task 6 `/connections` URL replaced with `/settings`** — verified against `RecViz/frontend/src/routes/_app/`. `/connections` does not exist.
+- **Task 11 (was 12) drill-down conditional inverted** — original plan led with "If no dashboard has drillDown: True…". Actual seed has 10 of 12 dashboards with `drillDown: True`. Now leads with `dash-break-analysis` as the recommended target and demotes the "no drill-down available" path to a fallback footnote.
+- **Task 10 (was 11) line bounds corrected** — `index.css` legacy block is lines 156-173 (18 lines), not "156-176 ish, ~20 lines". Grep commands use `-F` for literal matching.
+- **Code-reviewer cadence clarified** in the Standing Rules section — explicit that the orchestrator inserts the reviewer pass; if executing inline (no orchestrator), the executor dispatches the reviewer manually.
+- **Task 2 CSS rule placement note** — explicit that the hover rule slots between `.ag-row-selected` (line 31) and the `.ag-row-group-expanded` block (line 32-35), keeping related row-state rules clustered.
+- **Task 3 hover-row selector tightened** — uses `.ag-center-cols-container .ag-row:not(.ag-row-group):not(.ag-header-row)` to explicitly exclude header + group rows from the synthetic-hover target.
+- **Task 3 Step 5b added** — explicit regression check on rectrace's existing `.ag-row-group .ag-group-expanded:hover` chevron-color rule.
+- **Task 6 Step 5 null-checked** — `getComputedStyle` query now wraps the element lookup in a guard to avoid throwing when `.font-mono` isn't present on the current surface.
+- **Verification matrix updated** — task numbers updated after the renumber; new row added for the `.ag-row-group` regression check.
