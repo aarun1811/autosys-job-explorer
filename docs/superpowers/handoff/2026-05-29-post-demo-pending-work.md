@@ -22,6 +22,7 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 |---|---|---|
 | B4 | Set_id identifier alignment in `gen_core_dicts` (rectrace-local-dev `volume.py`) — change bounded SETV_* pool to per-recon `LACC_{recon.seq:06d}`. Fixes the 0/0/0/0 result when clicking a specific recon+set_id cell. | ✅ DONE + RUNTIME VERIFIED — KPIs 5/0/1/10 on click of LACC_000006 (was 0/0/0/0) |
 | B5 | MultiSelectFilter array normalization (RecViz `dashboard-renderer.tsx`) — wrap URL string values as arrays for `multi-select` filters so the badge stops showing string-length as the selected count ("24 selected" → "1 selected" for the locked recon). | ✅ DONE + RUNTIME VERIFIED — locked recon (22-char) + set_id badges both show "1 selected" |
+| B6 | Multi-select cascade serialization — GET `/api/data-sources/:id/distinct/:col` serializes array filter values as `"A,B"` comma-string instead of repeated query keys, so SQL becomes `IN ('A,B')` and matches nothing. Surfaced when picking >1 recon in the recon multi-select and watching set_id dropdown return empty. | DESIGN APPROVED (autonomous standing approval) — implementing |
 
 ## C. Code-review hygiene (low-priority but real)
 
@@ -135,6 +136,45 @@ In `dashboard-renderer.tsx` between receiving `initialFilters` prop and calling 
 4. Sanity: a normal (unlocked) multi-select still works — pick 3 items, badge says "3 selected".
 
 - **Result placeholder**: <TO_BE_FILLED>
+
+### B6: Multi-select cascade serialization bug
+
+- **Status**: DESIGN APPROVED (autonomous standing approval) — implementing
+- **Repo**: `/Users/aarun/Workspace/Projects/RecViz`
+- **Branch**: direct on `main`
+
+**Purpose** — Cascading filter options (`set_id` depends on `recon` depends on `tlm_instance`) work fine for single-recon selections but return empty when 2+ recons are picked. Root cause is in the URL serialization of array filter values to the GET `/distinct` endpoint.
+
+**Root cause** (curl-verified):
+- Frontend `frontend/src/hooks/use-filter-options.ts:25` does `params.set('filter.${key}', String(val))`. For `val = ['A','B']`, `String(['A','B'])` returns `"A,B"`. URL becomes `?filter.recon=A,B`.
+- Backend `backend/app/api/data_sources.py:80-86` reads `request.query_params.items()` — one entry per key, value is the raw string `"A,B"`. Filter dict becomes `{'recon': 'A,B'}`.
+- Backend `query_engine._build_sql:172-177` sees `isinstance(fval, list) == False`, takes the string branch → SQL: `b.agent_code IN ('A,B')` (one literal) → matches no row.
+
+**Important: POST `/query` body path is fine.** It deserializes JSON arrays via Pydantic `dict[str, str | int | list[str] | None]` and `_build_sql` correctly handles lists. So multi-select filtering of KPIs/charts/grids already works — only the cascading-options GET path is broken.
+
+**Approach chosen — A: repeated query params**
+- Frontend: when value is an array, call `.append('filter.${key}', item)` per element. Strings still use `.set()`.
+- Backend `get_distinct_values`: iterate `request.query_params.multi_items()` into a per-key list; if 1 entry keep as string, if ≥2 keep as list. Pass to `execute_distinct` whose `_build_sql` already handles both.
+
+**Alternatives rejected**
+- B (JSON-encoded query value, `filter.recon=%5B%22A%22%5D`): ugly URLs, fragile parsing, non-REST.
+- C (switch GET to POST with body): API-break, loses GET cacheability and URL-share/debug ergonomics, larger blast radius.
+
+**Idempotency**
+- Single string value (`?filter.X=A`) — backend reads 1 entry → string → unchanged behavior.
+- Multi-value (`?filter.X=A&filter.X=B`) — backend reads 2 entries → list → SQL `IN ('A','B')`.
+- `_resolve_database` (dynamic DB routing) already coerces list→list[0] (query_engine.py:83-84), so `tlm_instance=['TLMP_CONSUMER']` doesn't break routing.
+
+**Affected surfaces**
+- `frontend/src/hooks/use-filter-options.ts` lines 22-27 — switch `.set` to per-element `.append` for arrays.
+- `backend/app/api/data_sources.py` lines 80-86 — replace `items()` with `multi_items()` + grouping.
+- No SQL/schema changes. No POST /query changes. No type changes.
+
+**Verification**
+- API: `curl '.../distinct/set_id?filter.tlm_instance=TLMP_CONSUMER&filter.recon=RECON-COMMOD-APAC-000052&filter.recon=FX_FWD_RECON_LATAM_000023'` → returns `{"values":["LACC_000023","LACC_000052"]}`.
+- UI: rebuild RecViz frontend, restart uvicorn, select 2 recons in `/dashboards/dash-tlm-stats?filter.tlm_instance=TLMP_CONSUMER` → set_id dropdown shows their 2 LACCs.
+- Regression: single recon still narrows to 1 LACC (existing B4-verified behavior).
+- KPI/grid queries (POST /query body path) unaffected — confirm by clicking through the rectrace cell flow once.
 
 ### A3: Cache-Control no-cache on RecViz index.html
 
