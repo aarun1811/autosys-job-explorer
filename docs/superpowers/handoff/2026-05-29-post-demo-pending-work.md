@@ -22,7 +22,7 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 |---|---|---|
 | B4 | Set_id identifier alignment in `gen_core_dicts` (rectrace-local-dev `volume.py`) — change bounded SETV_* pool to per-recon `LACC_{recon.seq:06d}`. Fixes the 0/0/0/0 result when clicking a specific recon+set_id cell. | ✅ DONE + RUNTIME VERIFIED — KPIs 5/0/1/10 on click of LACC_000006 (was 0/0/0/0) |
 | B5 | MultiSelectFilter array normalization (RecViz `dashboard-renderer.tsx`) — wrap URL string values as arrays for `multi-select` filters so the badge stops showing string-length as the selected count ("24 selected" → "1 selected" for the locked recon). | ✅ DONE + RUNTIME VERIFIED — locked recon (22-char) + set_id badges both show "1 selected" |
-| B6 | Multi-select cascade serialization — GET `/api/data-sources/:id/distinct/:col` serializes array filter values as `"A,B"` comma-string instead of repeated query keys, so SQL becomes `IN ('A,B')` and matches nothing. Surfaced when picking >1 recon in the recon multi-select and watching set_id dropdown return empty. | DESIGN APPROVED (autonomous standing approval) — implementing |
+| B6 | Multi-select cascade serialization — GET `/api/data-sources/:id/distinct/:col` serializes array filter values as `"A,B"` comma-string instead of repeated query keys, so SQL becomes `IN ('A,B')` and matches nothing. Surfaced when picking >1 recon in the recon multi-select and watching set_id dropdown return empty. | ✅ DONE + UI-VERIFIED — 2 recons → set_id dropdown shows 2 LACCs; single-recon and KPI/grid queries unaffected |
 
 ## C. Code-review hygiene (low-priority but real)
 
@@ -139,7 +139,19 @@ In `dashboard-renderer.tsx` between receiving `initialFilters` prop and calling 
 
 ### B6: Multi-select cascade serialization bug
 
-- **Status**: DESIGN APPROVED (autonomous standing approval) — implementing
+- **Status**: ✅ DONE + RUNTIME + UI VERIFIED
+- **Commit**: RecViz `03115dd` (pushed to main)
+- **Code review**: feature-dev:code-reviewer APPROVED — verified Starlette `multi_items()` semantics; idempotency across 0/1/N value cases; `_resolve_database` list-coercion (line 83-84) safe for `tlm_instance=['T1']`; FilterValue type narrowing correct; empty-array now means "filter not active" (correct semantics, supersedes latent `IN ('')` bug); POST /query body path untouched
+- **Runtime verification result** (live stack, post-rebuild + uvicorn restart):
+  - curl 2-recon (`?filter.recon=RECON-COMMOD-APAC-000052&filter.recon=FX_FWD_RECON_LATAM_000023`) → `{"values":["LACC_000023","LACC_000052"]}` ✅
+  - curl 1-recon → `{"values":["LACC_000052"]}` (regression OK) ✅
+  - curl 0-recon → all 105 set_ids (no filter applied) ✅
+  - recon dropdown options API → 105 distinct recons ✅
+- **UI verification result** (Playwright):
+  - Navigated to `/dashboards/dash-tlm-stats?filter.tlm_instance=TLMP_CONSUMER&filter.recon=RECON-COMMOD-APAC-000052,FX_FWD_RECON_LATAM_000023`
+  - Recon filter badge displays **"2 selected"** (B5 fix + B6 fix interplay confirmed)
+  - Opened Set ID dropdown → contains **exactly 2 items**: `LACC_000023` and `LACC_000052` — matches the 2 selected recons' LACCs
+  - Screenshot at `docs/superpowers/handoff/b6-cascade-2-recons-2-set-ids.png`
 - **Repo**: `/Users/aarun/Workspace/Projects/RecViz`
 - **Branch**: direct on `main`
 
