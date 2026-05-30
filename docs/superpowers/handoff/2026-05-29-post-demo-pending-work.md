@@ -13,7 +13,7 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 | # | Task | Status |
 |---|---|---|
 | A1 | Empty-state no-results bug + Contextual dashboards inline in search results — needs its own brainstorm → spec → plan (UX redesign) | NOT STARTED — pick up with user |
-| A2 | AG-Grid styling inside the embedded RecViz dashboards (quartz tweaks, denser rows, column dividers) | NOT STARTED — pick up with user |
+| A2 | AG-Grid styling consistency between rectrace + RecViz (Gmail-inspired hover hairline in rectrace + v35-canonical port to RecViz + Geist app-wide migration in RecViz) | ✅ SPEC + PLAN APPROVED — ready to execute. Spec v3: `docs/superpowers/specs/2026-05-30-ag-grid-styling-consistency-design.md` (passed 2 adversarial reviews). Plan v2: `docs/superpowers/plans/2026-05-30-ag-grid-styling-consistency.md` (passed 1 review; 11 tasks ready for subagent-driven execution) |
 | A3 | `Cache-Control: no-cache` on RecViz `index.html` so bundle-hash invalidation busts browser caches | ✅ DONE + RUNTIME VERIFIED — `/`, `/dashboards/quickrec`, `/embed/dashboards/dash-tlm-stats` all return `no-cache, no-store, must-revalidate`; `/assets/<hash>.js` still cacheable; `/health` JSON unchanged |
 
 ## B. Plan 4 polish parked at the demo gate
