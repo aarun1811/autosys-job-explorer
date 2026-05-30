@@ -45,5 +45,12 @@ describe('gridTheme', () => {
     expect(json).toContain('font-variant-numeric: tabular-nums')
     expect(json).toContain('.ag-row-selected')
     expect(json).toContain('.ag-row-group-expanded')
+    // Gmail-inspired hover hairline (single-state) + combined hover+selected
+    // composition (CSS does not auto-compose two separate box-shadow
+    // declarations — the combined .ag-row-hover.ag-row-selected selector
+    // is required so the primary left-edge stays visible on hovered-selected
+    // rows).
+    expect(json).toContain('.ag-row-hover')
+    expect(json).toContain('.ag-row-hover.ag-row-selected')
   })
 })
