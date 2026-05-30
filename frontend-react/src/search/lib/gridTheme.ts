@@ -1,6 +1,23 @@
 import { createPart, themeQuartz } from 'ag-grid-community'
 
 /**
+ * MIRROR FILE: `RecViz/frontend/src/lib/grid-theme.ts`
+ *
+ * Sync rule (best-effort, no CI enforcement):
+ *  - Visual params (colors, borders, hover/selected, header chrome) are kept
+ *    in lockstep with the RecViz mirror. Any change here SHOULD also be
+ *    applied there, and vice-versa.
+ *  - Density params (fontSize, headerFontSize, cellHorizontalPadding,
+ *    spacing, iconSize) are DELIBERATELY divergent — rectrace runs the
+ *    tighter custom values below; RecViz runs Quartz defaults.
+ *  - CSS rules in gridBodyPart are rectrace-specific in places (row-group
+ *    panel, sidebar tabs, group rows). The RecViz mirror skips those.
+ *
+ * When this file changes, audit the mirror. Drift is reviewed during
+ * quarterly design audits if not caught earlier in normal PR review.
+ */
+
+/**
  * AG-Grid v33+ Theming API theme for the search grid.
  *
  * Params reference the shadcn oklch CSS variables directly (`var()` is supported
@@ -29,6 +46,28 @@ const gridBodyPart = createPart({
 .ag-row { transition: background-color 120ms ease; }
 /* selected row: accent left-edge (distinct from hover) */
 .ag-row-selected { box-shadow: inset 2px 0 0 0 var(--color-primary); }
+/* Gmail-inspired hover hairline: bright top + bottom edges that read brighter
+   than the default 7% row border. The foreground-tinted hairline switches
+   automatically across light + dark via the var() cascade. The existing 6%
+   primary rowHoverColor (set via .withParams) stays — it provides the BG
+   lift; this rule adds the edge emphasis. */
+.ag-row-hover {
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, var(--color-foreground) 20%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, var(--color-foreground) 20%, transparent);
+}
+/* Hovered + selected: CSS does NOT compose two separate box-shadow declarations
+   (later cascade winner replaces, not adds). Declare the combined effect
+   explicitly so the user sees the primary left-edge AND the hover hairlines
+   together. The combined selector has higher specificity (two classes) than
+   each single-class rule and wins the cascade for the hovered-and-selected
+   state. */
+.ag-row-hover.ag-row-selected {
+  box-shadow:
+    inset 2px 0 0 0 var(--color-primary),
+    inset 0 1px 0 0 color-mix(in oklab, var(--color-foreground) 20%, transparent),
+    inset 0 -1px 0 0 color-mix(in oklab, var(--color-foreground) 20%, transparent);
+}
 /* group rows: NO background band (it read as an out-of-place block). Distinguish
    them purely by the indented, heavier group value + chevron, so every row shares
    the same clean canvas. The expanded/contracted cell classes carry no fill. */
