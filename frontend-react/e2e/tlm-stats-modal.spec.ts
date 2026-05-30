@@ -16,8 +16,9 @@ import { test, expect, type Page } from '@playwright/test'
  *    fully verify the Plan 4 end-to-end flow (Task 6 renderer → buildEmbedUrl
  *    → Task 5 dashboard).
  *
- *  - Plan 3's volume seed produces `set_id` values prefixed `SETV_`, not
- *    `SETID_` (verified via SSRM probe of the live stack).
+ *  - Plan 3's volume seed (post-B4) produces `set_id` values prefixed
+ *    `LACC_` — per-recon, aligned with the TLM-side local_acc_no
+ *    identifier space so cell-click filter-pushdown yields non-zero KPIs.
  */
 test.describe('TLM stats modal — embedded RecViz dashboard', () => {
   async function searchAndExpandGroup(page: Page) {
@@ -56,7 +57,7 @@ test.describe('TLM stats modal — embedded RecViz dashboard', () => {
     // open the same dashboard, just with different recon-name filters.
     const reconCell = page
       .locator('button[aria-label^="View TLM stats for"]')
-      .filter({ hasNotText: /^SETV_/ })
+      .filter({ hasNotText: /^LACC_/ })
       .first()
     await reconCell.waitFor({ state: 'visible', timeout: 15_000 })
     await reconCell.click()
@@ -76,11 +77,11 @@ test.describe('TLM stats modal — embedded RecViz dashboard', () => {
   test('search → expand tlm_instance group → click set_id cell → modal opens with tlm_instance + recon + set_id locked', async ({ page }) => {
     await searchAndExpandGroup(page)
 
-    // Find a set_id cell button. The seed uses SETV_ as the prefix (verified
-    // via SSRM probe — the plan body's SETID_ was a documentation guess).
+    // Find a set_id cell button. Post-B4 the seed uses LACC_ as the prefix
+    // (per-recon LACC_<seq:06d>, aligned with TLM local_acc_no).
     const setIdCell = page
       .locator('button[aria-label^="View TLM stats for"]')
-      .filter({ hasText: /^SETV_/ })
+      .filter({ hasText: /^LACC_/ })
       .first()
     await setIdCell.waitFor({ state: 'visible', timeout: 15_000 })
     await setIdCell.click()
