@@ -2,7 +2,7 @@
 
 **Created:** 2026-05-30 14:50 IST
 **Owner:** A Arun
-**Last updated:** 2026-05-30 (autonomous window CLOSED — B4/B5/A3 code complete + reviewed + pushed + runtime verified ✅)
+**Last updated:** 2026-05-30 (A2 AG-Grid styling executed end-to-end via subagent-driven-development — 11 tasks shipped, both repos pushed, final review SHIP ✅)
 
 After the successful TLM dashboard demo, we're working through the remaining task queue. This doc is the canonical "what's left" list. Status fields update in place.
 
@@ -13,7 +13,7 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 | # | Task | Status |
 |---|---|---|
 | A1 | Empty-state no-results bug + Contextual dashboards inline in search results — needs its own brainstorm → spec → plan (UX redesign) | NOT STARTED — pick up with user |
-| A2 | AG-Grid styling consistency between rectrace + RecViz (Gmail-inspired hover hairline in rectrace + v35-canonical port to RecViz + Geist app-wide migration in RecViz) | ✅ SPEC + PLAN APPROVED — ready to execute. Spec v3: `docs/superpowers/specs/2026-05-30-ag-grid-styling-consistency-design.md` (passed 2 adversarial reviews). Plan v2: `docs/superpowers/plans/2026-05-30-ag-grid-styling-consistency.md` (passed 1 review; 11 tasks ready for subagent-driven execution) |
+| A2 | AG-Grid styling consistency between rectrace + RecViz (Gmail-inspired hover hairline in rectrace + v35-canonical port to RecViz + Geist app-wide migration in RecViz) | ✅ DONE (2026-05-30) — spec + plan executed end-to-end via subagent-driven-development. 11 tasks shipped + 1 Task-6 remediation. Final cross-cutting review verdict: SHIP. Mirror sync between `frontend-react/src/search/lib/gridTheme.ts` and `RecViz/frontend/src/lib/grid-theme.ts` verified byte-for-byte on visual params + universal CSS. Cross-app continuity confirmed via embed-modal screenshot. 25 handoff PNGs in `docs/superpowers/handoff/` (taskA3 ×4, task6 ×16, task11 ×5). Commits: rectrace `5b316ca`/`d49ad63`/`202830c`/`fd310f6`/`d77f6a4`/`bdc5775`; RecViz `6408fa8`/`7e99697`/`9aad0ef`/`38299e8`/`7f575a2`/`e1bc728` |
 | A3 | `Cache-Control: no-cache` on RecViz `index.html` so bundle-hash invalidation busts browser caches | ✅ DONE + RUNTIME VERIFIED — `/`, `/dashboards/quickrec`, `/embed/dashboards/dash-tlm-stats` all return `no-cache, no-store, must-revalidate`; `/assets/<hash>.js` still cacheable; `/health` JSON unchanged |
 
 ## B. Plan 4 polish parked at the demo gate
