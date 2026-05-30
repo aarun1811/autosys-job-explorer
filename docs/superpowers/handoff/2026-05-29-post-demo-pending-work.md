@@ -23,6 +23,7 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 | B4 | Set_id identifier alignment in `gen_core_dicts` (rectrace-local-dev `volume.py`) — change bounded SETV_* pool to per-recon `LACC_{recon.seq:06d}`. Fixes the 0/0/0/0 result when clicking a specific recon+set_id cell. | ✅ DONE + RUNTIME VERIFIED — KPIs 5/0/1/10 on click of LACC_000006 (was 0/0/0/0) |
 | B5 | MultiSelectFilter array normalization (RecViz `dashboard-renderer.tsx`) — wrap URL string values as arrays for `multi-select` filters so the badge stops showing string-length as the selected count ("24 selected" → "1 selected" for the locked recon). | ✅ DONE + RUNTIME VERIFIED — locked recon (22-char) + set_id badges both show "1 selected" |
 | B6 | Multi-select cascade serialization — GET `/api/data-sources/:id/distinct/:col` serializes array filter values as `"A,B"` comma-string instead of repeated query keys, so SQL becomes `IN ('A,B')` and matches nothing. Surfaced when picking >1 recon in the recon multi-select and watching set_id dropdown return empty. | ✅ DONE + UI-VERIFIED — 2 recons → set_id dropdown shows 2 LACCs; single-recon and KPI/grid queries unaffected |
+| B7 | Single-selection multi-select badge — after B5 fixed the char-count bug, a multi-select with exactly 1 value (locked or unlocked) shows the unhelpful "1 selected" badge instead of the actual value. Especially bad for locked filters since the dropdown is disabled so the user can't see what's in. | DESIGN APPROVED — implementing |
 
 ## C. Code-review hygiene (low-priority but real)
 
@@ -187,6 +188,34 @@ In `dashboard-renderer.tsx` between receiving `initialFilters` prop and calling 
 - UI: rebuild RecViz frontend, restart uvicorn, select 2 recons in `/dashboards/dash-tlm-stats?filter.tlm_instance=TLMP_CONSUMER` → set_id dropdown shows their 2 LACCs.
 - Regression: single recon still narrows to 1 LACC (existing B4-verified behavior).
 - KPI/grid queries (POST /query body path) unaffected — confirm by clicking through the rectrace cell flow once.
+
+### B7: Single-selection multi-select badge UX
+
+- **Status**: DESIGN APPROVED — implementing
+- **Repo**: `/Users/aarun/Workspace/Projects/RecViz`
+- **Branch**: direct on `main`
+
+**Purpose** — B5 fixed the "24 selected" char-count bug by wrapping single-value URL params as `[value]` arrays. Now locked multi-selects (recon, set_id) correctly count as "1 selected" — but the badge is opaque: it reveals neither what's selected nor (when locked) any way to find out. Especially bad for the rectrace cell-click modal where recon + set_id are always single-locked.
+
+**Approach chosen — A: value-aware badge text**
+Replace the always-`{N} selected` rendering with:
+- **0 selected** → existing placeholder (`All recon` / `Select…`)
+- **1 selected** → render `selected[0]` as text. Truncate with CSS ellipsis past pill width (already truncate-able via existing `.truncate` class on the inner span). Add `title={selected[0]}` for native tooltip with the full value.
+- **2+ selected** → existing `{N} selected`
+
+Idempotent — array length switches drive the render branch.
+
+**Alternatives rejected**
+- B (always `N selected: <preview>`): noisier; doesn't fit the compact pill.
+- C (locked-only): leaves the unlocked-single inconsistency; tlm_instance single-select shows raw value, multi-select with one item should match.
+
+**Affected surfaces**
+- `frontend/src/components/dashboard/config-filter-bar.tsx` around the MultiSelectFilter render (lines ~269-274 where `{selected.length} selected` is rendered).
+- No other consumer.
+
+**Verification**
+- Playwright: rectrace cell-click modal — locked recon shows full value (truncated if needed); set_id shows `LACC_000006`. Open standalone dashboard with `?filter.recon=A,B` → recon badge shows "2 selected" (unchanged). Pick 1 unlocked recon → badge shows that recon's value.
+- Tooltip: hover the truncated value → native tooltip shows full string.
 
 ### A3: Cache-Control no-cache on RecViz index.html
 
