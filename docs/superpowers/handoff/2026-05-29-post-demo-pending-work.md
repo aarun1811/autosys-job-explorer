@@ -23,7 +23,7 @@ After the successful TLM dashboard demo, we're working through the remaining tas
 | B4 | Set_id identifier alignment in `gen_core_dicts` (rectrace-local-dev `volume.py`) — change bounded SETV_* pool to per-recon `LACC_{recon.seq:06d}`. Fixes the 0/0/0/0 result when clicking a specific recon+set_id cell. | ✅ DONE + RUNTIME VERIFIED — KPIs 5/0/1/10 on click of LACC_000006 (was 0/0/0/0) |
 | B5 | MultiSelectFilter array normalization (RecViz `dashboard-renderer.tsx`) — wrap URL string values as arrays for `multi-select` filters so the badge stops showing string-length as the selected count ("24 selected" → "1 selected" for the locked recon). | ✅ DONE + RUNTIME VERIFIED — locked recon (22-char) + set_id badges both show "1 selected" |
 | B6 | Multi-select cascade serialization — GET `/api/data-sources/:id/distinct/:col` serializes array filter values as `"A,B"` comma-string instead of repeated query keys, so SQL becomes `IN ('A,B')` and matches nothing. Surfaced when picking >1 recon in the recon multi-select and watching set_id dropdown return empty. | ✅ DONE + UI-VERIFIED — 2 recons → set_id dropdown shows 2 LACCs; single-recon and KPI/grid queries unaffected |
-| B7 | Single-selection multi-select badge — after B5 fixed the char-count bug, a multi-select with exactly 1 value (locked or unlocked) shows the unhelpful "1 selected" badge instead of the actual value. Especially bad for locked filters since the dropdown is disabled so the user can't see what's in. | DESIGN APPROVED — implementing |
+| B7 | Single-selection multi-select badge — after B5 fixed the char-count bug, a multi-select with exactly 1 value (locked or unlocked) shows the unhelpful "1 selected" badge instead of the actual value. Especially bad for locked filters since the dropdown is disabled so the user can't see what's in. | ✅ DONE + UI-VERIFIED — locked recon/set_id now read out full value with title-attr tooltip; 0 and 2+ states unchanged |
 
 ## C. Code-review hygiene (low-priority but real)
 
@@ -191,7 +191,16 @@ In `dashboard-renderer.tsx` between receiving `initialFilters` prop and calling 
 
 ### B7: Single-selection multi-select badge UX
 
-- **Status**: DESIGN APPROVED — implementing
+- **Status**: ✅ DONE + RUNTIME + UI VERIFIED
+- **Commit**: RecViz `48d7ca7` (pushed to main)
+- **Code review**: feature-dev:code-reviewer APPROVED — verified 3-way branch correctness (0/1/2+), truncation math inside 200px button minus chevron + padding ≈ 144px → 24-char value truncates with ellipsis, native `title` tooltip exposes full string, no SingleSelectFilter/PresetRangeFilter side-effects, no raw hex
+- **Runtime verification result** (live stack):
+  - Embed modal (locked) `?filter.recon=RECON-COMMOD-APAC-000052&filter.set_id=LACC_000052&filter.lock=tlm_instance,recon,set_id`:
+    - RECON pill displays "RECON-COMMOD-APAC-000052" + `title="RECON-COMMOD-APAC-000052"` ✅
+    - SET ID pill displays "LACC_000052" + `title="LACC_000052"` ✅
+  - Standalone (2 recons via `?filter.recon=A,B`): RECON pill displays "2 selected" (regression OK) ✅
+  - Standalone (0 recons): SET ID pill displays "All set id" placeholder (regression OK) ✅
+- **Screenshots**: `docs/superpowers/handoff/b7-locked-single-shows-value.png` (the win) + `b7-regression-2-recons-shows-N-selected.png` (regression OK)
 - **Repo**: `/Users/aarun/Workspace/Projects/RecViz`
 - **Branch**: direct on `main`
 
