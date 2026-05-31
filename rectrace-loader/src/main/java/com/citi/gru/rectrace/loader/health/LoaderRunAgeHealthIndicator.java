@@ -27,10 +27,13 @@ import com.citi.gru.rectrace.loader.dto.LoaderRunStatus;
  * Phase 7 / OBS-02 — per-loader-job staleness probe. Reports DOWN when any configured
  * loader job's last-successful-run age exceeds 2× its cron interval (D-7.12).
  *
- * <p>Bean name {@code "loaderRunAge"} matches {@code management.endpoint.health.group.loader.include=loaderRunAge}
- * in {@code application.properties} — Plan 02 puts the indicator in its own
- * {@code /actuator/health/loader} group so it cannot flap a k8s readiness probe
- * (Pitfall P-11 / Threat T-07-14).
+ * <p>Bean name {@code loaderRunAge} is the contributor name in the default
+ * {@code /actuator/health} aggregate. The dedicated
+ * {@code management.endpoint.health.group.loader} group is intentionally deferred
+ * (Phase 7 Pitfall P-11 / D-7.12) — the indicator contributes to the default group only.
+ * See the comment block above the management-endpoints stanza in
+ * {@code rectrace-loader/src/main/resources/application.properties} for the deferral
+ * rationale.
  *
  * <p>The indicator iterates {@link LoaderConfigService#getJobs()} and for each job:
  * <ul>

@@ -173,7 +173,7 @@ Open:
 ## Things to Watch Out For
 
 - **`backend/rectrace` is `@Profile("!test")`-gated** for production beans (`OracleServiceV4`, `SqlQueryServiceV4`, `SqlSearchControllerV4`, `LoaderShedLockConfig`, etc.). Test profile bypasses Oracle wiring. When adding new wiring tests, decide whether `@Profile("!test")` or a `@ActiveProfiles("slice")` carve-out is needed.
-- **Lombok is in `backend/rectrace` but NOT `rectrace-tlm-stats`.** When mirroring code between modules, use plain SLF4J `Logger`/`LoggerFactory` for tlm-stats, not `@Slf4j`.
+- **Lombok is in `backend/rectrace` and `rectrace-loader/` but NOT `rectrace-tlm-stats`.** When mirroring code into tlm-stats, use plain SLF4J `Logger`/`LoggerFactory`, not `@Slf4j`; backend ↔ loader code can share Lombok freely.
 - **The `local` profile** points at the sibling `../rectrace-local-dev/` Docker stack. Without that stack running, the backend boots but Oracle health is DOWN.
 - **Maven Surefire on Java 21 + Lombok prints `Unsafe::objectFieldOffset` warnings.** Cosmetic; not a build failure.
 - **Bash 3.2 portability is enforced for everything under `ops/`** (OPS-01). No associative arrays, no `mapfile`, no `[[ ... = pat* ]]` glob patterns. Use POSIX `case` for prefix matching. `shellcheck -x` is the gate.

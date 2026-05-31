@@ -1,4 +1,4 @@
-package com.citi.gru.rectrace.observability.aop;
+package com.citi.gru.rectrace.loader.observability.aop;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -13,7 +13,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * {@code /api/v4/loader-admin/*}. Backend (port 6088) is now a pure read-side API
  * with zero loader awareness.
  *
- * <p>This is the Phase 1 skeleton — the loader beans land in Phase 3.
+ * <p>The loader subsystem: ShedLock-coordinated ticker, ES BulkIngester, admin endpoints
+ * at {@code /api/v4/loader-admin/*}. Extracted from {@code backend/rectrace} per
+ * {@code docs/superpowers/specs/2026-05-31-loader-extraction-design.md}.
  */
 @SpringBootApplication
 public class RectraceLoaderApplication {
