@@ -6,11 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +26,7 @@ import com.citi.gru.rectrace.loader.dto.LoaderRunRecordV4;
 import com.citi.gru.rectrace.loader.dto.LoaderRunStatus;
 import com.citi.gru.rectrace.loader.dto.RunNowConflictResponseV4;
 
+import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskResult;
 
 /**
@@ -53,12 +53,9 @@ import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskResult;
 @Profile("!test")
 @RestController
 @RequestMapping("/api/v4/loader-admin")
+@Slf4j
 public class LoaderAdminControllerV4 {
 
-    private static final Logger log = LoggerFactory.getLogger(LoaderAdminControllerV4.class);
-
-    // Inlined from backend's com.citi.gru.rectrace.constants.AppConstants per Task 3 spec —
-    // AppConstants stays in the backend module and isn't worth copying for one constant.
     private static final String CITI_PORTAL_LOGIN_ID_HEADER = "x-citiportal-loginid";
 
     private final LoaderConfigService loaderConfig;

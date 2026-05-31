@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * Phase 6 / LOADER-01 — Oracle source side of a loader job.
  *
@@ -13,39 +16,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * <p>{@code primaryKey} is the ordered list of column names whose values combine into the
  * deterministic ES document ID via {@code DocumentIdHasher}. Order is contract-significant —
  * reordering would re-key the entire index.
- *
- * <p>Plain POJO — no Lombok in this module (Task 3 convention).
  */
+@Data
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoaderSourceConfigV4 {
     private String datasource = "primary";
     private String query;
     private List<String> primaryKey;
-
-    public LoaderSourceConfigV4() {
-    }
-
-    public String getDatasource() {
-        return datasource;
-    }
-
-    public void setDatasource(String datasource) {
-        this.datasource = datasource;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
-    public List<String> getPrimaryKey() {
-        return primaryKey;
-    }
-
-    public void setPrimaryKey(List<String> primaryKey) {
-        this.primaryKey = primaryKey;
-    }
 }

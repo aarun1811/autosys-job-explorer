@@ -104,6 +104,17 @@
             <version>8.13.4</version>
         </dependency>
 
+        <!-- Lombok — used by loader services + DTOs (mirrors backend pattern).
+             The previous "no Lombok" decision was reverted 2026-05-31 — the
+             convention turned out to be tlm-stats-specific, not project-wide.
+             Version managed by the Spring Boot 3.5.14 BOM (1.18.46). -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -122,6 +133,24 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- Lombok annotation processor — mirrors backend/rectrace. The
+                 spring-boot-starter-parent's pluginManagement preconfigures
+                 the compiler plugin but only takes effect when we explicitly
+                 declare the plugin here. ${lombok.version} comes from the
+                 Boot 3.5.14 BOM (1.18.46). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
             <!-- OBS-08 — Micrometer pin guard (Option A: scoped requireSameVersions).
                  Mirror of backend/rectrace/pom.xml. Three-execution defence per D-7.8:

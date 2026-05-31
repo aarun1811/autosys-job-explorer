@@ -7,8 +7,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import com.citi.gru.rectrace.loader.dto.LoaderRunRecordV4;
 import com.citi.gru.rectrace.loader.dto.LoaderRunStatus;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Phase 6 / LOADER-06 + LOADER-07 — persists one row per loader run and prunes to the last 20
@@ -48,9 +48,8 @@ import com.citi.gru.rectrace.loader.dto.LoaderRunStatus;
  */
 @Profile("!test")
 @Service
+@Slf4j
 public class LoaderRunHistoryService {
-
-    private static final Logger log = LoggerFactory.getLogger(LoaderRunHistoryService.class);
 
     /** Pitfall L8 / Research A8 — cap for {@code last_error}. */
     static final int LAST_ERROR_MAX_CHARS = 8192;

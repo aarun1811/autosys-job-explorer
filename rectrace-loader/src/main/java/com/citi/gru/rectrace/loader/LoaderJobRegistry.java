@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Component;
@@ -19,6 +17,8 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Phase 6 / LOADER-05 + LOADER-09 + LOADER-10 — per-job {@code BulkIngester} lifecycle and
@@ -50,9 +50,9 @@ import jakarta.annotation.PreDestroy;
  */
 @Component
 @Profile("!test")
+@Slf4j
+@RequiredArgsConstructor
 public class LoaderJobRegistry {
-
-    private static final Logger log = LoggerFactory.getLogger(LoaderJobRegistry.class);
 
     private final LoaderConfigService loaderConfig;
     private final ElasticsearchClient esClient;
@@ -61,11 +61,6 @@ public class LoaderJobRegistry {
     private final Map<String, CronExpression> cronExpressions = new ConcurrentHashMap<>();
     private final Map<String, LoaderBulkListener> listeners = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastFireTimes = new ConcurrentHashMap<>();
-
-    public LoaderJobRegistry(LoaderConfigService loaderConfig, ElasticsearchClient esClient) {
-        this.loaderConfig = loaderConfig;
-        this.esClient = esClient;
-    }
 
     /**
      * Boot-time wiring: build one {@code BulkIngester} + {@code CronExpression} per job.

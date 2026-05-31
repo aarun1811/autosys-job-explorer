@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -26,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Phase 6 / LOADER-01 — loads {@code loader-config-v4.json} at boot and fails loud on any
@@ -46,9 +45,8 @@ import jakarta.annotation.PostConstruct;
  */
 @Profile("!test")
 @Service
+@Slf4j
 public class LoaderConfigService {
-
-    private static final Logger log = LoggerFactory.getLogger(LoaderConfigService.class);
 
     @Value("${loader-config.location}")
     private String configLocation;

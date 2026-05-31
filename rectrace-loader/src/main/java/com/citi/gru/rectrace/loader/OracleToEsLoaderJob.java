@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +21,7 @@ import org.springframework.stereotype.Service;
 import com.citi.gru.rectrace.loader.dto.LoaderJobDefV4;
 
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Phase 6 / LOADER-03 + LOADER-04 + LOADER-05 — the actual Oracle → Elasticsearch loader.
@@ -64,9 +63,8 @@ import co.elastic.clients.elasticsearch._helpers.bulk.BulkIngester;
  */
 @Service
 @Profile("!test")
+@Slf4j
 public class OracleToEsLoaderJob {
-
-    private static final Logger log = LoggerFactory.getLogger(OracleToEsLoaderJob.class);
 
     private final LoaderJobRegistry registry;
     private final LoaderRunHistoryService runHistory;

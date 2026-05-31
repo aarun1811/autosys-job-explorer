@@ -1,6 +1,10 @@
 package com.citi.gru.rectrace.loader.dto;
 
+import com.citi.gru.rectrace.loader.dto.LoaderRunRecordV4;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Phase 6 / LOADER-08 / D-6.14 — body for the {@code POST /jobs/{key}/run-now} 409 Conflict
@@ -17,30 +21,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *       table has no such row — possible only in a tight race window between the scheduled
  *       run inserting the row and ShedLock acquiring the lock).</li>
  * </ul>
- *
- * <p>Plain POJO — no Lombok in this module (Task 3 convention).
  */
+@Data
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RunNowConflictResponseV4 {
     private String reason = "scheduled run in flight";
     private LoaderRunRecordV4 currentRun;
-
-    public RunNowConflictResponseV4() {
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
-    public LoaderRunRecordV4 getCurrentRun() {
-        return currentRun;
-    }
-
-    public void setCurrentRun(LoaderRunRecordV4 currentRun) {
-        this.currentRun = currentRun;
-    }
 }

@@ -3,13 +3,11 @@ package com.citi.gru.rectrace.loader;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import co.elastic.clients.elasticsearch._helpers.bulk.BulkListener;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Phase 6 / LOADER-10 — observer for a per-job {@code BulkIngester}.
@@ -31,9 +29,8 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
  * <p>Not a Spring bean — instantiated directly by {@code LoaderJobRegistry.init()}, one
  * listener per job key.
  */
+@Slf4j
 public class LoaderBulkListener implements BulkListener<String> {
-
-    private static final Logger log = LoggerFactory.getLogger(LoaderBulkListener.class);
 
     private final String jobKey;
     private final AtomicLong failedItemCount = new AtomicLong(0);

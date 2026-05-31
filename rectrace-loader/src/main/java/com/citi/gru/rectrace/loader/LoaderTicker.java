@@ -4,14 +4,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.citi.gru.rectrace.loader.dto.LoaderJobDefV4;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.LockingTaskExecutor;
 import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskResult;
@@ -53,9 +53,9 @@ import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskWithResult;
  */
 @Component
 @Profile("!test")
+@Slf4j
+@RequiredArgsConstructor
 public class LoaderTicker {
-
-    private static final Logger log = LoggerFactory.getLogger(LoaderTicker.class);
 
     /** Anti-thrash floor for sub-30-second cron schedules (D-6.2). */
     static final Duration LOCK_AT_LEAST_FOR = Duration.ofSeconds(5);
@@ -66,14 +66,6 @@ public class LoaderTicker {
     private final LoaderJobRegistry registry;
     private final OracleToEsLoaderJob job;
     private final LockingTaskExecutor lockingTaskExecutor;
-
-    public LoaderTicker(LoaderJobRegistry registry,
-                        OracleToEsLoaderJob job,
-                        LockingTaskExecutor lockingTaskExecutor) {
-        this.registry = registry;
-        this.job = job;
-        this.lockingTaskExecutor = lockingTaskExecutor;
-    }
 
     /**
      * Fires every 30 s and dispatches any job whose cron has come due. {@code fixedDelayString}
