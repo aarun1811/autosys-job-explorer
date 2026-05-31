@@ -15,7 +15,7 @@
 - `dto/v4/LoaderJobSummaryV4.java` + `dto/v4/RunNowConflictResponseV4.java` — loader DTOs.
 - `resources/loader-config-v4.json` — loader's job catalog (cron, batch, source SQL, target index — all loader-cycle config lives in this JSON, not in `application*.properties`).
 - `pom.xml` deps: `shedlock-spring` + `shedlock-provider-jdbc-template` (main scope) + `shedlock-provider-inmemory` (test scope). All three are loader-only.
-- `application*.properties` keys: just one — `loader-config.location=classpath:loader-config-v4.json` (in both `application.properties` and `application-local.properties`). Plus a 6-line comment block at `application.properties:64-68` documenting the deferred `management.endpoint.health.group.loader.include=loaderRunAge` (the dedicated health-group wiring was deferred during Phase 7 — see "Phase 7 deferred health group" note below).
+- `application*.properties` keys: just one — `loader-config.location=classpath:loader-config-v4.json` (in both `application.properties` and `application-local.properties`). Plus a 6-line comment block at `application.properties:64-69` documenting the deferred `management.endpoint.health.group.loader.include=loaderRunAge` (the dedicated health-group wiring was deferred during Phase 7 — see "Phase 7 deferred health group" note below).
 
 Total: 20 main Java files + 9 test files (`loader/` test package has 7: `BulkIngesterFactoryTest`, `DocumentIdHasherTest`, `LoaderConfigServiceTest`, `LoaderJobLockTest`, `LoaderPackageStructureTest`, `LoaderRunHistoryServiceTest`, `OracleToEsLoaderJobTest`; plus `observability/health/LoaderRunAgeHealthIndicatorTest` and `controller/v4/LoaderAdminControllerV4Test`).
 
@@ -113,11 +113,11 @@ Shared infra: Oracle schema (DDL stays in `rectrace-local-dev/`), ES indices. Ze
 
 **Backend KEEPS** (still needed for search read-side): `spring-boot-starter-data-elasticsearch`, `co.elastic.clients:elasticsearch-java`, `micrometer-tracing-bridge-brave`, `micrometer-registry-prometheus`. Don't accidentally prune these.
 
-**`application*.properties` prune**: one key in each file — `loader-config.location=classpath:loader-config-v4.json`. Plus the 6-line comment block at `application.properties:64-68` about the deferred loader health group.
+**`application*.properties` prune**: one key in each file — `loader-config.location=classpath:loader-config-v4.json`. Plus the 6-line comment block at `application.properties:64-69` about the deferred loader health group.
 
 ### Created in `rectrace-loader/` (Phase 1 skeleton + Phase 3 move)
 
-- `pom.xml` — Boot 3.5.14, Java 21; deps: spring-boot-starter-web, -actuator, -jdbc, -scheduling; ojdbc11; ShedLock-JDBC 7.7.0; co.elastic.clients elasticsearch-java BulkIngester; micrometer-tracing-bridge-brave; logstash-logback-encoder.
+- `pom.xml` — Boot 3.5.14, Java 21; deps: spring-boot-starter-web, -actuator, -jdbc, -scheduling; ojdbc8 (matching tlm-stats + backend convention); ShedLock-JDBC 7.7.0; co.elastic.clients elasticsearch-java BulkIngester; micrometer-tracing-bridge-brave; logstash-logback-encoder.
 - `src/main/java/com/citi/gru/rectrace/loader/RectraceLoaderApplication.java` — Spring main.
 - `src/main/java/com/citi/gru/rectrace/loader/*` — 14 moved files (7 top-level + 7 DTOs under `dto/`); `@Slf4j` rewritten to manual SLF4J `Logger`.
 - `src/main/java/com/citi/gru/rectrace/loader/controller/LoaderAdminController.java` — moved + repackaged under loader; same `/api/v4/loader-admin/*` paths.

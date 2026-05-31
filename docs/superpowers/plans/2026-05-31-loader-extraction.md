@@ -392,9 +392,12 @@ git commit -m "$(cat <<'EOF'
 feat(loader): gate backend loader behind rectrace.loader.enabled (default ON)
 
 Adds @ConditionalOnProperty("rectrace.loader.enabled", havingValue="true",
-matchIfMissing=true) to all 11 backend loader beans (Ticker, JobRegistry,
-ConfigService, RunHistoryService, BulkListener, OracleToEsLoaderJob,
-DocumentIdHasher, ShedLockConfig, JdbcConfig, AdminController, RunAgeHealthIndicator).
+matchIfMissing=true) to all 10 backend loader beans (Ticker, JobRegistry,
+ConfigService, RunHistoryService, OracleToEsLoaderJob, DocumentIdHasher,
+ShedLockConfig, JdbcConfig, AdminController, RunAgeHealthIndicator).
+LoaderBulkListener is excluded — no bean stereotype; instantiated
+programmatically by OracleToEsLoaderJob (the gate on the latter is
+sufficient).
 Default true preserves current behavior; local profile flips to false so the
 rectrace-loader module on :6089 (Phase 3) is the sole loader instance during
 the cutover. Tests untouched — test profile uses default true so existing
@@ -527,6 +530,17 @@ Search-and-replace the old package references in imports across the 6 relocated 
 
 The 14 files in the `loader/` package stay at the same package, so cross-references within them work unchanged.
 
+**`AppConstants` cross-module dependency** (single-class concern, important): `LoaderAdminControllerV4.java` line 20 imports `com.citi.gru.rectrace.constants.AppConstants` and uses `AppConstants.CITI_PORTAL_LOGIN_ID_HEADER` in 3 `@RequestHeader` declarations (lines 79, 116, 154). `AppConstants` lives in backend's `com.citi.gru.rectrace.constants` package and is NOT being moved. Resolve via **inlining**: in the moved `LoaderAdminControllerV4.java` (now under `com.citi.gru.rectrace.loader.controller`):
+
+1. Delete `import com.citi.gru.rectrace.constants.AppConstants;`
+2. Add a private constant at the top of the class body:
+   ```java
+   private static final String CITI_PORTAL_LOGIN_ID_HEADER = "x-citiportal-loginid";
+   ```
+3. Replace `AppConstants.CITI_PORTAL_LOGIN_ID_HEADER` with `CITI_PORTAL_LOGIN_ID_HEADER` in all 3 `@RequestHeader` usages.
+
+(Inline rather than copy `AppConstants` because (a) the loader only needs one constant from it, (b) the constants class will get its own Phase 9 auth treatment per the spec's out-of-scope list, and (c) duplicating one string literal is YAGNI-respecting.)
+
 - [ ] **Step 6: Rewrite `@Slf4j` to manual SLF4J in the 7 Lombok-using files**
 
 For each of the 7 files identified above, find:
@@ -586,11 +600,30 @@ If a class has `@Autowired` on the constructor (some health indicators do), pres
 
 In the NEW loader module (`rectrace-loader/`), the beans are unconditional — the entire module IS the loader. Remove the `@ConditionalOnProperty("rectrace.loader.enabled", ...)` annotation lines and the matching `import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;` from all 10 gated classes (the set from Task 2 Step 2). (Backend keeps them until Phase 4 deletion.)
 
-- [ ] **Step 9: Remove `@Profile("!test")` annotations**
+- [ ] **Step 9: KEEP `@Profile("!test")` annotations as-is on ES/Oracle-touching beans**
 
-Loader module beans don't need the `!test` gate — they're the only beans in the module, and tests use a separate test slice configuration. Remove every `@Profile("!test")` annotation + the matching `import org.springframework.context.annotation.Profile;` from the loader files in `rectrace-loader/`.
+These gates exist because `LoaderConfigService` runs an ES alias-validation `@PostConstruct` (Pitfall L1) and `LoaderJobRegistry` constructs `BulkIngester` instances against the live ES client — both fail to wire without a running ES cluster. The slice tests in the loader module (`LoaderJobLockTest`, `OracleToEsLoaderJobTest`, `LoaderRunHistoryServiceTest`, etc.) already either use `@ActiveProfiles("slice")` (which is `!test`) with their own Mockito/in-memory wiring OR use `@DataJpaTest` / `@WebMvcTest` slices that don't trigger full context wiring. The existing `!test` gates preserve all of that.
 
-(Slice tests using `@SpringBootTest(properties = "spring.profiles.active=test")` will see the beans as expected.)
+**However**, the `contextLoads` test from Task 1 uses bare `@SpringBootTest` with no profile → without the `!test` gate, ES/Oracle beans would activate and fail. Fix by adding `@ActiveProfiles("test")` to `RectraceLoaderApplicationTests`:
+
+```java
+package com.citi.gru.rectrace.loader;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest
+@ActiveProfiles("test")
+class RectraceLoaderApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+}
+```
+
+(`@ActiveProfiles("test")` causes `@Profile("!test")` beans to be excluded — `contextLoads` boots a minimal context with no ES/Oracle wiring.)
 
 - [ ] **Step 10: Copy `loader-config-v4.json`**
 
@@ -663,21 +696,20 @@ import com.citi.gru.rectrace.loader.RectraceLoaderApplication;
 
 If a test uses `@SpringBootTest` without `classes=`, Spring Boot auto-detects the nearest `@SpringBootApplication` — that's `RectraceLoaderApplication` once the test is in the loader module's tree. Leave un-classed `@SpringBootTest` as-is.
 
-- [ ] **Step 17: Update `LoaderPackageStructureTest` for the new package set**
+- [ ] **Step 17: Verify `LoaderPackageStructureTest` still passes — likely no edits needed**
 
-`LoaderPackageStructureTest` likely uses ArchUnit (`com.tngtech.archunit`) assertions like "classes in `com.citi.gru.rectrace.loader` package must follow rule X". The new module's package set is:
-- `com.citi.gru.rectrace.loader.*` (7 top-level + 7 dto)
-- `com.citi.gru.rectrace.loader.config.*` (2)
-- `com.citi.gru.rectrace.loader.controller.*` (1)
-- `com.citi.gru.rectrace.loader.health.*` (1)
+The existing `LoaderPackageStructureTest` has 6 `@Test` methods that use `Class.forName("com.citi.gru.rectrace.loader.<Name>")` to assert the loader classes exist by FQCN. Since the 7 top-level + 7 DTO files keep their `com.citi.gru.rectrace.loader.*` packages unchanged, all 6 assertions continue to hold without edits.
 
-Update any base-package assertions to match. (Open the file, run `mvn test -Dtest=LoaderPackageStructureTest` to see what fails, then patch.)
+Run the test in isolation to confirm:
+```bash
+cd rectrace-loader && mvn test -Dtest=LoaderPackageStructureTest 2>&1 | tail -10
+```
 
-If the test currently asserts "loader classes do not depend on classes in `com.citi.gru.rectrace.controller.v4`" or similar, remove or relax those (the controller IS a loader class now). If it asserts "loader-package classes do not import from `com.citi.gru.rectrace.search.*`", that should still hold and is good to keep.
+Expected: PASS (6/6). If any assertion fails — typically because a class moved to a sub-package (e.g., `controller`, `health`, `config`) and the test asserts the old FQCN — update that single `Class.forName(...)` string to the new FQCN. Otherwise leave the file alone.
 
-- [ ] **Step 18: Remove the ArchUnit assertion (if any) that gates the OLD package**
+- [ ] **Step 18: SKIPPED — no ArchUnit refactor required**
 
-If `LoaderPackageStructureTest` had assertions specifically about the backend package layout (`com.citi.gru.rectrace.controller.v4.LoaderAdminControllerV4 must extend BaseControllerV4` or similar), those don't apply in the loader module. Drop them.
+(Step kept for plan continuity; nothing to do. Move to Step 19.)
 
 - [ ] **Step 19: Run loader module tests**
 
@@ -685,7 +717,7 @@ If `LoaderPackageStructureTest` had assertions specifically about the backend pa
 cd rectrace-loader && mvn test 2>&1 | tail -30
 ```
 
-Expected: `BUILD SUCCESS`, total tests = 1 (contextLoads from Task 1) + 9 (moved loader tests) = 10. If any fail, diagnose the compile/import/wiring issue and fix before moving on.
+Expected: `BUILD SUCCESS`, `Failures: 0, Errors: 0`. (Total `Tests run:` count will be ~38 — 1 contextLoads + 37 across the 9 moved test files: BulkIngesterFactoryTest 2, DocumentIdHasherTest 4, LoaderConfigServiceTest 4, LoaderJobLockTest 2, LoaderPackageStructureTest 6, LoaderRunHistoryServiceTest 5, OracleToEsLoaderJobTest 3, LoaderAdminControllerV4Test 6, LoaderRunAgeHealthIndicatorTest 5. Don't gate on the exact number — gate on zero failures.) If any fail, diagnose the compile/import/wiring issue and fix before moving on.
 
 Common likely failures:
 - Missing import after the package move → add it.
@@ -1123,6 +1155,7 @@ git push origin main
 **Files:**
 - Modify: `scripts/smoke-loader-admin.sh` (change `BASE_URL` default)
 - Modify: `scripts/smoke-loader-sigterm.sh` (change loader URL/port references)
+- Modify: `scripts/smoke-loader-alias.sh` (change boot target from `backend/rectrace` to `rectrace-loader`)
 - Modify: `CLAUDE.md` (module table + sections)
 
 - [ ] **Step 1: Update `scripts/smoke-loader-admin.sh`**
@@ -1160,6 +1193,21 @@ Update each occurrence. The general patterns:
 - `lsof -iTCP:6088` (if the script kills the backend listener) → `lsof -iTCP:6089`
 - Pid file `run/backend.pid` → `run/loader.pid`
 - Log file `logs/backend.log` → `logs/loader.log`
+
+- [ ] **Step 2b: Update `scripts/smoke-loader-alias.sh`**
+
+This script verifies the alias-validation `@PostConstruct` in `LoaderConfigService` fails the boot when the ES alias is misconfigured. After Phase 4, `backend/rectrace` no longer has `LoaderConfigService`, so the script must boot `rectrace-loader` instead.
+
+```bash
+grep -nE "backend/rectrace|spring-boot:run|6088|/rectrace" scripts/smoke-loader-alias.sh
+```
+
+Find line 64 (or wherever `mvn spring-boot:run` lives):
+```bash
+( cd "$REPO_ROOT/backend/rectrace" && mvn -q spring-boot:run \
+```
+
+Replace `backend/rectrace` with `rectrace-loader`. Also update any `localhost:6088` references to `localhost:6089`, and drop any `/rectrace` URL path prefixes (loader has no context path). The script's intent — assert the boot fails when the alias misconfig is injected — is unchanged; only the target module changes.
 
 - [ ] **Step 3: Update `CLAUDE.md` module table**
 
@@ -1248,6 +1296,17 @@ Expected last line: `PASS: loader admin smoke green`. If FAIL, the script will p
 
 Expected: PASS. (This script stops + restarts the loader to verify graceful shutdown + ShedLock release.)
 
+- [ ] **Step 9b: Run `scripts/smoke-loader-alias.sh`**
+
+This script intentionally injects a bad alias config and asserts the boot fails fast. It boots its own `mvn spring-boot:run` instance, so make sure no other loader process is using :6089 first:
+
+```bash
+./ops/rectrace-ops.sh stop loader 2>/dev/null
+./scripts/smoke-loader-alias.sh
+```
+
+Expected: PASS. The script asserts `LoaderConfigService.@PostConstruct` fails with an alias-validation error during boot, then cleans up. After it finishes, restart the loader normally if you want it back: `./ops/rectrace-ops.sh start loader`.
+
 - [ ] **Step 10: Final cross-module smoke — verify everything still healthy**
 
 ```bash
@@ -1263,7 +1322,7 @@ Expected: all 200. (Backend health may report DOWN if there's an unrelated pre-e
 - [ ] **Step 11: Commit**
 
 ```bash
-git add scripts/smoke-loader-admin.sh scripts/smoke-loader-sigterm.sh CLAUDE.md
+git add scripts/smoke-loader-admin.sh scripts/smoke-loader-sigterm.sh scripts/smoke-loader-alias.sh CLAUDE.md
 git commit -m "$(cat <<'EOF'
 docs+smoke(loader): repoint smoke scripts + CLAUDE.md to rectrace-loader
 
@@ -1274,6 +1333,11 @@ comment updated to reference `./ops/rectrace-ops.sh start loader`.
 scripts/smoke-loader-sigterm.sh: every :6088/rectrace URL, backend pid/log
 path, and `start backend` invocation now targets :6089 / run/loader.pid /
 logs/loader.log / `start loader`.
+
+scripts/smoke-loader-alias.sh: the `mvn spring-boot:run` target flips from
+backend/rectrace to rectrace-loader (only the loader has LoaderConfigService
++ the alias-validation @PostConstruct after Phase 4); URL/port references
+adjusted to :6089 without context path.
 
 CLAUDE.md: adds rectrace-loader to the module table (Boot 3.5.14, port
 6089, Active); adds an Essential Commands sub-section for the loader;
