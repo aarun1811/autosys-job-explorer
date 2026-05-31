@@ -13,9 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * OBS-02 contract — {@code /actuator/health} aggregates Oracle / Elasticsearch /
- * search-config indicators; the loader-run-age indicator sits in a separate
- * group (per Pitfall P-11 / D-7.12) reachable at {@code /actuator/health/loader}.
- * Plan 07-03 implements all four indicators and enables this test.
+ * search-config indicators. The loader-run-age indicator was moved out of
+ * backend/rectrace in Phase 4 of the loader-extraction work and now lives in
+ * the rectrace-loader module's own actuator surface on :6089.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -32,12 +32,5 @@ class ActuatorHealthIntegrationTest {
                 .andExpect(jsonPath("$.components.oracle.status").exists())
                 .andExpect(jsonPath("$.components.elasticsearch.status").exists())
                 .andExpect(jsonPath("$.components.searchConfig.status").exists());
-    }
-
-    @Test
-    void loaderRunAgeIsInSeparateGroup() throws Exception {
-        mockMvc.perform(get("/actuator/health/loader"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.components.loaderRunAge.status").exists());
     }
 }
