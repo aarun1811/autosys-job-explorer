@@ -1,0 +1,32 @@
+{
+  "jobs": [
+    {
+      "key": "dupe",
+      "source": {
+        "datasource": "primary",
+        "query": "SELECT job_name FROM rectrace.rectrace_core",
+        "primaryKey": ["job_name"]
+      },
+      "target": {
+        "alias": "rectrace_core_alias",
+        "batch": { "rows": 5000, "bytes": 5242880, "flushMs": 5000 }
+      },
+      "schedule": "0 */5 * * * *",
+      "timezone": "UTC"
+    },
+    {
+      "key": "dupe",
+      "source": {
+        "datasource": "primary",
+        "query": "SELECT app_name FROM rectrace.rectrace_core",
+        "primaryKey": ["app_name"]
+      },
+      "target": {
+        "alias": "rectrace_core_alias",
+        "batch": { "rows": 5000, "bytes": 5242880, "flushMs": 5000 }
+      },
+      "schedule": "0 */10 * * * *",
+      "timezone": "UTC"
+    }
+  ]
+}

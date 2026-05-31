@@ -1,0 +1,18 @@
+{
+  "jobs": [
+    {
+      "key": "missing_alias_job",
+      "source": {
+        "datasource": "primary",
+        "query": "SELECT job_name FROM rectrace.rectrace_core",
+        "primaryKey": ["job_name"]
+      },
+      "target": {
+        "alias": "this_alias_does_not_exist",
+        "batch": { "rows": 5000, "bytes": 5242880, "flushMs": 5000 }
+      },
+      "schedule": "0 */5 * * * *",
+      "timezone": "UTC"
+    }
+  ]
+}
