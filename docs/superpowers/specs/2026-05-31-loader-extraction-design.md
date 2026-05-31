@@ -2,20 +2,26 @@
 
 **Date:** 2026-05-31
 **Status:** Approved (architecture, file map, migration sequence locked)
-**Motivation:** Backend should be a strict read-side API. The ES loader subsystem currently lives in `backend/rectrace` as 18 main files + 8 tests + a JSON config + its own deps; that's the wrong shape for an upcoming demo focused on architectural cleanliness. The loader becomes its own deployable, sibling to `rectrace-tlm-stats`, scalable + restartable independently of the read-side API.
+**Motivation:** Backend should be a strict read-side API. The ES loader subsystem currently lives in `backend/rectrace` as 20 main files + 9 tests + a JSON config + its own deps; that's the wrong shape for an upcoming demo focused on architectural cleanliness. The loader becomes its own deployable, sibling to `rectrace-tlm-stats`, scalable + restartable independently of the read-side API.
 
 ## Problem
 
-`backend/rectrace` today carries the ES loader subsystem:
+`backend/rectrace` today carries the ES loader subsystem (verified file-by-file 2026-05-31):
 
-- `loader/` package (10 files): `LoaderTicker`, `LoaderJobRegistry`, `OracleToEsLoaderJob`, `LoaderConfigService`, `LoaderRunHistoryService`, `LoaderBulkListener`, all DTOs.
-- `controller/v4/LoaderAdminControllerV4.java` — admin surface at `POST /api/v4/loader-admin/*`.
-- `config/{LoaderShedLockConfig,LoaderJdbcConfig}.java` — loader-specific wiring.
+- `loader/` package — 14 files: 7 top-level (`DocumentIdHasher`, `LoaderBulkListener`, `LoaderConfigService`, `LoaderJobRegistry`, `LoaderRunHistoryService`, `LoaderTicker`, `OracleToEsLoaderJob`) + 7 DTOs (`LoaderBatchConfigV4`, `LoaderConfigV4`, `LoaderJobDefV4`, `LoaderRunRecordV4`, `LoaderRunStatus`, `LoaderSourceConfigV4`, `LoaderTargetConfigV4`).
+- `controller/v4/LoaderAdminControllerV4.java` — admin surface at `/api/v4/loader-admin/*` (GET `/jobs`, POST `/jobs/{key}/run-now`, GET `/jobs/{key}/runs`).
+- `config/LoaderShedLockConfig.java` + `config/LoaderJdbcConfig.java` — loader-specific wiring.
 - `observability/health/LoaderRunAgeHealthIndicator.java` — health indicator that directly imports + injects `LoaderConfigService` + `LoaderRunHistoryService` (in-process Java dep, not DB-mediated).
-- `dto/v4/{LoaderJobSummaryV4,RunNowConflictResponseV4}.java` — loader DTOs.
-- `resources/loader-config-v4.json` — loader's catalog.
-- `pom.xml` deps for ShedLock 7.7.0 + ES BulkIngester + scheduling.
-- `application*.properties` keys for loader cron, ShedLock URL, ingester config.
+- `dto/v4/LoaderJobSummaryV4.java` + `dto/v4/RunNowConflictResponseV4.java` — loader DTOs.
+- `resources/loader-config-v4.json` — loader's job catalog (cron, batch, source SQL, target index — all loader-cycle config lives in this JSON, not in `application*.properties`).
+- `pom.xml` deps: `shedlock-spring` + `shedlock-provider-jdbc-template` (main scope) + `shedlock-provider-inmemory` (test scope). All three are loader-only.
+- `application*.properties` keys: just one — `loader-config.location=classpath:loader-config-v4.json` (in both `application.properties` and `application-local.properties`). Plus a 6-line comment block at `application.properties:64-68` documenting the deferred `management.endpoint.health.group.loader.include=loaderRunAge` (the dedicated health-group wiring was deferred during Phase 7 — see "Phase 7 deferred health group" note below).
+
+Total: 20 main Java files + 9 test files (`loader/` test package has 7: `BulkIngesterFactoryTest`, `DocumentIdHasherTest`, `LoaderConfigServiceTest`, `LoaderJobLockTest`, `LoaderPackageStructureTest`, `LoaderRunHistoryServiceTest`, `OracleToEsLoaderJobTest`; plus `observability/health/LoaderRunAgeHealthIndicatorTest` and `controller/v4/LoaderAdminControllerV4Test`).
+
+`BulkIngesterFactoryTest` covers the inline BulkIngester construction inside `OracleToEsLoaderJob` (no separate factory class exists). Test moves with that source.
+
+**Phase 7 deferred health group**: backend currently registers `LoaderRunAgeHealthIndicator` (bean name `loaderRunAge`) but does NOT add it to a dedicated `management.endpoint.health.group.loader` group. The indicator therefore contributes to the default `/actuator/health` aggregate. This posture stays in the loader module after extraction (move the indicator + the deferred-comment block; don't enable the group during this work).
 
 Two concrete problems:
 
@@ -52,18 +58,21 @@ Create `rectrace-loader/` at the repo root, mirroring `rectrace-tlm-stats/`. Mov
 │  • NO loader awareness       │         │                                │
 └──────────────────────────────┘         └────────────────────────────────┘
               │                                       │
-              │ JDBC (read)                JDBC (read+write)
-              │ rectrace_core              rectrace_core, loader_run_history,
-              ▼                            shedlock_locks
+              │ JDBC                       JDBC
+              │ read: rectrace_core        read:  rectrace_core (source)
+              │       (SSRM detail rows,   write: loader_run_history,
+              │        cell-renderer)             shedlock_locks
+              ▼                                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  Oracle 23c FREEPDB1 (sibling rectrace-local-dev compose)       │
 │  schema/01-rectrace.sql defines all tables — no changes         │
 └─────────────────────────────────────────────────────────────────┘
               │                                       │
-              │ ES read (search)               ES write (alias-only)
+              │ ES read (search via                ES write (alias-only)
+              │ rectrace_core_alias)               via rectrace_core_alias
               ▼                                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Elasticsearch 8.13.4 — rectrace_core_index (alias) + others    │
+│  Elasticsearch 8.13.4 — rectrace_core_alias → versioned index   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -85,7 +94,7 @@ Shared infra: Oracle schema (DDL stays in `rectrace-local-dev/`), ES indices. Ze
 
 | Path | Why |
 |---|---|
-| `src/main/java/.../loader/` (10 files: Ticker, JobRegistry, OracleToEsLoaderJob, ConfigService, RunHistoryService, BulkListener + 4 DTOs) | Whole loader package |
+| `src/main/java/.../loader/` (14 files: 7 top-level — DocumentIdHasher, LoaderBulkListener, LoaderConfigService, LoaderJobRegistry, LoaderRunHistoryService, LoaderTicker, OracleToEsLoaderJob; 7 DTOs — LoaderBatchConfigV4, LoaderConfigV4, LoaderJobDefV4, LoaderRunRecordV4, LoaderRunStatus, LoaderSourceConfigV4, LoaderTargetConfigV4) | Whole loader package |
 | `src/main/java/.../controller/v4/LoaderAdminControllerV4.java` | Loader admin |
 | `src/main/java/.../config/LoaderShedLockConfig.java` | Loader-specific wiring |
 | `src/main/java/.../config/LoaderJdbcConfig.java` | Loader-specific DS |
@@ -93,17 +102,24 @@ Shared infra: Oracle schema (DDL stays in `rectrace-local-dev/`), ES indices. Ze
 | `src/main/java/.../dto/v4/RunNowConflictResponseV4.java` | Loader admin DTO |
 | `src/main/java/.../observability/health/LoaderRunAgeHealthIndicator.java` | Loader-self-monitoring → relocates to loader module |
 | `src/main/resources/loader-config-v4.json` | Loader's config catalog |
-| `src/test/.../loader/` (6 test files) | Mirrors source move |
+| `src/test/.../loader/` (7 test files: BulkIngesterFactoryTest, DocumentIdHasherTest, LoaderConfigServiceTest, LoaderJobLockTest, LoaderPackageStructureTest, LoaderRunHistoryServiceTest, OracleToEsLoaderJobTest) | Mirrors source move |
 | `src/test/.../observability/health/LoaderRunAgeHealthIndicatorTest.java` | Mirrors source move |
 | `src/test/.../controller/v4/LoaderAdminControllerV4Test.java` | Mirrors source move |
 
-Plus `pom.xml` prune of loader-only deps (ShedLock JDBC, anything backend doesn't need for read-side ES) and `application*.properties` prune of loader-only keys (cron, shedlock, ingester, loader-config.location).
+**`pom.xml` deps to prune (exactly 3, all ShedLock)**:
+- `net.javacrumbs.shedlock:shedlock-spring`
+- `net.javacrumbs.shedlock:shedlock-provider-jdbc-template`
+- `net.javacrumbs.shedlock:shedlock-provider-inmemory` (test scope)
+
+**Backend KEEPS** (still needed for search read-side): `spring-boot-starter-data-elasticsearch`, `co.elastic.clients:elasticsearch-java`, `micrometer-tracing-bridge-brave`, `micrometer-registry-prometheus`. Don't accidentally prune these.
+
+**`application*.properties` prune**: one key in each file — `loader-config.location=classpath:loader-config-v4.json`. Plus the 6-line comment block at `application.properties:64-68` about the deferred loader health group.
 
 ### Created in `rectrace-loader/` (Phase 1 skeleton + Phase 3 move)
 
 - `pom.xml` — Boot 3.5.14, Java 21; deps: spring-boot-starter-web, -actuator, -jdbc, -scheduling; ojdbc11; ShedLock-JDBC 7.7.0; co.elastic.clients elasticsearch-java BulkIngester; micrometer-tracing-bridge-brave; logstash-logback-encoder.
 - `src/main/java/com/citi/gru/rectrace/loader/RectraceLoaderApplication.java` — Spring main.
-- `src/main/java/com/citi/gru/rectrace/loader/*` — 10 moved files; `@Slf4j` rewritten to manual SLF4J `Logger`.
+- `src/main/java/com/citi/gru/rectrace/loader/*` — 14 moved files (7 top-level + 7 DTOs under `dto/`); `@Slf4j` rewritten to manual SLF4J `Logger`.
 - `src/main/java/com/citi/gru/rectrace/loader/controller/LoaderAdminController.java` — moved + repackaged under loader; same `/api/v4/loader-admin/*` paths.
 - `src/main/java/com/citi/gru/rectrace/loader/config/{LoaderShedLockConfig,LoaderJdbcConfig}.java` — moved.
 - `src/main/java/com/citi/gru/rectrace/loader/dto/{LoaderJobSummaryV4,RunNowConflictResponseV4}.java` — consolidated under loader package.
@@ -111,7 +127,7 @@ Plus `pom.xml` prune of loader-only deps (ShedLock JDBC, anything backend doesn'
 - `src/main/resources/application.properties` + `application-local.properties` — `server.port=6089`; Oracle/ES connection same as backend's local profile; `loader-config.location=classpath:loader-config-v4.json`.
 - `src/main/resources/loader-config-v4.json` — moved verbatim.
 - `src/main/resources/logback-spring.xml` — copy backend's profile-aware Splunk HEC pattern (loader logs ship to the same Splunk index for ops continuity).
-- `src/test/...` — 8 moved test files; slice tests re-anchored to `RectraceLoaderApplication`; `LoaderPackageStructureTest` package set adjusted.
+- `src/test/...` — 9 moved test files (7 in `loader/` package + `LoaderRunAgeHealthIndicatorTest` under `loader/health/` + `LoaderAdminControllerV4Test` under `loader/controller/`); slice tests re-anchored to `RectraceLoaderApplication`; `LoaderPackageStructureTest` package set adjusted.
 
 ## Migration sequence — 6 phases
 
@@ -132,7 +148,7 @@ Add `rectrace.loader.enabled` property in backend's `application.properties` (de
 
 ### Phase 3 — MOVE LOADER CODE INTO `rectrace-loader`
 
-Copy all 18 main + 8 test files + `loader-config-v4.json` into the new module under package `com.citi.gru.rectrace.loader.*`. Rewrite `@Slf4j` to manual SLF4J. Re-anchor slice tests to `RectraceLoaderApplication`. Verify:
+Copy all 20 main + 9 test files + `loader-config-v4.json` into the new module under package `com.citi.gru.rectrace.loader.*`. Rewrite `@Slf4j` to manual SLF4J. Re-anchor slice tests to `RectraceLoaderApplication`. Verify:
 
 - `cd rectrace-loader && mvn test` green.
 - `mvn spring-boot:run -Dspring-boot.run.profiles=local` → loader boots on :6089.
@@ -142,7 +158,7 @@ Copy all 18 main + 8 test files + `loader-config-v4.json` into the new module un
 
 ### Phase 4 — DELETE LOADER FROM BACKEND
 
-Delete every loader file from `backend/rectrace/` (18 main + 8 test + `loader-config-v4.json`). Remove the `@ConditionalOnProperty` flag and the property. Prune loader-only deps from `pom.xml` (ShedLock JDBC, scheduling extras backend doesn't otherwise need). Prune loader properties from `application*.properties`. Verify:
+Delete every loader file from `backend/rectrace/` (20 main + 9 test + `loader-config-v4.json`). Remove the `@ConditionalOnProperty` flag and the property. Prune the 3 ShedLock deps from `pom.xml` (`shedlock-spring`, `shedlock-provider-jdbc-template`, `shedlock-provider-inmemory`). Prune the `loader-config.location` key + the deferred-health-group comment block from `application*.properties`. Verify:
 
 - `cd backend/rectrace && mvn test` green; no broken imports.
 - Backend boots clean on :6088.
@@ -166,11 +182,11 @@ Repoint `scripts/smoke-loader-admin.sh` and `scripts/smoke-loader-sigterm.sh` fr
 
 ## Test strategy
 
-- All 8 loader test files **move** (not copy) with their target source. Same package layout under `com.citi.gru.rectrace.loader.*`.
+- All 9 loader test files **move** (not copy) with their target source. Same package layout under `com.citi.gru.rectrace.loader.*` (7 files), `loader.health.*` (1 file), `loader.controller.*` (1 file).
 - Slice tests (`LoaderJobLockTest`, `OracleToEsLoaderJobTest`, `LoaderRunHistoryServiceTest`) using `@SpringBootTest` re-anchor to `RectraceLoaderApplication` and use the loader module's test profile.
 - `LoaderPackageStructureTest` ArchUnit-style package assertions update for the new module's package set.
-- `LoaderRunAgeHealthIndicatorTest` moves with the indicator into `rectrace-loader/src/test/.../health/`.
-- Backend gains zero new tests (loses 8). Backend's existing test suite must stay green after Phase 4 with no loader-related imports.
+- `BulkIngesterFactoryTest` moves with `OracleToEsLoaderJob` (the inline BulkIngester construction it exercises).
+- Backend gains zero new tests (loses 9). Backend's existing test suite must stay green after Phase 4 with no loader-related imports.
 
 ## Verification matrix
 
