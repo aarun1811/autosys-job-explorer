@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.lang.Nullable;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Component;
@@ -47,6 +48,7 @@ import com.citi.gru.rectrace.loader.dto.LoaderRunStatus;
  * are {@code @Profile("!test")}. The integration test then sees an UP indicator with
  * {@code jobs: "none configured"}, which is the documented "no jobs to monitor" state.
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Component("loaderRunAge")
 public class LoaderRunAgeHealthIndicator extends AbstractHealthIndicator {
 

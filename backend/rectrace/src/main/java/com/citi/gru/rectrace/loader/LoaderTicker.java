@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -51,6 +52,7 @@ import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskWithResult;
  * the {@link TaskResult} so the controller can map {@code wasExecuted()=false} to HTTP 409
  * (CONFLICT).
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 @Profile("!test")
 @Slf4j

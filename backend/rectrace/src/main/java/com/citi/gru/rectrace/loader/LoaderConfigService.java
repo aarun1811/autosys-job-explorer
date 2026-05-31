@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -43,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  * client on the classpath (Pitfall L4). Plan 03 tests instantiate the service directly via
  * {@code ReflectionTestUtils} rather than booting a Spring context.
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Profile("!test")
 @Service
 @Slf4j

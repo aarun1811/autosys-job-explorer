@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,6 +53,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * char inside each string — the resulting byte sequences differ at the first {@code "} after
  * the second {@code [}. {@code DocumentIdHasherTest#separatorInPkValueDoesNotCollide} pins this.
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public final class DocumentIdHasher {
 

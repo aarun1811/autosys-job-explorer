@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,7 @@ import net.javacrumbs.shedlock.core.LockingTaskExecutor.TaskResult;
  * <p>06-RESEARCH.md Pitfall L8 — the conflict path returns 409 (not 202): the admin user
  * needs to know the run did NOT happen so they can decide whether to retry.
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Profile("!test")
 @RestController
 @RequestMapping("/api/v4/loader-admin")

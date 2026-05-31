@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -61,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
  * are lowercase. {@link #rowToMap(ResultSet)} lower-cases the labels — same convention as
  * {@code SqlQueryServiceV4} (Phase 5).
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Service
 @Profile("!test")
 @Slf4j

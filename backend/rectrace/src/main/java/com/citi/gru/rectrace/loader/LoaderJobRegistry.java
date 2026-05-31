@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Component;
@@ -48,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>{@code @Profile("!test")} keeps the registry out of the test ApplicationContext —
  * tests instantiate it directly with mocks (Pitfall L4).
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 @Profile("!test")
 @Slf4j

@@ -3,6 +3,7 @@ package com.citi.gru.rectrace.config;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -55,6 +56,7 @@ import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
  * (Plan 06-01). Boot fails with a clear error from the JDBC provider if the table is
  * absent — Pitfall L1.
  */
+@ConditionalOnProperty(name = "rectrace.loader.enabled", havingValue = "true", matchIfMissing = true)
 @Configuration
 @Profile("!test")
 @EnableScheduling
