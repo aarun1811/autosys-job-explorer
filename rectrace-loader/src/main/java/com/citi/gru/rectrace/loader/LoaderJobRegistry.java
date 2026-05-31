@@ -1,6 +1,8 @@
 package com.citi.gru.rectrace.loader;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +123,10 @@ public class LoaderJobRegistry {
             if (cron == null || last == null) {
                 continue;
             }
-            Instant next = cron.next(last);
+            // CronExpression.next() requires a temporal that supports DayOfWeek;
+            // Instant doesn't, so convert via system-zone ZonedDateTime.
+            ZonedDateTime nextZdt = cron.next(last.atZone(ZoneId.systemDefault()));
+            Instant next = nextZdt == null ? null : nextZdt.toInstant();
             if (next != null && !next.isAfter(now)) {
                 due.add(def);
             }
