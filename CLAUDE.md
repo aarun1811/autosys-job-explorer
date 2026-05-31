@@ -10,6 +10,7 @@ Guidance for Claude Code when working in this repository.
 |---|---|---|---|
 | `backend/rectrace` | Spring Boot 3.5.14, Java 21, jakarta | 6088 | Active |
 | `rectrace-tlm-stats` | Spring Boot 3.5.14, Java 21 | 8080 | Active |
+| `rectrace-loader` | Spring Boot 3.5.14, Java 21 | 6089 | Active |
 | `frontend/rectrace` | Angular 18.2.14, AG-Grid 32, RxJS | 4200 | Legacy — frozen, replaced incrementally |
 | `frontend-react` | Vite 7 + React 19 + shadcn (Tailwind v4) + AG-Grid 35 + TanStack | 5173 | Net-new vertical-slice port |
 
@@ -68,6 +69,13 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 Boots on `http://localhost:8080`.
 
+### Loader Service
+```bash
+cd rectrace-loader
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+Boots on `http://localhost:6089`. Owns the ES Loader subsystem (ShedLock-coordinated ticker + admin endpoints at `/api/v4/loader-admin/*`). Backend (`backend/rectrace`) no longer carries any loader code as of Phase 4 of the loader-extraction work.
+
 ### Ops Surface
 ```bash
 ops/rectrace-ops.sh start backend|tlm-stats|react|all
@@ -86,7 +94,7 @@ Under `scripts/`:
 - `smoke-ssrm.sh` — end-to-end /initial → SSRM search flow
 - `smoke-hyphen-search.sh` — hyphenated-identifier regression (Phase 8 BUG-01..03)
 - `smoke-sql-search.sh` — Phase 5 configured-SELECT tab
-- `smoke-loader-{admin,alias,sigterm}.sh` — Phase 6 loader paths
+- `smoke-loader-{admin,alias,sigterm}.sh` — loader admin / alias-bootstrap / SIGTERM paths (post-extraction: targets `:6089`, no context path)
 - `smoke-observability.sh` — Phase 7 actuator/metrics/tracing surface
 - `smoke-correlation-id.sh` — `X-Correlation-Id` round-trip via MDC
 
@@ -114,7 +122,7 @@ scripts/                    # smoke-*.sh integration tests
 - **Column-name whitelist** (`ColumnNameWhitelist.forCategory(config)`) validates every client-supplied column name in ORDER BY / WHERE / SELECT / GROUP BY before SQL concatenation. Added 2026-05-18 to close the CONCERNS.md CRITICAL.
 - **CORS** is property-driven via `app.cors.allowed-origins` (comma-separated). Empty = block. Local profile defaults to dev origins; prod/uat carry `[NEEDS USER REVIEW]` placeholders.
 - **Observability** uses `logback-spring.xml` (profile-aware Splunk HEC), Brave Micrometer tracing with `X-Correlation-Id` as the 128-bit traceId, `/actuator/health` with custom indicators (Oracle, ES, loader-run-age, search-config), `/actuator/prometheus`, slow-query AOP.
-- **Loader subsystem** uses ShedLock 7.7.0 + `@Scheduled` + ES BulkIngester writing to aliases, with run-history and admin endpoints at `/api/v4/loader-admin`.
+- **Loader subsystem extracted to `rectrace-loader/`** (Boot 3.5.14, port 6089). Backend has zero loader awareness as of 2026-05-31 loader-extraction work — see `docs/superpowers/specs/2026-05-31-loader-extraction-design.md`.
 - **SQL tab subsystem** uses JSqlParser 5.3 for boot-time validation (fails to boot on bad shape) + a dedicated read-only Oracle DS + per-statement `setMaxRows/setQueryTimeout/setFetchSize` caps.
 
 ### Frontend (React)

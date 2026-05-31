@@ -13,14 +13,14 @@
 # Prerequisites:
 #   - Docker stack up: cd ../rectrace-local-dev && docker compose up -d
 #   - Seed applied:   cd ../rectrace-local-dev && .venv/bin/python apply.py
-#   - Backend running on :6088 (ops script): ./ops/rectrace-ops.sh start backend
+#   - Loader running on :6089 (ops script): ./ops/rectrace-ops.sh start loader
 #
 # Exit codes:
 #   0 — all 6 assertions green.
 #   1 — any assertion missed; see "FAIL:" line for the failing endpoint.
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://localhost:6088/rectrace}"
+BASE_URL="${BASE_URL:-http://localhost:6089}"
 ES_URL="${ES_URL:-http://localhost:9200}"
 JOB_KEY="rectrace_core_loader"
 ALIAS="rectrace_core_alias"

@@ -8,7 +8,7 @@
 # Prerequisites:
 #   - Docker stack up (Elasticsearch healthy on http://localhost:9200):
 #       cd ../rectrace-local-dev && docker compose up -d
-#   - Backend NOT running on :6088 (this smoke boots its own JVM with a bad config).
+#   - Loader NOT running on :6089 (this smoke boots its own JVM with a bad config).
 #
 # Exit codes:
 #   0 — boot failed with the expected diagnostic banner; LOADER-03 contract intact.
@@ -56,13 +56,20 @@ if [ "$ALIAS_CODE" != "404" ]; then
   exit 1
 fi
 
-# 3) Boot the backend with the bad config and the local profile. A successful boot keeps
+# 3) Boot the loader with the bad config and the local profile. A successful boot keeps
 #    running forever — we bound that with a shell-native timeout (macOS lacks `timeout`).
 #    Strategy: spawn maven in background, poll for exit up to 90s; if still alive, SIGTERM.
+#
+#    DevTools quirk: when rectrace-loader's spring-boot-devtools is on the classpath, a
+#    bean-creation failure during refresh is caught by RestartLauncher and `mvn
+#    spring-boot:run` exits 0 even though the app never started. We disable the restarter
+#    so the IllegalStateException from LoaderConfigService propagates and mvn returns
+#    non-zero — the assertion this smoke is built on.
 BOOT_DEADLINE_SEC="${BOOT_DEADLINE_SEC:-90}"
 set +e
-( cd "$REPO_ROOT/backend/rectrace" && mvn -q spring-boot:run \
+( cd "$REPO_ROOT/rectrace-loader" && mvn -q spring-boot:run \
     -Dspring-boot.run.profiles=local \
+    -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=false" \
     -Dspring-boot.run.arguments="--loader-config.location=file:${CONFIG_PATH}" \
     >"$BOOT_LOG" 2>&1 ) &
 MVN_PID=$!
@@ -85,14 +92,14 @@ if [ -z "$BOOT_EXIT" ]; then
   sleep 3
   pkill -KILL -P "$MVN_PID" 2>/dev/null || true
   kill -KILL "$MVN_PID" 2>/dev/null || true
-  echo "FAIL: backend did not exit within ${BOOT_DEADLINE_SEC}s — boot did not fail fast"
+  echo "FAIL: loader did not exit within ${BOOT_DEADLINE_SEC}s — boot did not fail fast"
   tail -60 "$BOOT_LOG"
   exit 1
 fi
 set -e
 
 if [ "$BOOT_EXIT" -eq 0 ]; then
-  echo "FAIL: backend boot returned 0 — expected JVM failure"
+  echo "FAIL: loader boot returned 0 — expected JVM failure"
   tail -60 "$BOOT_LOG"
   exit 1
 fi

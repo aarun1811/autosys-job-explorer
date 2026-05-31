@@ -10,7 +10,7 @@
 # Prerequisites:
 #   - Docker stack up (Oracle + Elasticsearch healthy).
 #   - Seed applied: cd ../rectrace-local-dev && .venv/bin/python apply.py
-#   - Backend NOT running on :6088 (this smoke owns the JVM lifecycle).
+#   - Loader NOT running on :6089 (this smoke owns the JVM lifecycle).
 #   - Python with `oracledb` installed. Resolution order: $RECTRACE_PYTHON env var,
 #     then the sibling repo venv ../rectrace-local-dev/.venv/bin/python, then python3 on PATH.
 #   - RECTRACE_PWD + ORACLE_DSN env vars (defaults match rectrace-local-dev/.env.example).
@@ -21,7 +21,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BASE_URL="${BASE_URL:-http://localhost:6088/rectrace}"
+BASE_URL="${BASE_URL:-http://localhost:6089}"
 ES_URL="${ES_URL:-http://localhost:9200}"
 JOB_KEY="rectrace_core_loader"
 ALIAS="rectrace_core_alias"
@@ -46,18 +46,18 @@ else
 fi
 echo "INFO: using Python interpreter: $PYTHON_BIN"
 
-# 1) Pre-flight — port :6088 must be free.
-if lsof -i:6088 -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "FAIL: another process holds port 6088 — stop the backend first"
+# 1) Pre-flight — port :6089 must be free.
+if lsof -i:6089 -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "FAIL: another process holds port 6089 — stop the loader first"
   exit 1
 fi
 
-# 2) Boot backend in background.
-( cd "$REPO_ROOT/backend/rectrace" && mvn -q spring-boot:run \
+# 2) Boot loader in background.
+( cd "$REPO_ROOT/rectrace-loader" && mvn -q spring-boot:run \
     -Dspring-boot.run.profiles=local \
     >"$LOG_PATH" 2>&1 ) &
 BACKEND_PID=$!
-echo "INFO: backend booting (pid=$BACKEND_PID, log=$LOG_PATH)"
+echo "INFO: loader booting (pid=$BACKEND_PID, log=$LOG_PATH)"
 
 cleanup() {
   if kill -0 "$BACKEND_PID" 2>/dev/null; then
@@ -73,13 +73,13 @@ HEALTH_OK=0
 for i in $(seq 1 45); do
   if curl -fsS "${BASE_URL}/actuator/health" 2>/dev/null | grep -q '"status":"UP"'; then
     HEALTH_OK=1
-    echo "INFO: backend healthy after ${i}x2s polls"
+    echo "INFO: loader healthy after ${i}x2s polls"
     break
   fi
   sleep 2
 done
 if [ "$HEALTH_OK" -ne 1 ]; then
-  echo "FAIL: backend did not report UP within 90s"
+  echo "FAIL: loader did not report UP within 90s"
   tail -60 "$LOG_PATH"
   exit 1
 fi
@@ -91,7 +91,7 @@ curl -fsS -X POST "${BASE_URL}/api/v4/loader-admin/jobs/${JOB_KEY}/run-now" \
 RUN_NOW_PID=$!
 sleep 1
 
-# 4) Send SIGTERM to the backend mid-run. The OracleToEsLoaderJob @Scheduled task is
+# 4) Send SIGTERM to the loader mid-run. The OracleToEsLoaderJob @Scheduled task is
 #    inside ShedLock's executeWithLock; @PreDestroy on LoaderJobRegistry closes the
 #    BulkIngester which flushes any queued docs.
 #
@@ -107,12 +107,12 @@ fi
 echo "INFO: sending SIGTERM to JVM pid $JVM_PID (mvn wrapper pid $BACKEND_PID)"
 kill -TERM "$JVM_PID"
 
-# 5) Wait for the backend to exit (90s budget).
+# 5) Wait for the loader to exit (90s budget).
 SHUTDOWN_OK=0
 for i in $(seq 1 45); do
   if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
     SHUTDOWN_OK=1
-    echo "INFO: backend exited cleanly after ${i}x2s polls"
+    echo "INFO: loader exited cleanly after ${i}x2s polls"
     break
   fi
   sleep 2
@@ -121,7 +121,7 @@ done
 wait "$RUN_NOW_PID" 2>/dev/null || true
 
 if [ "$SHUTDOWN_OK" -ne 1 ]; then
-  echo "FAIL: backend did not exit within 90s of SIGTERM"
+  echo "FAIL: loader did not exit within 90s of SIGTERM"
   tail -60 "$LOG_PATH"
   exit 1
 fi
