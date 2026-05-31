@@ -36,6 +36,7 @@ fi
 REGISTRY=(
   "backend|6088|run/backend.pid|logs/backend.log|http://localhost:6088/rectrace/actuator/health|-|mvn spring-boot:run -f backend/rectrace/pom.xml -Dspring-boot.run.profiles=local"
   "tlm-stats|8080|run/tlmstats.pid|logs/tlmstats.log|http://localhost:8080/actuator/health|-|mvn spring-boot:run -f rectrace-tlm-stats/pom.xml -Dspring-boot.run.profiles=local"
+  "loader|6089|run/loader.pid|logs/loader.log|http://localhost:6089/actuator/health|-|mvn spring-boot:run -f rectrace-loader/pom.xml -Dspring-boot.run.profiles=local"
   "react|5173|run/react.pid|logs/react.log|http://localhost:5173/|frontend-react|$REACT_START_CMD"
 )
 
