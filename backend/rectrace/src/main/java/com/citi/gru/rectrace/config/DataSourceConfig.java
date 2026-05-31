@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
@@ -88,6 +89,23 @@ public class DataSourceConfig {
         config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
 
         return new HikariDataSource(config);
+    }
+
+    /**
+     * Primary {@link JdbcTemplate} wrapping the primary RECTRACE {@link DataSource}.
+     *
+     * <p>Relocated here from the now-deleted {@code LoaderJdbcConfig} (Phase 4 of the
+     * loader-extraction work). {@code OracleServiceV4} autowires {@code JdbcTemplate} by
+     * type with no qualifier; without an {@code @Primary} marker, Spring sees a 2-bean
+     * ambiguity against {@code readonlyJdbcTemplate} (declared in
+     * {@link ReadonlyDataSourceConfig}) and {@code healthCheckJdbcTemplate} (declared in
+     * {@code HealthIndicatorDataSourceConfig}) and fails boot with
+     * UnsatisfiedDependencyException.
+     */
+    @Bean
+    @Primary
+    public JdbcTemplate primaryJdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
     }
 
     @Bean
