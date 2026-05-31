@@ -823,7 +823,7 @@ git push origin main
 - Modify: `backend/rectrace/src/main/resources/application.properties` (remove `loader-config.location` line + lines 64-68 comment)
 - Modify: `backend/rectrace/src/main/resources/application-local.properties` (remove `loader-config.location` line + the `rectrace.loader.enabled=false` line added in Task 2)
 
-- [ ] **Step 1: Pre-flight — confirm no non-loader code references the loader classes**
+- [ ] **Step 1: Pre-flight — confirm no non-loader code references the loader classes (by name)**
 
 ```bash
 grep -rln "LoaderTicker\|LoaderJobRegistry\|LoaderConfigService\|LoaderRunHistoryService\|LoaderBulkListener\|OracleToEsLoaderJob\|DocumentIdHasher\|LoaderShedLockConfig\|LoaderJdbcConfig\|LoaderAdminController\|LoaderRunAgeHealthIndicator\|LoaderJobSummaryV4\|RunNowConflictResponseV4" \
@@ -833,7 +833,81 @@ grep -rln "LoaderTicker\|LoaderJobRegistry\|LoaderConfigService\|LoaderRunHistor
   grep -v "/observability/health/LoaderRunAgeHealthIndicator"
 ```
 
-Expected: empty output (no non-loader file references loader classes). If anything shows up, investigate before deleting.
+Expected: empty output (no non-loader file references loader classes by name). If anything shows up, investigate before deleting.
+
+- [ ] **Step 1b: Pre-flight — find structural Spring-container dependencies on loader-provided beans**
+
+The loader's `LoaderJdbcConfig` declares `@Bean(name="loaderJdbcTemplate") @Primary JdbcTemplate`. Other code that autowires `JdbcTemplate` by type with NO `@Qualifier` will depend on this `@Primary` marker for disambiguation. Surfacing this kind of structural dep before deletion (Task 2 hit exactly this when gating `LoaderJdbcConfig`).
+
+```bash
+grep -rn "JdbcTemplate" backend/rectrace/src/main/java --include="*.java" | \
+  grep -v "/loader/" | grep -v "config/Loader" | grep -vE "@Qualifier|@Bean"
+```
+
+Expected output includes: `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/OracleServiceV4.java:27:    @Autowired private JdbcTemplate jdbcTemplate;` — confirms `OracleServiceV4` depends on the `@Primary` marker. Step 1c addresses this.
+
+- [ ] **Step 1c: Relocate the `@Primary` `JdbcTemplate` to a non-loader configuration BEFORE deleting `LoaderJdbcConfig`**
+
+Without this step, the loader-class deletion in Step 2 will break backend boot with `UnsatisfiedDependencyException` on `OracleServiceV4` (same failure mode the Task 2 implementer hit while gating).
+
+Pick the cheapest of three options:
+
+**Option A (Recommended) — add a `@Primary JdbcTemplate` bean to `DataSourceConfig`**
+
+Edit `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java` to add (preserving its other beans):
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
+// ...
+
+@Bean
+@Primary
+public JdbcTemplate primaryJdbcTemplate(DataSource dataSource) {
+    return new JdbcTemplate(dataSource);
+}
+```
+
+(The body is identical to `LoaderJdbcConfig.loaderJdbcTemplate`; just rename the bean to `primaryJdbcTemplate` and host it where it belongs semantically.)
+
+**Option B — switch `OracleServiceV4` to `@Qualifier` injection + drop `@Primary` entirely**
+
+In `backend/rectrace/src/main/java/com/citi/gru/rectrace/service/v4/OracleServiceV4.java`, change:
+```java
+@Autowired private JdbcTemplate jdbcTemplate;
+```
+to:
+```java
+@Autowired @Qualifier("readonlyJdbcTemplate") private JdbcTemplate jdbcTemplate;
+```
+(Or whichever existing template is correct for OracleServiceV4's use case — verify the SQL it issues fits the readonly pool's caps.)
+
+**Option C — promote an existing template to `@Primary`**: NOT recommended. `readonlyJdbcTemplate` is intentionally read-only with `setMaxRows`/`setQueryTimeout` caps; `healthCheckJdbcTemplate` is intentionally narrow-scoped. Promoting either would change semantics for any future by-type wiring.
+
+**Verify after relocation** (before continuing to Step 2):
+```bash
+cd backend/rectrace && mvn test 2>&1 | tail -10
+# Expected: BUILD SUCCESS
+```
+Then restart backend (orphan-kill + start) and verify `/api/v4/search/initial?keyword=tlm` returns hits — `OracleServiceV4`'s wiring is the canary.
+
+Commit Step 1c separately from Step 2's delete (atomic relocation, then atomic delete):
+```bash
+git add backend/rectrace/src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java  # or OracleServiceV4.java for Option B
+git commit -m "$(cat <<'EOF'
+refactor(backend): relocate @Primary JdbcTemplate from LoaderJdbcConfig
+
+Pre-step for Phase 4 of the loader-extraction work. LoaderJdbcConfig
+hosted the @Primary JdbcTemplate that OracleServiceV4 autowires by type;
+the deletion of LoaderJdbcConfig in the next commit would break backend
+boot with UnsatisfiedDependencyException without this relocation.
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+```
 
 - [ ] **Step 2: Delete loader package + relocated files**
 
