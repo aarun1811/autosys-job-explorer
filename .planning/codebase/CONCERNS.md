@@ -3,6 +3,19 @@
 **Analysis Date:** 2026-05-12
 **Last reviewed:** 2026-05-18 — CRITICAL items 1-4 closed; "STATUS" markers added inline.
 
+> **2026-06-12 reconciliation** (see `.planning/codebase/CURRENT-STATE-2026-06-12.md`): the modernization, now merged to `main`, closed most of the HIGH/MEDIUM **backend** items below even where they aren't individually marked:
+> - **Backend tests skipped** → CLOSED Phase 0 (`maven.test.skip` removed; suites run).
+> - **Spring Boot 2.7.x EOL** → CLOSED Phase 1 (now Boot 3.5.14 / Java 21, jakarta).
+> - **Primary Oracle DS lacks pool** → CLOSED Phase 1 (explicit HikariCP, 4 named pools).
+> - **`AppConstants` empty** → CLOSED Phase 1 (populated; header constants centralized).
+> - **Parallel V3 + V4 APIs** → CLOSED Phase 1 (V3 controllers/services/providers deleted).
+> - **`hibernate.show_sql=true`** → CLOSED Phase 1 (off in prod/uat).
+> - **`System.err` / `printStackTrace`** → CLOSED Phase 7 (routed through SLF4J).
+>
+> **All MEDIUM/LOW items scoped to the Angular app** (`frontend/`: V1 renderers, `console.log`, `: any`, Cytoscape, dark-mode TODO) are **MOOT** — Angular is frozen and slated for deletion.
+>
+> **Still open:** `x-citiportal-loginid` is logged-not-enforced (Phase 9); `AutosysDataSourceConfig` has no `get_password.sh` password fallback (empty on a Citi VM); ES SSL re-enable + Citi CA truststore (Phase 9); AG-Grid license is a build-time value in React `main.tsx`. **New (Boot 3.x):** `application-uat.properties:2` sets `spring.profiles.active=uat` — forbidden in a profile-specific file; fails boot if the UAT profile is activated. The four CRITICALs remain CLOSED.
+
 ---
 
 ## CRITICAL

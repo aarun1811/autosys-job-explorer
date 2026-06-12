@@ -1,5 +1,7 @@
 # Technology Stack
 
+> **⚠ Point-in-time audit (2026-05-12)** — describes the pre-modernization stack (Boot 2.7 / Java 8 / Angular 16). Current stack: Boot 3.5.14 / Java 21 / React 19 — see **`.planning/codebase/CURRENT-STATE-2026-06-12.md`** and the repo **`CLAUDE.md`**.
+
 **Analysis Date:** 2026-05-12
 
 ## Languages

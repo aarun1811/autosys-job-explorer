@@ -1,5 +1,7 @@
 # Coding Conventions
 
+> **⚠ Point-in-time audit (2026-05-12)** — pre-modernization. Current conventions/gotchas live in the repo **`CLAUDE.md`**; current state in **`.planning/codebase/CURRENT-STATE-2026-06-12.md`**.
+
 **Analysis Date:** 2026-05-12
 
 ---

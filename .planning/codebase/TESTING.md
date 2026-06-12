@@ -1,5 +1,7 @@
 # Testing Patterns
 
+> **⚠ Point-in-time audit (2026-05-12)** — pre-modernization (tests were skipped by default then). The skip gate was removed in Phase 0; backend suites run, and `frontend-react` has vitest. See **`.planning/codebase/CURRENT-STATE-2026-06-12.md`** and the repo **`CLAUDE.md`**.
+
 **Analysis Date:** 2026-05-12
 
 ---

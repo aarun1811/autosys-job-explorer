@@ -85,26 +85,13 @@ Duplicate the same shape into `application-uat.properties` with `_UAT` suffixes 
 
 ## 4. Tell the React frontend where RecViz lives
 
-The React app currently reads `import.meta.env.VITE_RECVIZ_ORIGIN` (build-time env var, `frontend-react/src/search/recviz/recvizConfig.ts:9`). For a single jar that works in multiple environments, switch to a runtime config endpoint:
+**This is already implemented — you only need to set `app.recviz.origin`.** The backend `ConfigController` already exposes `GET /rectrace/api/config` → `{"recvizOrigin": ...}` (from `@Value("${app.recviz.origin:}")`), and `frontend-react/src/search/recviz/recvizConfig.ts` already fetches `/rectrace/api/config` at boot and caches it (falling back to `VITE_RECVIZ_ORIGIN`, then `http://localhost:8000`). So a single jar works across environments — just set `app.recviz.origin` per profile (step 3.2 / the `RECVIZ_ORIGIN_*` env var in step 5).
 
-### 4.1 Add a backend endpoint that exposes the value
+> **⚠ Blocker — `app.recviz.origin` is NOT yet committed in any `application-*.properties`.** Until you add it (step 3.2), `ConfigController` returns an empty string and the React app falls back to `http://localhost:8000`, so TLM/QuickRec cell clicks embed a dead URL. Add `app.recviz.origin=${RECVIZ_ORIGIN_PROD:}` (and the UAT equivalent).
 
-Create or extend a Spring REST controller to return:
+> **⚠ Blocker — RecViz CORS + frame-ancestors must list this origin.** RecViz currently **hardcodes** its allowed CORS origins to `localhost:5173/3000/4200` (`RecViz/backend/app/main.py:219`) and **ignores** the `RECVIZ_CORS_ALLOWED_ORIGINS` env var. RecViz's embed framing is driven by `RECVIZ_EMBED_FRAME_ANCESTORS` (default `http://localhost:5173`). For a non-localhost rectrace origin you must EITHER patch RecViz to read the env var, OR serve RecViz same-origin behind a reverse proxy (making CORS moot). Set `RECVIZ_EMBED_FRAME_ANCESTORS` to the rectrace origin regardless.
 
-```java
-@GetMapping("/api/config")
-public Map<String, String> config() {
-    return Map.of("recvizOrigin", recvizOrigin);
-}
-```
-
-where `recvizOrigin` is `@Value("${app.recviz.origin:}") String recvizOrigin` injected from the properties file.
-
-### 4.2 Update the React app to fetch at boot
-
-Replace the contents of `frontend-react/src/search/recviz/recvizConfig.ts` with a function that fetches `/rectrace/api/config` once on first call and caches the result. The current implementation only handles a build-time env var fallback (`http://localhost:8000`); add a runtime fetch that overrides it.
-
-**Alternative if you'd rather not add a runtime fetch:** build the frontend SEPARATELY for each environment with the right `VITE_RECVIZ_ORIGIN` set, and ship one jar per env (jar naming: `rectrace-prod.jar` vs `rectrace-uat.jar`).
+> **⚠ Also seed the RecViz dashboards** `dash-tlm-stats` and `dash-quickrec-stats` per environment via `RecViz/scripts/seed-oracle.py` — the rectrace renderers hardcode those IDs; without the seed, cell clicks 404.
 
 ---
 
@@ -300,6 +287,9 @@ In production, Spring Boot's logback-spring.xml is configured for **Splunk HEC**
 | Cells render but no TLM modal opens on click | Frontend can't reach RecViz origin | Verify `app.recviz.origin` value in the active profile + that RecViz is running at that URL |
 | `Failed to determine a suitable driver class` | OracleDriver not on classpath | The Maven pom includes `com.oracle.database.jdbc:ojdbc8` — verify the dependency wasn't excluded |
 | CORS errors in browser | Origin not in `app.cors.allowed-origins` | Add the calling origin to the comma-separated list and restart |
+| App fails to boot under the UAT profile (`InvalidConfigDataPropertyException`) | `application-uat.properties:2` sets `spring.profiles.active=uat` — forbidden in a profile-specific file (Boot 3.x) | Remove that line; activate the profile via the `SPRING_PROFILES_ACTIVE=uat` env var (step 5) instead |
+| RecViz iframe stuck on "loading"; console shows a `frame-ancestors`/CORS refusal | rectrace origin not allowed by RecViz | Patch RecViz CORS (`RecViz/backend/app/main.py:219`) + set `RECVIZ_EMBED_FRAME_ANCESTORS` to the rectrace origin, or proxy RecViz same-origin (step 4) |
+| TLM/QuickRec modal opens but shows a 404 / empty dashboard | RecViz dashboards not seeded in this env | Run `RecViz/scripts/seed-oracle.py` to create `dash-tlm-stats` / `dash-quickrec-stats` |
 
 ---
 

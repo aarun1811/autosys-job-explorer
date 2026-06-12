@@ -1,231 +1,79 @@
 # External Integrations
 
-**Analysis Date:** 2026-05-12
+**Reconciled:** 2026-06-12 (supersedes the 2026-05-12 pre-modernization audit). Cross-ref: `.planning/codebase/CURRENT-STATE-2026-06-12.md`.
 
 ## APIs & External Services
 
+**RecViz (embedded BI app — the primary external integration):**
+- Separate app at `/Users/aarun/Workspace/Projects/citi/RecViz` (FastAPI + Python 3.12 on :8000; React 19 + AG-Charts/ECharts). rectrace embeds it **one-directionally via iframe** — no API exchange, no shared ES, only a shared Oracle *instance* (different schema).
+- rectrace side: `frontend-react/src/search/RecvizEmbed.tsx`, `recviz/buildEmbedUrl.ts`, `recviz/recvizConfig.ts`, `recviz/RecvizDashboardModal.tsx`, renderers `TlmStatsCellRenderer` / `QuickRecStatsCellRenderer`; backend `ConfigController` `GET /api/config` → `{recvizOrigin}` from `app.recviz.origin`.
+- Embed URL: `{recvizOrigin}/embed/dashboards/{id}?filter.{k}={v}&filter.lock=...&hide=...&theme=...`. The only data hand-off is URL filter params.
+- `postMessage`: origin-validated `RECTRACE_THEME` (down) / `RECTRACE_IFRAME_HEIGHT` (up), never `targetOrigin:'*'`.
+- **Blockers** (see CURRENT-STATE §5): RecViz CORS hardcoded (`RecViz/backend/app/main.py:219`, env var unread); `app.recviz.origin` absent from `application-*.properties`; dashboards must be seeded per env; no SSO/auth on either side; `RecvizEmbed.onError` can't detect CSP framing refusal.
+
 **AG-Grid Enterprise:**
-- Used for server-side row model grid rendering throughout the frontend
-- SDK: `ag-grid-enterprise` 32.2.2, `ag-grid-angular` 32.2.2
-- License: `agGridLicenseKey` field in environment files (`frontend/rectrace/src/environments/environment.ts`)
-  - Value: `'License_Value'` (placeholder — must be replaced with actual enterprise license in deployment)
-- License registration: Injected via `ENVIRONMENT` provider in `frontend/rectrace/src/app/app.module.ts`
+- React: `ag-grid-enterprise` / `ag-grid-react` **35.x**. License set via `LicenseManager.setLicenseKey(...)` in `frontend-react/src/main.tsx` **before** `ModuleRegistry.registerModules([...])` (16 modules). License key comes from build env.
+- Angular (frozen): `ag-grid-angular` 32.x — being retired.
 
-**Cytoscape.js + cytoscape-dagre:**
-- Used for execution order job dependency visualization
-- Integrated in `frontend/rectrace/src/app/custom-interactions/components/modals/execution-order-graph/execution-order-graph.component.ts`
-- dagre plugin registered at module load via `cytoscape.use(dagre)`
-
-**AG Charts:**
-- Used for charts within grid cell renderers
-- SDK: `ag-charts-angular` 10.2.0
-- Registered in `frontend/rectrace/src/app/custom-interactions/custom-interactions.module.ts`
+**Graph / charts:**
+- React execution-order graph uses **`@xyflow/react` (React Flow) v12 + dagre** (NOT Cytoscape — that was Angular).
+- Charts inside cells / dashboards are owned by RecViz (AG-Charts + ECharts), not rectrace.
 
 ## Data Storage
 
-### Databases — Backend (`backend/rectrace`)
+### Backend (`backend/rectrace`) — three Oracle datasources + Elasticsearch
 
-**Primary Oracle DB (Rectrace schema):**
-- Driver: `oracle.jdbc.OracleDriver` (ojdbc8)
-- Connection: TNS-based via Oracle Wallet (`TNS_ADMIN` path in JDBC URL)
-- Config properties: `datasource.url`, `datasource.username`, `datasource.service-name`, `datasource.db-schema`
-- File: `backend/rectrace/src/main/resources/application.properties`
-- DataSource bean: `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/DataSourceConfig.java`
-- Schema: `RECTRACE`
-- Password: Retrieved at startup via external shell script (see "Password Retrieval" section below)
-- ORM: Hibernate with `Oracle12cDialect`, `hbm2ddl.auto=none`
+- **Primary `RECTRACE` DS** (`DataSourceConfig`, `@Profile("!test")`) — explicit HikariCP. Password via `${datasource.password:}` with a `get_password.sh` script fallback.
+- **`AUTOSYS` DS** (`AutosysDataSourceConfig`) — HikariCP. Password via `@Value("${autosys.db.password}")` with **no script fallback** (unlike the others — empty on a Citi VM → Hikari connection failure).
+- **Read-only DS** (`ReadonlyDataSourceConfig`) — for the SQL-tab subsystem; `get_password.sh` fallback; per-statement `setMaxRows`/`setQueryTimeout`/`setFetchSize`.
+- **Elasticsearch** — ES Java API Client (`co.elastic.clients.elasticsearch.ElasticsearchClient`). Index `rectrace_core_index`; the loader writes via alias `rectrace_core_alias` while search reads the concrete index. (The Boot-2.7-era `ElasticsearchDevConfiguration` SSL-bypass class was deleted in Phase 1.)
+- Oracle access is JDBC-template based; JPA is wired but vestigial (only `ExecutionOrderService` uses `em.createNativeQuery`; zero `@Entity`).
 
-**Secondary Oracle DB (Autosys schema):**
-- Driver: `oracle.jdbc.OracleDriver` (ojdbc8)
-- Config properties: `autosys.db.url`, `autosys.db.username`, `autosys.db.password`, `autosys.db.schema`
-- File: `backend/rectrace/src/main/resources/application.properties`
-- DataSource bean: `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/AutosysDataSourceConfig.java`
-- Bean name: `autosysDataSource`
-- Pool: HikariCP (pool name: `AutoSys-HikariCP`)
-  - `maximum-pool-size=10`, `minimum-idle=5`, `connection-timeout=20000ms`
-- Schema: `AUTOSYS`
-- Oracle optimizations: `oracle.jdbc.ReadTimeout=60000`, `oracle.net.CONNECT_TIMEOUT=10000`
-- Note: Password stored in `application.properties` directly (not script-retrieved — see CONCERNS.md)
+### Loader (`rectrace-loader`, :6089)
 
-**Elasticsearch:**
-- URI: `spring.elasticsearch.uris=https://localhost:9200` (dev default)
-- Auth: `spring.elasticsearch.username` / `spring.elasticsearch.password`
-- File: `backend/rectrace/src/main/resources/application.properties`
-- Client: Spring Data Elasticsearch (`spring-boot-starter-data-elasticsearch`)
-- SSL: Dev configuration bypasses SSL certificate validation entirely
-  - File: `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/ElasticsearchDevConfiguration.java`
-  - Warning: `TrustStrategy` accepts all certificates; `NoopHostnameVerifier` used — this bean is active in ALL profiles, not only dev
-- Search providers: `ElasticsearchSearchProviderV3` and `ElasticsearchServiceV4`
+- Reads Oracle, writes Elasticsearch via the alias. ShedLock-coordinated ticker, `BulkIngester`, idempotent upserts (`DocumentIdHasher`: SHA-256 of JSON-encoded configured-primaryKey values → first 8 bytes → 16 hex), run history (last 20/job), admin endpoints `/api/v4/loader-admin/*`. Owns the `loaderRunAge` health indicator.
 
-### Databases — TLM Stats (`rectrace-tlm-stats`)
+### TLM Stats (`rectrace-tlm-stats`, :8080)
 
-**Reconmgmt Oracle DB:**
-- Driver: `oracle.jdbc.OracleDriver`
-- Config properties: `reconmgmt.datasource.url`, `reconmgmt.datasource.username`, `reconmgmt.datasource.service-name`, `reconmgmt.datasource.db-schema`
-- File: `rectrace-tlm-stats/src/main/resources/application.properties`
-- DataSource bean: `reconmgmtDataSource` in `rectrace-tlm-stats/src/main/java/com/citi/gru/rectrace/tlmstats/config/DatabaseConfig.java`
-- JdbcTemplate bean: `reconmgmtJdbcTemplate`
-- Password: Retrieved at startup via external shell script
+- `reconmgmt` + `recportal` Oracle DS + up to 9 lazily-created TLM instance datasources (`tlm-instances.json`). **Not deeply audited in the 2026-06-12 pass** — treat its specifics as needing re-verification.
 
-**Recportal Oracle DB:**
-- Driver: `oracle.jdbc.OracleDriver` (default)
-- Config properties: `recportal.datasource.url`, `recportal.datasource.username`, `recportal.datasource.service-name`, `recportal.datasource.db-schema`
-- DataSource bean: `recportalDataSource` in `DatabaseConfig.java`
-- JdbcTemplate bean: `recportalJdbcTemplate`
-- Password: Retrieved at startup via external shell script
+### Local dev (sibling `../rectrace-local-dev`)
 
-**9 TLM Oracle Instances (TLM1–TLM9):**
-- Instance definitions: `rectrace-tlm-stats/src/main/resources/tlm-instances.json`
-- Each instance has: `instanceName`, `host`, `port` (1521), `serviceName`, `username`, `dbSchema`
-- Connection creation: Lazy — `TlmJdbcTemplateFactory.getJdbcTemplate(instanceName)` creates connections on first use
-- Factory bean: `tlmJdbcTemplateFactory` in `DatabaseConfig.java`
-- Password: Retrieved on each new connection via external shell script
+- docker-compose: Oracle `gvenzl/oracle-free:23-slim` (`1521`) + ES `8.13.4` (`9200`). `apply.py` seeds DDL + data + ES index (mapping `es/rectrace_core_index.mapping.json`: 13 `.keyword` fields @ `ignore_above:8192`, 8 completion suggesters).
 
-**HikariCP connection pool:**
-- Config: `spring.datasource.hikari.*` in `rectrace-tlm-stats/src/main/resources/application.properties`
-  - `maximum-pool-size=10`, `minimum-idle=5`, `connection-timeout=30000ms`, `idle-timeout=600000ms`, `max-lifetime=1800000ms`
+### Caching / object storage
 
-### File Storage
-
-- Local filesystem only — no object storage integration
-
-### Caching
-
-- None — no Redis, Memcached, or in-memory cache layer detected
+- None.
 
 ## Authentication & Identity
 
-**Auth Provider:**
-- No dedicated auth provider (no OAuth2, Keycloak, LDAP, Spring Security)
-- Identity propagated via HTTP request header: `x-citiportal-loginid`
-  - Set by upstream portal/proxy before requests reach the backend
-  - Used for audit logging only — no authorization enforcement in code
-
-**Implementation:**
-- Header read in `SearchController.java` (`backend/rectrace/src/main/java/com/citi/gru/rectrace/controller/SearchController.java`):
-  ```java
-  private static final String CITI_PORTAL_LOGIN_ID_HEADER = "x-citiportal-loginid";
-  String loginId = request.getHeader(CITI_PORTAL_LOGIN_ID_HEADER);
-  ```
-- Same pattern in `UserController.java`, `SearchControllerV4.java` (`@RequestHeader(value = "x-citiportal-loginid", required = false)`)
-- Frontend services do not inject this header — it must be injected by the reverse proxy
+- No auth provider. Identity is the `x-citiportal-loginid` HTTP header, set by the upstream portal/proxy, **read for logging only — not enforced** (Phase 9 will add a Spring Security filter). Read in `SearchController`, `SearchControllerV4`, `UserController` (`required=false`).
+- RecViz has **no auth of any kind**; there is no auth handoff in the embed.
+- `SecurityFilterChain` is permit-all per module.
 
 ## Password Retrieval — External Script
 
-Both `backend/rectrace` and `rectrace-tlm-stats` retrieve Oracle passwords by executing a shell script rather than storing them in config.
+- `/opt/rectify/control/scripts/get_password.sh` invoked at DataSource init via `ScriptExecutor`. Used by the primary + read-only backend DS and the tlm-stats DS. **Exception:** the backend `AUTOSYS` DS does NOT use it.
 
-**Script path:** `/opt/rectify/control/scripts/get_password.sh`
-- Configured via: `password.script.path` property in `rectrace-tlm-stats/src/main/resources/application.properties`
-- Hardcoded in backend: `DataSourceConfig.java` calls `scriptExecutor.executeScript("/opt/rectify/control/scripts/get_password.sh", serviceName, dbSchema)`
+## Observability
 
-**Invocation — Backend:**
-- Class: `backend/rectrace/src/main/java/com/citi/gru/rectrace/util/ScriptExecutor.java`
-- Signature: `executeScript(String scriptPath, String serviceName, String dbSchema)`
-- Args passed: `@<SERVICE_NAME>`, `<DB_SCHEMA>` (both uppercased)
-- Returns: first line of stdout
-
-**Invocation — TLM Stats:**
-- Class: `rectrace-tlm-stats/src/main/java/com/citi/gru/rectrace/tlmstats/util/ScriptExecutor.java`
-- Signature: `executeScript(String scriptPath, String... args)`
-- Returns: full trimmed stdout output
-
-**When called:**
-- Backend: at DataSource bean initialization (Spring startup)
-- TLM Stats reconmgmt/recportal: at DataSource bean initialization (Spring startup)
-- TLM Stats TLM instances: lazily, on first `getJdbcTemplate(instanceName)` call
-
-**Note:** The Autosys secondary Oracle DB in the backend (`autosys.db.*`) does NOT use the script — its password is stored in `application.properties` directly.
-
-## Monitoring & Observability
-
-**Health Endpoints — TLM Stats:**
-- Spring Boot Actuator: `GET /actuator/health`, `GET /actuator/info`
-- Exposed in: `rectrace-tlm-stats/src/main/resources/application.properties` (`management.endpoints.web.exposure.include=health,info`)
-- Custom health endpoint: `GET /api/health` (`HealthController.java`)
-- TLM-specific health: `GET /api/tlm-stats/health` (`TlmStatsController.java`)
-
-**Logging:**
-- Backend: SLF4J + Logback (Spring Boot default). Logger instances created with `LoggerFactory.getLogger(...)` or `@Slf4j` (Lombok)
-- TLM Stats: SLF4J + Logback. Log levels in `application.properties`:
-  - `logging.level.com.citi.gru.rectrace.tlmstats=INFO`
-  - `logging.level.org.springframework.web=INFO`
-  - `logging.level.org.springframework.jdbc=DEBUG`
-
-**Error Tracking:**
-- None — no Sentry, Datadog, or similar APM integration detected
+- JSON logs via `logstash-logback-encoder` in `logback-spring.xml` (profile-aware Splunk HEC). Brave/Micrometer tracing; `X-Correlation-Id` adopted as the 128-bit traceId. Prometheus at `/actuator/prometheus`. Slow-query AOP. Health indicators: `oracle`, `elasticsearch`, `searchConfig` (backend); `loaderRunAge` (loader). Maven-enforcer pins the Micrometer dual-release-train.
 
 ## CI/CD & Deployment
 
-**Hosting:**
-- No Dockerfile, docker-compose, or `.github/` CI configuration found in the repository
-- Deployment mechanism: Not captured in repository
+- `.github/workflows/ops-script.yml` runs the ops-script portability smoke on Linux. `ops/` is the managed-process surface (`rectrace-ops.sh`, `components.sh`, `build.sh`, `ci-smoke.sh`), bash 3.2/4/5 portable.
+- The React `dist/` is copied into the backend's `static/` (`ops/build.sh react`); the backend serves the SPA via `FrontendController` under `/rectrace/`. Production deploys one Spring Boot jar per component. See `DEPLOY.md`.
 
-**Build outputs:**
-- Backend: `backend/rectrace/target/*.jar` (Spring Boot fat JAR)
-- TLM Stats: `rectrace-tlm-stats/target/*.jar` (Spring Boot fat JAR)
-- Frontend: `frontend/rectrace/dist/rectrace/` (Angular build output)
-  - The backend serves the Angular SPA as static content from `classpath:/static/` via `FrontendController.java`
-  - Context path: `/rectrace/`
+## CORS
 
-## Internal Service-to-Service Communication
+- **Property-driven** via `app.cors.allowed-origins` (comma-separated; empty = block) in both backend services — the Boot-2.7-era wildcard `allowedOrigins("*")` and `@CrossOrigin("*")` annotations were removed. Local profile defaults to dev origins; prod/uat carry placeholders.
+- **RecViz** CORS is separate and currently **hardcoded** to dev origins (see Blockers above).
 
-**Frontend → Backend:**
-- Dev: `http://localhost:6088/api` (`frontend/rectrace/src/environments/environment.ts`)
-- Prod/UAT: `/api` (relative, same-origin via reverse proxy)
+## Environment Configuration (deploy)
 
-**Frontend → TLM Stats:**
-- Dev: `http://localhost:8080/api/tlm-stats`
-- Prod/UAT: `/api/tlm-stats` (relative)
-- Additional TLM Stats endpoints fronted under same base:
-  - `/api/qrk-stats` (QuickRec stats — `qrkStatsUrl`)
-  - `/api/di-dashboard` (DI Dashboard — `diDashboardUrl`)
-
-**Backend API Endpoints:**
-- `GET /rectrace/api/search/suggest` — Autocomplete suggestions
-- `GET /rectrace/api/v3/search/keyword` — V3 keyword search
-- `GET /rectrace/api/v3/search/expand` — V3 group expansion
-- `POST /rectrace/api/v3/search/ssrm/{category}` — AG-Grid server-side row model
-- `GET /rectrace/api/v4/search/initial` — V4 initial keyword search
-- `GET /rectrace/api/execution-order/{loadJobName}` — Job dependency graph data
-- `GET /rectrace/api/user/info` — Logged-in user info (reads `x-citiportal-loginid`)
-
-**TLM Stats API Endpoints:**
-- `GET /api/tlm-stats/breaks` — Break statistics
-- `GET /api/tlm-stats/automatch` — Auto-match statistics
-- `GET /api/tlm-stats/manual-match` — Manual match statistics
-- `GET /api/tlm-stats/health` — Health check
-- `POST /api/tlm-stats/v2/dashboard/breaks` — V2 break dashboard
-- `POST /api/tlm-stats/v2/dashboard/recon` — V2 recon dashboard
-- `GET /api/tlm-stats/v2/dashboard/summary` — V2 summary
-- `GET /api/tlm-stats/v2/filters/recons` — Filter options
-- `GET /api/tlm-stats/v2/filters/set-ids` — Set ID filter options
-- `GET /api/quickrec-stats/*` — QuickRec statistics (via `QuickRecStatsController.java`)
-
-## CORS Configuration
-
-**Backend (`backend/rectrace`):**
-- Allows all origins (`*`), all standard HTTP methods, all headers
-- File: `backend/rectrace/src/main/java/com/citi/gru/rectrace/config/CorsConfig.java`
-
-**TLM Stats (`rectrace-tlm-stats`):**
-- `@CrossOrigin(origins = "*")` on controller classes (`TlmStatsController.java`, `QuickRecStatsController.java`)
-
-## Environment Configuration
-
-**Required at runtime — Backend:**
-- Oracle Wallet files accessible at path referenced in JDBC URL (`TNS_ADMIN=...`)
-- `/opt/rectify/control/scripts/get_password.sh` executable
-- Elasticsearch cluster reachable at `spring.elasticsearch.uris`
-
-**Required at runtime — TLM Stats:**
-- `/opt/rectify/control/scripts/get_password.sh` executable
-- Oracle hosts for all configured TLM instances, reconmgmt, and recportal reachable
-
-**Secrets location:**
-- Oracle passwords: Retrieved at runtime via `/opt/rectify/control/scripts/get_password.sh` (not stored in repo)
-- Exception: `autosys.db.password` is stored in `backend/rectrace/src/main/resources/application.properties` (development value — see CONCERNS.md)
-- AG-Grid license: `agGridLicenseKey` in environment files (placeholder value committed)
+- Backend env vars: `RECTRACE_DB_*`, `RECTRACE_ES_*`, `AUTOSYS_DB_*`, `app.recviz.origin` (→ `RECVIZ_ORIGIN_*`), `SPRING_PROFILES_ACTIVE`. Oracle wallet at `TNS_ADMIN` path; Citi CA truststore for HTTPS Oracle/ES. See `DEPLOY.md` for the full cheat sheet.
+- **Watch:** `application-uat.properties:2` sets `spring.profiles.active=uat` (forbidden in Boot 3.x — fails boot if the UAT profile is activated).
 
 ---
 
-*Integration audit: 2026-05-12*
+*Integration reconciliation: 2026-06-12. Prior audit (2026-05-12) described the pre-modernization V3/Angular/Boot-2.7 state and is superseded.*

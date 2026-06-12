@@ -1,6 +1,8 @@
 <!-- refreshed: 2026-05-12 -->
 # Architecture
 
+> **⚠ Point-in-time audit (2026-05-12)** — describes the pre-modernization codebase (Boot 2.7 / Angular / V3). For the current verified state see **`.planning/codebase/CURRENT-STATE-2026-06-12.md`**; for conventions + gotchas see the repo **`CLAUDE.md`**.
+
 **Analysis Date:** 2026-05-12
 
 ## System Overview

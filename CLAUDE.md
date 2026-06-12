@@ -121,22 +121,30 @@ scripts/                    # smoke-*.sh integration tests
 - **Server-side row model.** AG-Grid SSRM endpoint at `POST /api/v4/search/ssrm/{category}` with `SSRMRequestV4` carrying initial ES filter + group keys + sort/filter model + visible columns + pagination.
 - **Column-name whitelist** (`ColumnNameWhitelist.forCategory(config)`) validates every client-supplied column name in ORDER BY / WHERE / SELECT / GROUP BY before SQL concatenation. Added 2026-05-18 to close the CONCERNS.md CRITICAL.
 - **CORS** is property-driven via `app.cors.allowed-origins` (comma-separated). Empty = block. Local profile defaults to dev origins; prod/uat carry `[NEEDS USER REVIEW]` placeholders.
-- **Observability** uses `logback-spring.xml` (profile-aware Splunk HEC), Brave Micrometer tracing with `X-Correlation-Id` as the 128-bit traceId, `/actuator/health` with custom indicators (Oracle, ES, loader-run-age, search-config), `/actuator/prometheus`, slow-query AOP.
+- **Observability** uses `logback-spring.xml` (profile-aware Splunk HEC), Brave Micrometer tracing with `X-Correlation-Id` as the 128-bit traceId, `/actuator/health` with custom indicators — **`oracle`, `elasticsearch`, `searchConfig` in `backend/rectrace`** (the `loaderRunAge` indicator now lives in `rectrace-loader`, not the backend), `/actuator/prometheus`, slow-query AOP.
 - **Loader subsystem extracted to `rectrace-loader/`** (Boot 3.5.14, port 6089). Backend has zero loader awareness as of 2026-05-31 loader-extraction work — see `docs/superpowers/specs/2026-05-31-loader-extraction-design.md`.
 - **SQL tab subsystem** uses JSqlParser 5.3 for boot-time validation (fails to boot on bad shape) + a dedicated read-only Oracle DS + per-statement `setMaxRows/setQueryTimeout/setFetchSize` caps.
 
 ### Frontend (React)
-- **TanStack Router** with Zod-validated search params (`/search?q=...&cat=fileName`).
+- **TanStack Router** with Zod-validated search params (`/search?q=...&tab=fileName`; the active-category param is `tab`, not `cat`).
 - **TanStack Query** with `apiFetch` wrapper generating 32-char hex correlation IDs and attaching them to errors for "Error — reference: <ID>" toasts.
-- **Config-driven columns** — `useSearchConfig` hook fetches `/api/v4/search/config` once (`staleTime: Infinity`); `configCategoryToColDefs` adapts ColumnDefinitionV4 → AG-Grid ColDef; cell renderers are looked up by string key from `renderers/registry.ts`.
-- **Cell renderers** ported so far: AppID (anchor), SupportEmail (mailto), ExecutionOrder (button with placeholder Dialog — full Cytoscape graph deferred to Phase 4).
+- **Config-driven columns** — column defs arrive **inline** with the `GET /api/v4/search/initial` response (`CategoryResultV4.columns`); `configToColDefs` adapts `ColumnDefinitionV4` → AG-Grid `ColDef`; cell renderers are looked up by string key from the `cellRenderers` map in `renderers/registry.ts`. (A `GET /api/v4/search/config` endpoint also exists, but there is **no** `useSearchConfig` hook and the TanStack Query default `staleTime` is **5 min**, not `Infinity`.)
+- **Cell renderers** — 5 registered in `renderers/registry.ts`: `appIDCellRenderer` (anchor), `supportEmailCellRenderer` (mailto), `executionOrderButtonRenderer` (opens a **complete** `ExecutionOrderModal` — React Flow `@xyflow/react` v12 + dagre layout; native graph, **not** Cytoscape and **not** a placeholder), `tlmStatsButtonRenderer` + `quickRecStatsButtonRenderer` (open a RecViz dashboard inside a sandboxed iframe modal — see "RecViz integration" below).
 - **Custom ThemeProvider** with `rectrace-theme` localStorage key (NOT next-themes — that's dead code in `package.json`).
 - **ESLint** has a hex-rejection rule (`no-restricted-syntax` for hex Literals) — use CSS tokens (`var(--color-*)`).
-- **AG-Grid v35** requires 10 modules registered in `main.tsx` BEFORE license. Adding a new feature usually means adding a module.
+- **AG-Grid v35** — in `main.tsx`, `LicenseManager.setLicenseKey(...)` is called **first**, then `ModuleRegistry.registerModules([...])` with **16 modules** (license-before-modules is the AG-Grid requirement). Adding a new grid feature usually means adding a module.
 
 ### Authentication
 - All APIs read `x-citiportal-loginid` header for user context (logged, not enforced yet — Phase 9 will gate).
 - The React app generates `X-Correlation-Id` per request; backend adopts it as the 128-bit Brave traceId via a custom `Propagation.Factory`.
+
+### RecViz Integration (TLM / QuickRec dashboards)
+
+**RecViz** is a *separate* app (`/Users/aarun/Workspace/Projects/citi/RecViz` — FastAPI + Python 3.12 on :8000, React 19 + AG-Charts/ECharts; **not** Cytoscape). rectrace embeds RecViz **one-directionally via iframe** — there is no API exchange, no shared ES, and only a shared Oracle *instance* (different schema). The only data hand-off is URL filter params.
+
+- The `tlmStatsButtonRenderer` / `quickRecStatsButtonRenderer` cells open `RecvizDashboardModal` → `RecvizEmbed` → `<iframe src="{recvizOrigin}/embed/dashboards/{id}?filter.{k}={v}&filter.lock=...&hide=...&theme=...">`. Origin is fetched at runtime from `GET /rectrace/api/config` (`ConfigController` → `app.recviz.origin`, default empty), with `recvizConfig.ts` falling back to `VITE_RECVIZ_ORIGIN` then `http://localhost:8000`. `RecvizEmbed` does origin-validated `postMessage` (`RECTRACE_THEME` / `RECTRACE_IFRAME_HEIGHT`), never `*`.
+- Execution-order visualization is **native React Flow** and **independent of RecViz** — RecViz is only for the TLM/QuickRec *stats dashboards*.
+- **Prod blockers (verified 2026-06-12, see `.planning/codebase/CURRENT-STATE-2026-06-12.md`):** RecViz CORS is hardcoded to dev origins (`RecViz/backend/app/main.py:219`; its `RECVIZ_CORS_ALLOWED_ORIGINS` env var is never read); `app.recviz.origin` is absent from every `application-*.properties`; the `dash-tlm-stats`/`dash-quickrec-stats` dashboards must be seeded per env via `RecViz/scripts/seed-oracle.py`; neither app has SSO/auth; `RecvizEmbed.onError` can't detect a CSP `frame-ancestors` refusal.
 
 ## Project State
 
@@ -150,25 +158,36 @@ The living state is in `.planning/`:
 
 The `.planning/phases/` history (per-phase plan/summary blizzard from the previous workflow) is archived; read it for context but new work doesn't add to it. Use `superpowers:writing-plans` for new plans.
 
-## Active Modernization Milestone
+## Modernization Status & Current State
 
-Branch: `milestone/modernization` (≈160 commits ahead of `main`). Done:
+> **Full current-state reference:** `.planning/codebase/CURRENT-STATE-2026-06-12.md` — system map, domain model, RecViz integration, verified endpoint list, and doc-vs-code corrections. Read it before non-trivial work; the per-phase `.planning/` docs (STATE / ROADMAP / parity-matrix) lag the code.
 
-- Phase 0/0.1: test gate, local-dev seed bootstrap
-- Phase 1: Boot 2.7 → 3.5.14, Java 17 → 21, jakarta sweep, V3 deletion, SecurityFilterChain, HikariCP
+**Branch reality:** the modernization milestone is **merged into `main`** — `main` is the source of truth and is ~45 commits **ahead** of `milestone/modernization` (whose HEAD is the merge-base). The old "milestone branch is ~160 commits ahead of main" framing is obsolete. Do new work on `main` (or a feature branch off it).
+
+**Done (merged to main):**
+
+- Phase 0/0.1: test gate, local-dev seed bootstrap (sibling `../rectrace-local-dev/`)
+- Phase 1: Boot 2.7 → 3.5.14, Java 8 → 21, jakarta sweep, V3 deletion, `SecurityFilterChain`, explicit HikariCP
 - Phase 2: React shell (Vite 7 + React 19 + shadcn + AG-Grid 35 + tracing + ops v1)
 - Phase 3: React search vertical slice (one tab end-to-end)
 - Phase 5: Config-driven SELECT (JSqlParser + read-only DS + SSRM)
 - Phase 6: ES Loader (ShedLock + BulkIngester + admin endpoints + alias-only)
 - Phase 7: Observability sweep (JSON logs + tracing + HealthIndicators + Prometheus + enforcer pin)
 - Phase 8 (BUG + OPS subset): hyphen-search fix via `caseInsensitive(true)` on `.keyword` wildcards; `ops/rectrace-ops.sh` v2; `ops/ci-smoke.sh`; GitHub Actions workflow
+- **Post-milestone work on `main` (not in the per-phase `.planning/` history):**
+  - All 13 search tabs ported to one config-driven React search surface
+  - Execution-order **redesign** — full React Flow + dagre `ExecutionOrderModal` (native graph; replaces the Phase-3 placeholder)
+  - **TLM/QuickRec → RecViz embed** — `TlmStatsCellRenderer` + `QuickRecStatsCellRenderer` + `RecvizEmbed` + `buildEmbedUrl` + `recvizConfig` + backend `ConfigController`
+  - **A1a** — removed the category-level `dashboard` config concept (config-only edit; the `DashboardConfig` DTO infra remains but no category uses it)
+  - **Loader extraction** — loader moved out of `backend/rectrace` into `rectrace-loader/` (:6089); backend carries zero loader code
+  - AG-grid styling consistency, inline-SVG logo, Citi laptop profile + `CITI-LAPTOP-SETUP.md`
 
-Open:
+**Open:**
 
-- **Phase 4 — recviz integration** (not started). Needs Citi-internal CSP/cookie/SSO contract.
-- **Phase 8 DESIGN-01/02/03** (deferred). Needs recviz visual references.
+- **Phase 4 — RecViz integration**: the **rectrace side is largely built** (renderers, embed, runtime origin config). Remaining is RecViz-side + cross-team — seed the RecViz dashboards per env, write the CSP/`frame-ancestors`/cookie/SSO contract, and clear the blockers in the "RecViz Integration" section above.
 - **Phase 9 — Domain security** (not started). Needs CitiPortal/SiteMinder/SPNEGO + keytab/Vault choice + ES SSL re-enable + Citi CA truststore + CORS prod allow-list.
-- **Angular ↔ React coexistence decision** — both apps configure `/rectrace/` as base path; both use `rectrace-theme` localStorage key. Pick a path before production cutover (move React to `/rectrace-react/`, OR move Angular to `/rectrace-legacy/`, OR cut Angular over to React entirely once parity is reached).
+- **Phase 8 DESIGN-01/02/03** (deferred). Needs RecViz visual references.
+- **Angular retirement** — Angular (`frontend/`) is frozen and slated for deletion; React is the go-forward UI. Both still configure `/rectrace/` base path and the `rectrace-theme` localStorage key, so finalize the cutover (retire Angular, or move one off `/rectrace/`) before production.
 
 ## Things to Watch Out For
 
@@ -178,7 +197,7 @@ Open:
 - **Maven Surefire on Java 21 + Lombok prints `Unsafe::objectFieldOffset` warnings.** Cosmetic; not a build failure.
 - **Bash 3.2 portability is enforced for everything under `ops/`** (OPS-01). No associative arrays, no `mapfile`, no `[[ ... = pat* ]]` glob patterns. Use POSIX `case` for prefix matching. `shellcheck -x` is the gate.
 - **`scripts/smoke-loader-sigterm.sh`** depends on a Python interpreter with `oracledb` installed; it tries `$RECTRACE_PYTHON`, then the sibling venv, then `python3` on PATH.
-- **AG-Grid v35 modules must be registered BEFORE `LicenseManager.setLicenseKey`** in `frontend-react/src/main.tsx` — order matters.
+- **AG-Grid v35: `LicenseManager.setLicenseKey` must run BEFORE `ModuleRegistry.registerModules`** in `frontend-react/src/main.tsx` (license first, then the 16 modules) — order matters.
 - **`getRowId`** in any AG-Grid SSRM datasource must use stable business keys, never `Date.now()+Math.random()`. Breaks row-state persistence across refreshes.
 - **`x-citiportal-loginid` is logged, not enforced.** Phase 9 will add the Spring Security filter; until then, treat any backend that's reachable directly (i.e., not behind the portal proxy) as un-authenticated.
 

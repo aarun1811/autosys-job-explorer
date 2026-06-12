@@ -1,5 +1,7 @@
 # Codebase Structure
 
+> **⚠ Point-in-time audit (2026-05-12)** — pre-modernization layout (Angular frontend, loader inside backend). Current layout: `frontend-react/` is active, the loader is its own `rectrace-loader/` module — see **`.planning/codebase/CURRENT-STATE-2026-06-12.md`** and the repo **`CLAUDE.md`**.
+
 **Analysis Date:** 2026-05-12
 
 ## Directory Layout

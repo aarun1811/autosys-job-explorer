@@ -4,6 +4,8 @@
 
 This milestone modernizes the Rectrace stack along three axes — a backend platform upgrade (Spring Boot 2.7 → **3.5.14**, **Java 21**, jakarta), a net-new React frontend mirroring recviz, and a set of additive backend capabilities (config-driven SELECT, Oracle→ES scheduled loader, observability, ops script, Citi-domain security). The strategy is **vertical-slice strangler-fig**: a thin foundation lands first, then end-to-end slices ship one tab at a time while Angular keeps running. Backend-only phases (SQL, Loader, Observability) parallelize against React phases. The milestone closes with a hyphen-bug fix + design polish + ops hardening, then locks domain security as the production gate.
 
+> **Status (2026-06-12):** This milestone is **substantially complete and merged into `main`** — `main` is the source of truth (~45 commits ahead of `milestone/modernization`, whose HEAD is the merge-base). Phases 0–3 and 5–8 are done; **Phase 4 (RecViz) is largely built on the rectrace side** with RecViz-side seeding + cross-team contract work remaining; Phase 9 (security) is not started. Significant **post-milestone work** (execution-order React Flow redesign, TLM/QuickRec RecViz embed, A1a dashboard-config removal, loader extraction to `rectrace-loader`) landed on `main` *after* the per-phase history was archived — see the "Post-Milestone Work" section below and `.planning/codebase/CURRENT-STATE-2026-06-12.md`.
+
 ## Phases
 
 **Phase Numbering:**
@@ -15,7 +17,7 @@ This milestone modernizes the Rectrace stack along three axes — a backend plat
 - [x] **Phase 1: Backend Platform Upgrade** — Spring Boot 2.7 → **3.5.14**, **Java 21**, `javax` → `jakarta`, `SecurityFilterChain`, dependency-pin refresh, opportunistic cleanup. (completed 2026-05-12)
 - [x] **Phase 2: React Foundation** — Vite + React 19 + shadcn + AG-Grid React scaffold, design tokens, dark/light mode, correlation-ID plumbing, ops script v1. (completed 2026-05-13)
 - [x] **Phase 3: React Search Vertical Slice** — One V4 search category ported end-to-end to React with renderer, URL-sync, export, recent searches, correlation-ID error states. (completed 2026-05-17)
-- [ ] **Phase 4: recviz Integration** — Written CSP/cookie/SSO contract + Zod-validated `postMessage` envelope + `RecvizFrame` component + tab/modal renderer + UAT smoke.
+- [~] **Phase 4: RecViz Integration** — *rectrace side largely built on `main`* (TLM/QuickRec cell renderers + `RecvizEmbed` + `buildEmbedUrl` + `recvizConfig` + backend `ConfigController`). Remaining: seed the RecViz dashboards per env, written CSP/`frame-ancestors`/cookie/SSO contract, versioned Zod `postMessage` envelope, UAT smoke against the real instance, and the prod-config blockers (see `.planning/codebase/CURRENT-STATE-2026-06-12.md` §5).
 - [x] **Phase 5: Config-driven SELECT** — `SqlSearchControllerV4` + `SqlQueryServiceV4` with JSqlParser startup guard, read-only DB user, per-statement timeout/fetchSize/maxRows, mandatory `WHERE`/`FETCH FIRST` cap, SSRM-shaped responses. (completed 2026-05-17)
 - [x] **Phase 6: ES Loader Subsystem** — Config-driven multi-job Oracle→ES loader (scheduler decision locked in planning), alias-only indexes, idempotent upserts, run-history, admin endpoints, graceful shutdown. (completed 2026-05-17)
 - [x] **Phase 7: Observability Sweep** — JSON logs via `logback-spring.xml`, custom `HealthIndicator` beans, slow-query timing, Prometheus, actuator lockdown, Micrometer Tracing across `@Async`/scheduler/subprocess. (completed 2026-05-17)
@@ -123,14 +125,21 @@ Plans:
   3. Modals can render recviz iframes at parity with the existing execution-order / TLM-stats modal pattern.
   4. All `postMessage` traffic flows through a versioned Zod-validated envelope (auth handoff, height sync, navigation events), and every listener validates `event.origin` against a per-environment allow-list.
   5. A UAT smoke test against the real (non-localhost) recviz instance is recorded as evidence and committed.
-**Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
+**Status (2026-06-12):** the rectrace-side implementation shipped on `main` *outside* the original 3-plan structure — as the execution-order redesign + TLM/QuickRec RecViz embed work. See `docs/superpowers/specs/2026-05-28-tlm-quickrec-recviz-modals-design.md` and the 4 plans `docs/superpowers/plans/2026-05-28-tlm-quickrec-recviz-*.md`. DESIGN-01/02/03 deferred per 08-CONTEXT.md.
 
-Plans:
-- [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
-- [x] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
-- [x] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
-**UI hint**: yes
-**Research hint**: yes — recviz CSP/cookie/SSO posture, Citi network topology between the two apps, and iframe-resizer fork OSS-review outcome should be researched during phase planning.
+Shipped on the rectrace side:
+- `RecvizEmbed` (sandboxed iframe + origin-validated `postMessage` `RECTRACE_THEME`/`RECTRACE_IFRAME_HEIGHT`), `buildEmbedUrl` (+ test, never `targetOrigin:'*'`), `RecvizDashboardModal`
+- `TlmStatsCellRenderer` (`dash-tlm-stats`) + `QuickRecStatsCellRenderer` (`dash-quickrec-stats`), registered in `renderers/registry.ts`
+- `recvizConfig.ts` (runtime fetch of `/rectrace/api/config`) + backend `ConfigController` `GET /api/config` → `{recvizOrigin}` from `app.recviz.origin`
+
+Remaining (RecViz-side + cross-team):
+- Seed the two dashboards per env via `RecViz/scripts/seed-oracle.py`; align dataset `filter_mappings` with the renderers' filter IDs
+- Written CSP/`frame-ancestors`/`SameSite`/SSO contract (RECVIZ-01) + per-env origin allow-list (RECVIZ-02)
+- Versioned Zod `postMessage` envelope (RECVIZ-03); CSP framing-refusal detection in `RecvizEmbed.onError`
+- Prod blockers: RecViz CORS hardcoded (`RecViz/backend/app/main.py:219`); `app.recviz.origin` absent from `application-*.properties`
+- UAT smoke against the real RecViz instance (RECVIZ-07)
+
+**Research hint**: yes — RecViz CSP/cookie/SSO posture, Citi network topology between the two apps, and same-origin-vs-cross-origin embed topology should be settled during phase planning.
 
 ### Phase 5: Config-driven SELECT
 **Goal**: Devs/admins can define a search tab as an arbitrary `SELECT` in config, with the application enforcing bounded resources, parser-based validation, and SSRM-shaped output — never exposing SQL to end users.
@@ -220,13 +229,23 @@ Plans:
   3. ES SSL validation is enabled in all non-dev profiles, the dev-only bypass code path is excluded from production builds, and the internal Citi CA is installed in the JVM truststore with no in-code SSL trust manipulation outside dev.
   4. CORS is configured with an explicit per-environment allow-list (never `*` with credentials), and the Citi-network preflight checklist passes — internal Nexus/Verdaccio/Artifactory used, JVM proxy configured, zero external CDN URLs in the React bundle.
   5. All `CONCERNS.md` CRITICAL items are closed (column-name SQL injection in `OracleServiceV4.buildOrderByClause`, `printStackTrace`, `show_sql=true`, license placeholders).
-**Plans**: 3 plans (autonomous; 2 waves); DESIGN-01/02/03 deferred per 08-CONTEXT.md (see 08-DESIGN-DEFERRED.md)
+**Plans**: not yet planned. Phase 9 is **not started** — it is the production security gate.
 
-Plans:
-- [x] 08-01-PLAN.md — Wave 1: BUG-01/02/03 — HYPHEN-DIAGNOSTIC.md + ES wildcard caseInsensitive(true) on .keyword branch + HyphenSearchRegressionTest + scripts/smoke-hyphen-search.sh (4 commits 03c91ea/3358296/4835e9d/21b0f73; backend suite 86/0/0 with 4 designed skips; live smoke 6/6 PASS)
-- [ ] 08-02-PLAN.md — Wave 1: OPS-01/02/03 — ops/components.sh registry (indexed-array) + ops/rectrace-ops.sh v2 hardened (shellcheck-clean, set -euo pipefail, actuator readiness probe, bash 3.2+4/5 portable)
-- [ ] 08-03-PLAN.md — Wave 2: OPS-04 — ops/ci-smoke.sh Linux portability smoke + .github/workflows/ops-script.yml (ubuntu-latest, [NEEDS USER REVIEW] for Citi-CI swap per D-8.11)
+Scope (from the success criteria above): a user-auth filter (CitiPortal / SiteMinder / SPNEGO) replacing header-as-truth; service-auth (Kerberos keytab or Vault) replacing `get_password.sh`; ES SSL re-enable + Citi CA truststore; CORS per-env allow-list; Citi-network preflight. Note: the CONCERNS.md CRITICAL items this phase was meant to close (column-name SQL injection, CORS `*`, ES SSL bypass, plaintext password) were **already closed during the modernization** — see `.planning/codebase/CONCERNS.md`. What remains for Phase 9 is the auth/identity **enforcement** itself plus the network/TLS hardening.
+
 **Research hint**: yes — the user-auth mechanism (CitiPortal / SiteMinder / SPNEGO) and service-auth mechanism (keytab+Kerberos / Vault) must be researched and locked during phase planning; also Citi-network preflight specifics (internal Nexus/npmrc, proxy at JVM level, internal CA truststore content).
+
+## Post-Milestone Work (landed on `main` after the per-phase history was archived)
+
+These shipped on `main` after Phase 8 and are **not** captured in the archived per-phase `.planning/` docs. They have specs/plans under `docs/superpowers/`:
+
+- **Execution-order redesign** — full React Flow (`@xyflow/react` v12 + dagre) `ExecutionOrderModal` (JobInspector, StatusLegend, QuickFind, minimap). Replaces the Phase-3 placeholder; native graph, not Cytoscape. Specs: `docs/superpowers/specs/2026-05-27-execution-order-*.md`.
+- **TLM / QuickRec → RecViz embed** — the bulk of Phase 4's rectrace side (see Phase 4 above). Spec: `2026-05-28-tlm-quickrec-recviz-modals-design.md`.
+- **A1a — remove dashboard-config** (2026-05-31) — deleted the category-level `dashboard` config concept (config-only; DTO/types retained). Spec: `2026-05-31-a1a-remove-dashboard-config.md`.
+- **Loader extraction** (2026-05-31) — loader moved from `backend/rectrace` into `rectrace-loader/` (:6089). Spec: `2026-05-31-loader-extraction-design.md`.
+- **AG-grid styling consistency** (`2026-05-30-ag-grid-styling-consistency-*.md`), **premium search result surface**, **volume seed data**, inline-SVG logo, Citi laptop profile (`CITI-LAPTOP-SETUP.md`).
+
+Full verified current state: `.planning/codebase/CURRENT-STATE-2026-06-12.md`.
 
 ## Progress
 
@@ -240,7 +259,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 →
 | 1. Backend Platform Upgrade | 8/8 | Complete | 2026-05-12 |
 | 2. React Foundation | 5/5 | Complete   | 2026-05-13 |
 | 3. React Search Vertical Slice | 8/8 | Complete   | 2026-05-17 |
-| 4. recviz Integration | 0/TBD | Not started | - |
+| 4. RecViz Integration | rectrace side built | In progress — RecViz-side seeding + cross-team contract remaining | partial 2026-05-28 |
 | 5. Config-driven SELECT | 6/6 | Complete   | 2026-05-17 |
 | 6. ES Loader Subsystem | 5/5 | Complete   | 2026-05-17 |
 | 7. Observability Sweep | 5/5 | Complete   | 2026-05-17 |
