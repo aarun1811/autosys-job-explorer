@@ -1,5 +1,6 @@
 package com.citi.gru.rectrace.config;
 
+import com.citi.gru.rectrace.util.ScriptExecutor;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,8 +20,21 @@ public class AutosysDataSourceConfig {
     @Value("${autosys.db.username}")
     private String username;
 
-    @Value("${autosys.db.password}")
+    /**
+     * Empty default so production falls back to {@code get_password.sh} when blank —
+     * mirrors {@link DataSourceConfig} / {@link ReadonlyDataSourceConfig}. A directly
+     * configured value (e.g. application-prod.properties) is used verbatim.
+     */
+    @Value("${autosys.db.password:}")
     private String password;
+
+    /** Used only for the script fallback (when the password above is blank). */
+    @Value("${autosys.db.service-name:}")
+    private String serviceName;
+
+    /** Used only for the script fallback (when the password above is blank). */
+    @Value("${autosys.db.schema:}")
+    private String dbSchema;
 
     @Value("${autosys.db.driver-class-name}")
     private String driverClassName;
@@ -42,10 +56,24 @@ public class AutosysDataSourceConfig {
 
     @Bean(name = "autosysDataSource")
     public DataSource autosysDataSource() {
+        // Use the configured password when supplied (e.g. application-prod.properties),
+        // else fall back to /opt/rectify/control/scripts/get_password.sh keyed on
+        // (service-name, db-schema) — mirrors DataSourceConfig / ReadonlyDataSourceConfig.
+        String resolvedPassword;
+        if (password != null && !password.isBlank()) {
+            resolvedPassword = password;
+        } else {
+            ScriptExecutor scriptExecutor = new ScriptExecutor();
+            resolvedPassword = scriptExecutor.executeScript(
+                    "/opt/rectify/control/scripts/get_password.sh",
+                    serviceName.toUpperCase(),
+                    dbSchema.toUpperCase());
+        }
+
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(url);
         config.setUsername(username);
-        config.setPassword(password);
+        config.setPassword(resolvedPassword);
         config.setDriverClassName(driverClassName);
         config.setMaximumPoolSize(maximumPoolSize);
         config.setMinimumIdle(minimumIdle);

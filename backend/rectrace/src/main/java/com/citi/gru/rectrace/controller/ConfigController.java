@@ -16,12 +16,11 @@ import java.util.Map;
  * caches the result, and uses {@code recvizOrigin} when building TLM /
  * QuickRec embed URLs.
  *
- * Driven by the {@code app.recviz.origin} property, which is wired to the
- * {@code RECVIZ_ORIGIN_PROD} / {@code RECVIZ_ORIGIN_UAT} env vars via
- * {@code application-prod.properties} / {@code application-uat.properties}.
- * Defaults to an empty string when unset (local dev falls back to the
- * frontend's {@code VITE_RECVIZ_ORIGIN} build-time env var, then to
- * {@code http://localhost:8000}).
+ * Driven by the {@code app.recviz.origin} property, set in the active profile's
+ * properties file (e.g. {@code application-prod.properties} /
+ * {@code application-citi.properties}) to the RecViz server origin. Defaults to an
+ * empty string when unset, in which case the frontend falls back to its build-time
+ * {@code VITE_RECVIZ_ORIGIN} env var, then to {@code http://localhost:8000}.
  */
 @RestController
 @RequestMapping("/api/config")

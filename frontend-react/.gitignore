@@ -10,8 +10,10 @@ node_modules/
 # Vite cache
 .vite/
 
-# TanStack Router generated file (auto-generated from src/routes/)
-src/routeTree.gen.ts
+# NOTE: src/routeTree.gen.ts is intentionally COMMITTED (not ignored) so a fresh
+# checkout / GitHub zip can build. `pnpm build` runs `tsc -b` BEFORE Vite regenerates
+# the file, so it must already exist in the tree. The Vite plugin keeps it in sync
+# during dev/build; commit the regenerated version when routes change.
 
 # Playwright artifacts (per-run, never committed)
 test-results/

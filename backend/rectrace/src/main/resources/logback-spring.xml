@@ -38,6 +38,8 @@
                     defaultValue="splunk.citi.intra.example"/>
     <springProperty scope="context" name="splunkPort" source="splunk.hec.port"
                     defaultValue="9997"/>
+    <springProperty scope="context" name="logDir" source="logging.file.path"
+                    defaultValue="logs"/>
 
     <!-- Local recovery surface: JSON-encoded stdout. Captured by systemd/journald
          on the VM so operators always have a log surface even if Splunk is down. -->
@@ -77,8 +79,31 @@
       </encoder>
     </appender>
 
+    <!-- Always-on rotating JSON file: gives operators a flat log file even when
+         Splunk is down and journald is not used. Path is ${logging.file.path}/rectrace.log
+         (defaults to ./logs relative to the run dir; set logging.file.path to an absolute
+         path like /opt/rectrace/logs in prod). Daily + 100 MB rollover, gzip,
+         30-day / 3 GB retention. -->
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>${logDir}/rectrace.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+        <fileNamePattern>${logDir}/rectrace-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+        <maxFileSize>100MB</maxFileSize>
+        <maxHistory>30</maxHistory>
+        <totalSizeCap>3GB</totalSizeCap>
+      </rollingPolicy>
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <includeMdc>true</includeMdc>
+        <includeContext>false</includeContext>
+        <customFields>{"application":"${appName}","environment":"prod"}</customFields>
+        <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+        <timeZone>UTC</timeZone>
+      </encoder>
+    </appender>
+
     <root level="INFO">
       <appender-ref ref="STDOUT_JSON"/>
+      <appender-ref ref="FILE_JSON"/>
       <appender-ref ref="SPLUNK_HEC"/>
     </root>
   </springProfile>
