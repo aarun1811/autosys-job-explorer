@@ -3,11 +3,11 @@
   OBS-01 / OBS-07 — Profile-aware structured logging.
 
   In !prod profile: human-readable ConsoleAppender (CONSOLE) for laptop dev/UAT/test.
-  In  prod profile: STDOUT_JSON (LogstashEncoder via Console) AND SPLUNK_HEC
-                    (LogstashTcpSocketAppender to Splunk HEC, inherently async
-                    via its built-in <ringBufferSize>). STDOUT_JSON is the
-                    operator-recovery surface — it always emits even when
-                    Splunk is unreachable.
+  In  prod profile: STDOUT_JSON (JSON to stdout/journald) + FILE_JSON (rotating JSON file).
+                    Splunk (SPLUNK_HEC) is OPT-IN — add the `splunk` profile alongside prod
+                    (SPRING_PROFILES_ACTIVE=prod,splunk) and set splunk.hec.host. It is OFF by
+                    default so an unset/empty Splunk host can never break startup (a host-less
+                    TCP destination throws at config time).
 
   Filename pitfall P-1: this file MUST be logback-spring.xml (NOT logback.xml).
   Logback evaluates logback.xml BEFORE Spring activates profiles, so <springProfile>
@@ -34,10 +34,6 @@
   <!-- Production — Splunk HEC compatible JSON over TCP, plus STDOUT JSON fallback -->
   <springProfile name="prod">
     <springProperty scope="context" name="appName" source="spring.application.name"/>
-    <springProperty scope="context" name="splunkHost" source="splunk.hec.host"
-                    defaultValue="splunk.citi.intra.example"/>
-    <springProperty scope="context" name="splunkPort" source="splunk.hec.port"
-                    defaultValue="9997"/>
     <springProperty scope="context" name="logDir" source="logging.file.path"
                     defaultValue="logs"/>
 
@@ -53,31 +49,36 @@
       </encoder>
     </appender>
 
-    <!-- Splunk HEC TCP destination. Raw-TCP HEC is auth-by-source-IP today
-         (D-7.14); the splunk.hec.token placeholder is reserved for a future
-         HTTPS-HEC migration and is unused by LogstashTcpSocketAppender.
+    <!-- Splunk HEC — OPT-IN, nested under the `splunk` profile so the appender (and its
+         host/port properties) are NOT constructed unless SPRING_PROFILES_ACTIVE=prod,splunk.
+         This makes Splunk truly optional: an unset/empty splunk.hec.host can never reach the
+         LogstashTcpSocketAppender (a host-less destination throws at config time).
 
-         Pitfall P-2 — back-pressure: LogstashTcpSocketAppender is INHERENTLY
-         asynchronous. Its <ringBufferSize> field below configures the LMAX
-         disruptor buffer that decouples log producers from the TCP writer
-         thread. We attach it DIRECTLY to root rather than wrapping it in
-         a Logback AsyncAppender to avoid double-buffering and to keep the
-         appender chain inspectable by LogbackProdProfileTest. -->
-    <appender name="SPLUNK_HEC"
-              class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-      <destination>${splunkHost}:${splunkPort}</destination>
-      <reconnectionDelay>30 seconds</reconnectionDelay>
-      <writeTimeout>10 seconds</writeTimeout>
-      <keepAliveDuration>5 minutes</keepAliveDuration>
-      <ringBufferSize>8192</ringBufferSize>
-      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-        <includeMdc>true</includeMdc>
-        <includeContext>false</includeContext>
-        <customFields>{"application":"${appName}","environment":"prod"}</customFields>
-        <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
-        <timeZone>UTC</timeZone>
-      </encoder>
-    </appender>
+         Raw-TCP HEC is auth-by-source-IP today (D-7.14); splunk.hec.token is reserved for a
+         future HTTPS-HEC migration and is unused. Pitfall P-2: LogstashTcpSocketAppender is
+         inherently async (LMAX disruptor via <ringBufferSize>); attached directly to root,
+         not wrapped in an AsyncAppender. -->
+    <springProfile name="splunk">
+      <springProperty scope="context" name="splunkHost" source="splunk.hec.host"
+                      defaultValue="splunk.citi.intra.example"/>
+      <springProperty scope="context" name="splunkPort" source="splunk.hec.port"
+                      defaultValue="9997"/>
+      <appender name="SPLUNK_HEC"
+                class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${splunkHost}:${splunkPort}</destination>
+        <reconnectionDelay>30 seconds</reconnectionDelay>
+        <writeTimeout>10 seconds</writeTimeout>
+        <keepAliveDuration>5 minutes</keepAliveDuration>
+        <ringBufferSize>8192</ringBufferSize>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+          <includeMdc>true</includeMdc>
+          <includeContext>false</includeContext>
+          <customFields>{"application":"${appName}","environment":"prod"}</customFields>
+          <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampPattern>
+          <timeZone>UTC</timeZone>
+        </encoder>
+      </appender>
+    </springProfile>
 
     <!-- Always-on rotating JSON file: gives operators a flat log file even when
          Splunk is down and journald is not used. Path is ${logging.file.path}/rectrace.log
@@ -104,7 +105,10 @@
     <root level="INFO">
       <appender-ref ref="STDOUT_JSON"/>
       <appender-ref ref="FILE_JSON"/>
-      <appender-ref ref="SPLUNK_HEC"/>
+      <!-- Splunk attached only when the `splunk` profile is active (appender defined above). -->
+      <springProfile name="splunk">
+        <appender-ref ref="SPLUNK_HEC"/>
+      </springProfile>
     </root>
   </springProfile>
 </configuration>

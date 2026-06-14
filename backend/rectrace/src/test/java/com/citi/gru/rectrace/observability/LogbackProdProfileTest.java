@@ -17,10 +17,11 @@ import ch.qos.logback.core.Appender;
 import net.logstash.logback.appender.LogstashTcpSocketAppender;
 
 /**
- * OBS-01 / OBS-07 prod-profile contract — when {@code spring.profiles.active=prod}
- * the root logger must include a {@link LogstashTcpSocketAppender} pointing at
- * Splunk HEC (per D-7.0). Plan 07-02 enabled this test by wiring the
- * profile-aware {@code logback-spring.xml}.
+ * OBS-01 / OBS-07 — Splunk is opt-in via the {@code splunk} profile. When
+ * {@code spring.profiles.active=prod,splunk} the root logger must include a
+ * {@link LogstashTcpSocketAppender} pointing at Splunk HEC (per D-7.0).
+ * (Without the {@code splunk} profile, prod attaches NO Splunk appender — see
+ * {@code LogbackProdNoSplunkTest}.)
  */
 // Note: the additional properties beyond the original Plan 01 set are necessary
 // to load the context on dev laptops without Oracle wallets. They activate the
@@ -33,7 +34,7 @@ import net.logstash.logback.appender.LogstashTcpSocketAppender;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = {
-                "spring.profiles.active=prod,test",
+                "spring.profiles.active=prod,splunk,test",
                 "splunk.hec.host=127.0.0.1",
                 "splunk.hec.port=9997"
         })
@@ -58,7 +59,7 @@ class LogbackProdProfileTest {
      */
     @BeforeAll
     static void primeProdProfileForLogback() {
-        System.setProperty("spring.profiles.active", "prod");
+        System.setProperty("spring.profiles.active", "prod,splunk");
         LoggerContext ctx = (LoggerContext) LoggerFactory.getILoggerFactory();
         ctx.reset();
     }
